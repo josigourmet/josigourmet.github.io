@@ -3,864 +3,753 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel Josi Doces — Pedidos</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<title>Painel Admin - Rastreador Everton GPS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<!-- Nova biblioteca adicionada para forçar o contorno de ruas de forma nativa -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
 <style>
-:root{
-  --marrom-escuro:#3e2723;
-  --marrom-medio:#5d4037;
-  --marrom-claro:#8d6e63;
-  --creme-escuro:#d7ccc8;
-  --creme-medio:#efebe9;
-  --creme-fundo:#fdf5e6;
-  --destaque:#c8860a;
-  --verde:#25D366;
-  --azul:#0088c7;
-  --vermelho:#d64545;
-  --roxo:#7c5cbf;
-  --sombra:0 4px 20px rgba(62,39,35,.12);
+:root {
+  --bg-main: #0a0d12;
+  --bg-card: #131820;
+  --border: rgba(255,255,255,.08);
+  --signal-on: #00ffa6;
+  --signal-off: #ffb020;
+  --danger: #ff5470;
+  --telemetry: #2dd4ff;
+  --text: #eef2f6;
+  --text-dim: #74808f;
 }
-*{box-sizing:border-box}
-body{
-  margin:0;font-family:'Lato',sans-serif;background:var(--creme-fundo);color:var(--marrom-escuro);
+body {
+  margin: 0; padding: 0; font-family: system-ui, sans-serif;
+  background: var(--bg-main); color: var(--text);
+  display: flex; height: 100vh; overflow: hidden;
 }
+.sidebar {
+  width: 380px; background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; height: 100%;
+}
+#map { flex: 1; height: 100%; background: #000; }
+.header { padding: 16px; border-bottom: 1px solid var(--border); text-align: center; }
+.header h2 { margin: 0; font-size: 1.2em; color: var(--telemetry); }
+.content { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.box { background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 8px; }
+.box-title { font-size: 0.75em; text-transform: uppercase; color: var(--text-dim); font-weight: bold; margin-bottom: 8px; }
+select, input, button {
+  width: 100%; background: #1a212b; border: 1px solid var(--border);
+  padding: 10px; border-radius: 6px; color: white; font-size: 0.95em; box-sizing: border-box;
+}
+button { background: var(--telemetry); color: #000; font-weight: bold; cursor: pointer; margin-top: 8px; border: none;}
+button:hover { opacity: 0.9; }
+.telemetry-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.88em; }
+.telemetry-row:last-child { border-bottom: none; }
+.telemetry-row b { text-align: right; max-width: 60%; }
+.badge { font-size: 0.75em; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+.badge-movimento { background: rgba(0,255,166,0.15); color: var(--signal-on); }
+.badge-parado { background: rgba(255,176,32,0.15); color: var(--signal-off); }
+.badge-perigo { background: rgba(255, 84, 112, 0.15); color: var(--danger); }
+.live-indicator { display: inline-block; width: 8px; height: 8px; background: var(--signal-on); border-radius: 50%; margin-right: 6px; }
+.auth-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+.auth-card { background: var(--bg-card); border: 1px solid var(--border); padding: 24px; border-radius: 12px; width: 90%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; }
+.auth-card h3 { margin: 0; color: var(--text); font-size: 1.2em; text-align: center; }
+/* Esconder o painel de instruções de texto que o Leaflet Routing cria por padrão */
+.leaflet-routing-container { display: none !important; }
 
-/* ---------- LOGIN ---------- */
-#telaLogin{
-  position:fixed;inset:0;z-index:5000;
-  background:linear-gradient(155deg,var(--marrom-escuro),var(--marrom-medio) 60%,var(--marrom-claro));
-  display:flex;align-items:center;justify-content:center;padding:20px;
+/* ===================== CHAT ===================== */
+.chat-tab-btn-admin {
+  flex: 1; border-radius: 0; background: transparent; color: var(--text-dim);
+  padding: 10px; font-size: 0.82em; box-shadow: none; border: none; cursor: pointer;
 }
-.login-box{
-  background:#fff;border-radius:22px;padding:34px 28px;max-width:340px;width:100%;
-  text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35);
+.chat-tab-btn-admin.ativa { background: #1a212b; color: var(--telemetry); }
+.chat-lista-admin { height: 220px; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.msg-bolha-admin {
+  max-width: 82%; padding: 8px 12px; border-radius: 12px; font-size: 0.85em; line-height: 1.4;
+  word-break: break-word; align-self: flex-start; background: #1a212b; border: 1px solid var(--border); color: var(--text);
 }
-.login-box h1{font-family:'Playfair Display',serif;font-size:22px;margin:6px 0 4px;color:var(--marrom-escuro)}
-.login-box p{font-size:13px;color:var(--marrom-claro);margin:0 0 18px}
-.login-box input{
-  width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--creme-escuro);
-  font-size:16px;letter-spacing:3px;text-align:center;margin-bottom:12px;
-}
-.login-box button{
-  width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--marrom-medio),var(--marrom-escuro));
-  color:#fff;font-weight:700;font-size:15px;cursor:pointer;
-}
-.login-erro{color:var(--vermelho);font-size:12px;font-weight:700;height:16px;margin-top:8px}
+.msg-bolha-admin.minha { align-self: flex-end; background: rgba(45,212,255,.14); border-color: rgba(45,212,255,.3); }
+.msg-bolha-admin .msg-remetente-admin { font-size: 0.72em; font-weight: 700; color: var(--telemetry); margin-bottom: 2px; }
+.msg-bolha-admin .msg-hora-admin { font-size: 0.68em; color: var(--text-dim); margin-top: 3px; text-align: right; }
 
-.btn-biometria{
-  width:100%;padding:15px;border:none;border-radius:14px;
-  background:linear-gradient(135deg,var(--destaque),#a06810);
-  color:#fff;font-weight:700;font-size:15px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  margin-bottom:14px;box-shadow:0 6px 18px rgba(200,134,10,.35);
-}
-.btn-biometria i{font-size:19px}
-.btn-biometria:active{transform:scale(.97)}
-.separador-login{
-  display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--marrom-claro);font-size:11px;font-weight:700;text-transform:uppercase;
-}
-.separador-login::before,.separador-login::after{content:'';flex:1;height:1px;background:var(--creme-escuro)}
-.link-usar-pin{
-  background:none;border:none;color:var(--marrom-claro);font-size:12.5px;font-weight:700;
-  text-decoration:underline;cursor:pointer;margin-top:8px;padding:6px;width:auto;
-}
-.aviso-cadastrar-digital{
-  background:linear-gradient(135deg,#fff8e1,#fff3cd);border:1.5px dashed var(--destaque);
-  border-radius:14px;padding:14px;margin-top:16px;text-align:left;
-}
-.aviso-cadastrar-digital p{margin:0 0 10px;font-size:12.5px;color:#7a5800;font-weight:600;text-align:left}
-.btn-cadastrar-digital{
-  width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--marrom-medio),var(--marrom-escuro));
-  color:#fff;font-weight:700;font-size:13px;cursor:pointer;
-}
-.btn-agora-nao{
-  width:100%;padding:9px;border:none;border-radius:10px;background:transparent;
-  color:var(--marrom-claro);font-weight:700;font-size:12px;cursor:pointer;margin-top:4px;
-}
-
-/* ---------- HEADER ---------- */
-header{
-  background:linear-gradient(155deg,var(--marrom-escuro),var(--marrom-medio) 65%,var(--marrom-claro));
-  color:#fff;padding:18px 16px;position:sticky;top:0;z-index:200;box-shadow:var(--sombra);
-}
-.header-top{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1100px;margin:0 auto}
-.header-titulo{display:flex;align-items:center;gap:10px}
-.header-titulo h1{font-family:'Playfair Display',serif;font-size:19px;margin:0}
-.header-titulo span{font-size:11px;opacity:.75;display:block}
-.header-acoes{display:flex;align-items:center;gap:10px}
-#statusConexao{font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;background:rgba(255,255,255,.12)}
-#statusConexao.online{background:rgba(37,211,102,.25)}
-#statusConexao.offline{background:rgba(214,69,69,.35)}
-.btn-som,.btn-sair{
-  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff;
-  width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:14px;
-  display:flex;align-items:center;justify-content:center;
-}
-
-.filtros-wrap{max-width:1100px;margin:14px auto 0;padding:0 16px}
-.busca{
-  width:100%;padding:11px 14px;border-radius:12px;border:none;font-size:14px;
-  background:rgba(255,255,255,.15);color:#fff;
-}
-.busca::placeholder{color:rgba(255,255,255,.65)}
-.abas{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:14px;scrollbar-width:none}
-.abas::-webkit-scrollbar{display:none}
-.aba{
-  flex-shrink:0;padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.1);
-  color:rgba(255,255,255,.85);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;
-  border:1.5px solid transparent;transition:.2s;
-}
-.aba .contagem{
-  display:inline-block;margin-left:6px;background:rgba(255,255,255,.25);border-radius:10px;
-  padding:1px 7px;font-size:11px;
-}
-.aba.ativa{background:#fff;color:var(--marrom-escuro);border-color:#fff}
-.aba.ativa .contagem{background:var(--destaque);color:#fff}
-
-/* ---------- LISTA ---------- */
-.container{max-width:1100px;margin:18px auto;padding:0 16px 60px}
-.grid-pedidos{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-.vazio{
-  text-align:center;padding:60px 20px;color:var(--marrom-claro);
-}
-.vazio i{font-size:38px;opacity:.4;margin-bottom:10px;display:block}
-
-.pedido-card{
-  background:#fff;border-radius:18px;box-shadow:var(--sombra);border:1px solid rgba(215,204,200,.5);
-  overflow:hidden;position:relative;animation:entrar .3s ease;
-}
-@keyframes entrar{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.pedido-card.novo{border:2px solid var(--destaque);box-shadow:0 0 0 4px rgba(200,134,10,.15),var(--sombra)}
-.pedido-faixa{height:6px;width:100%}
-.pedido-head{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.pedido-num{font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:var(--marrom-escuro)}
-.pedido-hora{font-size:11px;color:var(--marrom-claro);font-weight:700}
-.badge-status{
-  font-size:10.5px;font-weight:800;padding:5px 10px;border-radius:20px;color:#fff;
-  text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;
-}
-.pedido-corpo{padding:0 16px 8px;font-size:13.5px}
-.linha-info{display:flex;gap:8px;margin-bottom:6px;line-height:1.4}
-.linha-info i{width:16px;color:var(--marrom-claro);margin-top:2px}
-.linha-info b{color:var(--marrom-escuro)}
-.itens-lista{
-  background:var(--creme-medio);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:13px;
-}
-.itens-lista .item-linha{display:flex;justify-content:space-between;padding:3px 0}
-.itens-lista .item-linha span:first-child{max-width:70%}
-.total-linha{
-  display:flex;justify-content:space-between;font-weight:800;font-size:15px;padding-top:10px;
-  border-top:1.5px dashed var(--creme-escuro);margin-top:4px;color:var(--marrom-escuro);
-}
-.total-linha b{color:var(--destaque)}
-.tag-pagamento{
-  display:inline-block;font-size:11px;font-weight:700;background:var(--creme-medio);
-  padding:3px 9px;border-radius:10px;color:var(--marrom-medio);margin-top:4px;
-}
-.pedido-acoes{padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px}
-.linha-btns{display:flex;gap:8px}
-.btn-acao{
-  flex:1;border:none;padding:11px 8px;border-radius:11px;font-weight:700;font-size:12.5px;
-  cursor:pointer;color:#fff;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px;
-}
-.btn-acao:active{transform:scale(.96)}
-.btn-avancar{background:linear-gradient(135deg,var(--verde),#1da851)}
-.btn-rejeitar{background:linear-gradient(135deg,var(--vermelho),#a83232)}
-.btn-whats{background:linear-gradient(135deg,#128c4a,#0e6b38)}
-.btn-secundario{background:linear-gradient(135deg,var(--marrom-claro),var(--marrom-medio))}
-.motivo-rejeicao{
-  margin-top:6px;font-size:12px;font-weight:700;color:var(--vermelho);
-  background:#fdecea;padding:8px 10px;border-radius:10px;border:1px dashed var(--vermelho);
-}
-.historico-mini{font-size:10.5px;color:var(--marrom-claro);margin-top:6px;font-weight:600}
-
-/* ---------- MODAL REJEITAR ---------- */
-.modal{
-  display:none;position:fixed;inset:0;background:rgba(30,15,10,.85);z-index:3000;
-  align-items:center;justify-content:center;padding:20px;
-}
-.modal.aberto{display:flex}
-.modal-box{
-  background:#fff;border-radius:20px;padding:24px 22px;max-width:380px;width:100%;
-  animation:entrar .3s ease;
-}
-.modal-box h3{font-family:'Playfair Display',serif;margin-top:0;font-size:18px;color:var(--marrom-escuro)}
-.opcao-motivo{
-  display:block;width:100%;text-align:left;padding:13px 14px;border-radius:12px;
-  border:1.5px solid var(--creme-escuro);background:var(--creme-medio);margin-bottom:10px;
-  font-weight:700;font-size:13.5px;cursor:pointer;color:var(--marrom-escuro);
-}
-.opcao-motivo:active{transform:scale(.98)}
-.opcao-motivo small{display:block;font-weight:400;color:var(--marrom-claro);margin-top:3px}
-.modal-cancelar{
-  width:100%;padding:11px;border-radius:10px;border:none;background:var(--creme-escuro);
-  color:var(--marrom-escuro);font-weight:700;cursor:pointer;margin-top:4px;
-}
-
-/* ---------- TOAST ---------- */
-#toastNovoPedido{
-  position:fixed;top:-100px;left:50%;transform:translateX(-50%);z-index:4000;
-  background:linear-gradient(135deg,var(--destaque),#a06810);color:#fff;padding:14px 20px;
-  border-radius:14px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.3);
-  transition:top .4s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:10px;
-}
-#toastNovoPedido.mostrar{top:16px}
-
-@media(max-width:480px){
-  .grid-pedidos{grid-template-columns:1fr}
-  .header-titulo h1{font-size:16px}
+@media (max-width: 768px) {
+  body { flex-direction: column-reverse; }
+  .sidebar { width: 100%; height: 50vh; }
+  #map { height: 50vh; }
 }
 </style>
 </head>
 <body>
 
-<!-- LOGIN SIMPLES -->
-<div id="telaLogin">
-  <div class="login-box">
-    <div style="font-size:38px;">🍰</div>
-    <h1>Painel Josi Doces</h1>
-
-    <div id="blocoBiometria" style="display:none;">
-      <p>Use sua digital para entrar</p>
-      <button class="btn-biometria" id="btnEntrarDigital" onclick="loginComBiometria()">
-        <i class="fas fa-fingerprint"></i> Entrar com digital
-      </button>
-      <div class="separador-login">ou</div>
-      <button class="link-usar-pin" onclick="mostrarBlocoPin()">Usar código de acesso</button>
+<div id="authOverlay" class="auth-overlay">
+  <div class="auth-card">
+    <h3>🔐 Painel Admin Protegido</h3>
+    <p style="font-size: 0.85em; color: var(--text-dim); text-align: center; margin: 0;">Insira as credenciais de administrador do sistema.</p>
+    <div>
+      <label style="font-size: 0.75em; color: var(--text-dim); text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 4px;">E-mail</label>
+      <input type="email" id="authEmail" placeholder="seu-email@gmail.com">
     </div>
-
-    <div id="blocoPin" style="display:none;">
-      <p>Digite o código de acesso da loja</p>
-      <input type="password" id="inputPin" inputmode="numeric" maxlength="6" placeholder="••••" onkeypress="if(event.key==='Enter')tentarLogin()">
-      <button onclick="tentarLogin()">Entrar</button>
+    <div>
+      <label style="font-size: 0.75em; color: var(--text-dim); text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 4px;">Senha</label>
+      <input type="password" id="authSenha" placeholder="******">
     </div>
-
-    <div class="login-erro" id="loginErro"></div>
-
-    <div id="avisoCadastrarDigital" class="aviso-cadastrar-digital" style="display:none;">
-      <p>👆 Seu aparelho tem leitor de digital. Quer ativar a entrada por digital para as próximas vezes?</p>
-      <button class="btn-cadastrar-digital" onclick="registrarBiometria()">Ativar entrada por digital</button>
-      <button class="btn-agora-nao" onclick="fecharAvisoDigital()">Agora não</button>
-    </div>
+    <button id="btnEntrarPainel">Entrar no Painel</button>
+    <div id="erroLogin" style="color: var(--danger); font-size: 0.85em; text-align: center; display: none;"></div>
   </div>
 </div>
 
-<div id="toastNovoPedido">🔔 <span id="toastTexto">Novo pedido recebido!</span></div>
+<div id="avisoSuspensoAdmin" style="display:none; position:fixed; inset:0; z-index:10001; background:var(--bg-main); flex-direction:column; align-items:center; justify-content:center; padding:32px 24px; text-align:center;">
+    <div style="width:88px; height:88px; border-radius:22px; background:linear-gradient(145deg,var(--danger),#a91c3e); display:flex; align-items:center; justify-content:center; font-size:2.4em; box-shadow:0 10px 28px rgba(255,84,112,0.3); margin-bottom:22px;">🛠️</div>
+    <div style="font-size:1.05em; font-weight:700; color:var(--text); letter-spacing:0.8px; margin-bottom:26px;">ADMIN EVERTON GPS</div>
+    <div style="border:1px solid rgba(255,84,112,.35); background:rgba(255,84,112,0.08); border-radius:16px; padding:24px 20px; max-width:340px;">
+        <div style="font-size:1.8em; margin-bottom:10px;">🚫</div>
+        <div style="color:var(--danger); font-weight:700; font-size:1.05em; line-height:1.5;">Acesso suspenso</div>
+        <div id="avisoSuspensoAdminTexto" style="color:var(--text-dim); font-size:0.88em; margin-top:8px; line-height:1.5;">Esta empresa está com o pagamento pendente. Entre em contato com o suporte para regularizar.</div>
+    </div>
+</div>
 
-<header>
-  <div class="header-top">
-    <div class="header-titulo">
-      <span style="font-size:26px;">🍰</span>
-      <div>
-        <h1>Josi Doces — Pedidos</h1>
-        <span id="statusConexao" class="offline">Conectando…</span>
+<div class="sidebar">
+  <div class="header">
+    <h2>🛠️ Admin Everton GPS</h2>
+    <span id="userLogado" style="font-size: 0.8em; color: var(--signal-on)">Sessão Protegida</span>
+  </div>
+  <div class="content">
+    <div class="box">
+      <div class="box-title">🏢 Empresa</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <input type="text" id="empresaIdInput" placeholder="ID da empresa (ex: transportadora_geromel)">
+        <button id="btnCarregarEmpresa">Carregar</button>
+      </div>
+      <div id="empresaAtualInfo" style="font-size: 0.75em; color: var(--text-dim); margin-top: 6px;">Nenhuma empresa carregada ainda.</div>
+      <div id="avisoTempoAssinaturaAdmin" style="display:none; margin-top:8px; padding:8px 10px; border-radius:6px; font-size:0.78em; font-weight:bold; text-align:center;"></div>
+    </div>
+
+    <div class="box">
+      <div class="box-title">🚗 Selecionar Veículo</div>
+      <select id="selectVeiculo">
+        <option value="">Carregue uma empresa primeiro...</option>
+      </select>
+    </div>
+
+    <div class="box">
+      <div class="box-title">📅 Filtrar Histórico Passado</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <input type="date" id="filtroData">
+        <div style="display: flex; gap: 6px;">
+          <input type="time" id="filtroHoraInicio" value="00:00">
+          <input type="time" id="filtroHoraFim" value="23:59">
+        </div>
+        <button id="btnBuscarHistorico">🔍 Buscar Histórico</button>
+        <button id="btnVoltarTempoReal" style="background: var(--signal-on); display: none;">🟢 Voltar ao Tempo Real</button>
       </div>
     </div>
-    <div class="header-acoes">
-      <button class="btn-som" id="btnSom" onclick="alternarSom()" title="Som de notificação"><i class="fas fa-volume-up"></i></button>
-      <button class="btn-sair" onclick="sair()" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+
+    <div id="statusModo" class="box" style="border-color: var(--signal-off); text-align: center; font-weight: bold; font-size: 0.9em; color: var(--signal-off);">
+      Aguardando seleção...
     </div>
-  </div>
-  <div class="filtros-wrap">
-    <input type="text" class="busca" id="busca" placeholder="🔍 Buscar por nome, telefone ou nº do pedido..." oninput="renderizar()">
-    <div class="abas" id="abasFiltro"></div>
-  </div>
-</header>
 
-<div class="container">
-  <div id="gridPedidos" class="grid-pedidos"></div>
-  <div id="vazioMsg" class="vazio" style="display:none">
-    <i class="fas fa-mug-hot"></i>
-    Nenhum pedido por aqui ainda.
-  </div>
-</div>
+    <div class="box">
+      <div class="box-title">📊 Dados do Ponto Selecionado</div>
+      <div class="telemetry-row"><span>Situação</span><span id="txtStatus" class="badge badge-parado">—</span></div>
+      <div class="telemetry-row"><span>Velocidade</span><b id="txtVelocidade">0 km/h</b></div>
+      <div class="telemetry-row"><span>Limite da Via</span><b id="txtLimiteVia">—</b></div>
+      <div class="telemetry-row"><span>Tempo Parado</span><b id="txtTempoParado">00:00:00</b></div>
+      <div class="telemetry-row"><span>Rua</span><b id="txtRua">—</b></div>
+      <div class="telemetry-row"><span>Bairro</span><b id="txtBairro">—</b></div>
+      <div class="telemetry-row"><span>Cidade/UF</span><b id="txtCidadeEstado">—</b></div>
+      <div class="telemetry-row"><span>Data/Hora</span><b id="txtDataHora">—</b></div>
+      <div class="telemetry-row"><span>Coordenadas</span><b id="txtCoords">—</b></div>
+    </div>
 
-<!-- MODAL REJEIÇÃO -->
-<div class="modal" id="modalRejeitar">
-  <div class="modal-box">
-    <h3>❌ Rejeitar pedido</h3>
-    <p style="font-size:13px;color:var(--marrom-claro);margin-top:-8px;">Escolha o motivo — o cliente poderá ser avisado pelo WhatsApp.</p>
-    <button class="opcao-motivo" onclick="confirmarRejeicao('fora_horario')">
-      ⏰ Fora do horário de atendimento
-      <small>Pedido feito ou agendado fora do horário de funcionamento</small>
-    </button>
-    <button class="opcao-motivo" onclick="confirmarRejeicao('sem_capacidade')">
-      📦 Sem capacidade no momento
-      <small>Volume de pedidos muito alto para este horário</small>
-    </button>
-    <button class="opcao-motivo" onclick="confirmarRejeicao('outro')">
-      ✏️ Outro motivo
-      <small>Você poderá digitar o motivo</small>
-    </button>
-    <button class="modal-cancelar" onclick="fecharModalRejeitar()">Cancelar</button>
+    <div class="box" style="padding:0; overflow:hidden;">
+      <div class="box-title" style="padding:12px 12px 0;">💬 Chat com a frota</div>
+      <div style="display:flex; border-bottom:1px solid var(--border); margin-top:8px;">
+        <button id="adminChatTabMural" class="chat-tab-btn-admin ativa">📢 Mural (todos)</button>
+        <button id="adminChatTabDireta" class="chat-tab-btn-admin">💬 Direto p/ veículo</button>
+      </div>
+      <div id="adminChatAvisoSelecioneVeiculo" style="display:none; padding:10px 12px; font-size:0.82em; color: var(--signal-off);">Selecione um veículo lá em cima pra conversar direto com ele.</div>
+      <div id="adminChatLista" class="chat-lista-admin"></div>
+      <div style="display:flex; gap:8px; padding:10px 12px; border-top:1px solid var(--border);">
+        <input type="text" id="adminChatInput" placeholder="Mensagem para a frota...">
+        <button id="adminChatBtnEnviar" style="width:auto; padding:10px 14px;">Enviar</button>
+      </div>
+    </div>
+
+    <button id="btnSair" style="background: #1a212b; color: var(--danger); border: 1px solid var(--border);">❌ Desconectar</button>
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, onValue, update, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+<div id="map"></div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCHzkyYek4fV7fs_1f6FTA9o4o3ikJuhs0",
-  authDomain: "josigourmet-af3ff.firebaseapp.com",
-  databaseURL: "https://josigourmet-af3ff-default-rtdb.firebaseio.com",
-  projectId: "josigourmet-af3ff",
-  storageBucket: "josigourmet-af3ff.firebasestorage.app",
-  messagingSenderId: "373768013260",
-  appId: "1:373768013260:web:bd5fa8dcf6053414d7c969",
-  measurementId: "G-XR4249E0QG"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const pedidosRef = ref(db, "pedidos");
-
-window._pedidos = {};
-window._primeiraCarga = true;
-
-function iniciarEscuta(){
-  document.getElementById('statusConexao').textContent = 'Conectando…';
-  onValue(pedidosRef, (snapshot) => {
-    const dados = snapshot.val() || {};
-    const chavesAntigas = new Set(Object.keys(window._pedidos));
-    const chavesNovas = [];
-
-    Object.entries(dados).forEach(([chave, pedido]) => {
-      if (!window._primeiraCarga && !chavesAntigas.has(chave) && pedido.status !== undefined) {
-        chavesNovas.push(chave);
-      }
-    });
-
-    window._pedidos = dados;
-    window._primeiraCarga = false;
-
-    document.getElementById('statusConexao').textContent = '🟢 Conectado em tempo real';
-    document.getElementById('statusConexao').className = 'online';
-
-    if (chavesNovas.length > 0 && typeof window.notificarNovoPedido === 'function') {
-      chavesNovas.forEach(ch => window.notificarNovoPedido(dados[ch]));
-    }
-    if (typeof window.renderizar === 'function') window.renderizar();
-  }, (erro) => {
-    console.error('Erro Firebase:', erro);
-    const elStatus = document.getElementById('statusConexao');
-    elStatus.textContent = '🔴 Sem conexão — ' + (erro.code || erro.message || 'erro desconhecido');
-    elStatus.className = 'offline';
-    elStatus.title = erro.message || '';
-  });
-}
-window.iniciarEscutaPedidos = iniciarEscuta;
-
-window.atualizarStatusPedido = function(chave, novoStatus, extras){
-  const payload = Object.assign({ status: novoStatus, statusAtualizadoEm: Date.now() }, extras || {});
-  return update(ref(db, "pedidos/" + chave), payload);
-};
-</script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<!-- Scripts adicionais para o motor de rotas nativo do mapa -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
-/* ==================== LOGIN — PIN + DIGITAL (WebAuthn) ====================
-   Proteção de acesso local. Isso NÃO substitui regras de
-   segurança no Firebase — apenas evita que qualquer pessoa com
-   o link abra o painel sem querer. Para segurança real,
-   configure Firebase Authentication + Regras de acesso no banco.
+var firebaseConfig = {
+  apiKey: "AIzaSyDwKIS8wL3D7OuaysVFV_xyAsFsKo2eXzY",
+  authDomain: "everton-gps.firebaseapp.com",
+  databaseURL: "https://everton-gps-default-rtdb.firebaseio.com",
+  projectId: "everton-gps",
+  storageBucket: "everton-gps.firebasestorage.app",
+  messagingSenderId: "688936933095",
+  appId: "1:688936933095:web:790b2407334e8b148e3442"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+var auth = firebase.auth();
 
-   A entrada por digital usa a API padrão do navegador (WebAuthn),
-   que aciona o leitor de digital/Face real do aparelho através
-   do próprio sistema operacional — nem o site nem este código
-   têm acesso à digital em si, apenas recebem "sim, a pessoa dona
-   deste aparelho confirmou". Por isso ela só funciona:
-   - servida por HTTPS (não funciona em preview local tipo Acode/file://)
-   - em um navegador/aparelho com leitor de digital configurado
-======================================================== */
-const PIN_ACESSO = "1985"; // troque este código quando quiser
-const CHAVE_CRED_BIOMETRIA = "josiAdminCredId";
-
-function mostrarBlocoPin(){
-    document.getElementById('blocoBiometria').style.display = 'none';
-    document.getElementById('blocoPin').style.display = 'block';
-    document.getElementById('loginErro').textContent = '';
+function sanitizarChavePath(valor) {
+    return String(valor).replace(/[.#$\[\]\/]/g, "_");
 }
 
-function mostrarBlocoBiometria(){
-    document.getElementById('blocoBiometria').style.display = 'block';
-    document.getElementById('blocoPin').style.display = 'none';
-    document.getElementById('loginErro').textContent = '';
+// ===================== BLOQUEIO POR ASSINATURA/TESTE (mesma lógica do app) =====================
+// Igual ao app principal: lê status/trialExpiraEm/assinaturaExpiraEm da empresa carregada
+// e, se estiver suspensa, teste vencido ou assinatura vencida, cobre o painel inteiro com
+// a mesma tela de "Acesso suspenso" — bloqueando o admin de ver dados de uma empresa
+// inadimplente, do mesmo jeito que o app bloqueia o motorista.
+var estadoEmpresaAtualAdmin = { status: null, trialExpiraEm: null, assinaturaExpiraEm: null };
+var painelAdminSuspenso = false;
+var refStatusEmpresaAdmin = null;
+var refTrialEmpresaAdmin = null;
+var refAssinaturaEmpresaAdmin = null;
+
+// Converte um total de milissegundos restantes em um texto "X dias, Y horas e Z minutos"
+// — mesma lógica usada no app, agora também no painel, pra o admin ver de longe quanto
+// tempo falta de teste/assinatura de cada empresa sem precisar abrir o Firebase.
+function formatarTempoRestanteAdmin(msRestante) {
+    var totalMinutos = Math.max(0, Math.floor(msRestante / 60000));
+    var dias = Math.floor(totalMinutos / 1440);
+    var horas = Math.floor((totalMinutos % 1440) / 60);
+    var minutos = totalMinutos % 60;
+    var partes = [];
+    if (dias > 0) partes.push(dias + (dias === 1 ? " dia" : " dias"));
+    if (dias > 0 || horas > 0) partes.push(horas + (horas === 1 ? " hora" : " horas"));
+    partes.push(minutos + (minutos === 1 ? " minuto" : " minutos"));
+    return partes.join(", ");
 }
 
-function biometriaCadastrada(){
-    try { return !!localStorage.getItem(CHAVE_CRED_BIOMETRIA); } catch(e){ return false; }
+function avaliarEstadoEmpresaAdmin() {
+    var testeVencido = estadoEmpresaAtualAdmin.status === 'trial' && estadoEmpresaAtualAdmin.trialExpiraEm && new Date(estadoEmpresaAtualAdmin.trialExpiraEm).getTime() < Date.now();
+    var assinaturaVencida = estadoEmpresaAtualAdmin.status === 'ativo' && estadoEmpresaAtualAdmin.assinaturaExpiraEm && new Date(estadoEmpresaAtualAdmin.assinaturaExpiraEm).getTime() < Date.now();
+    var suspenso = estadoEmpresaAtualAdmin.status === 'suspenso' || testeVencido || assinaturaVencida;
+    painelAdminSuspenso = suspenso;
+
+    var overlay = document.getElementById('avisoSuspensoAdmin');
+    var textoOverlay = document.getElementById('avisoSuspensoAdminTexto');
+    if (suspenso) {
+        if (textoOverlay) {
+            textoOverlay.textContent = "A empresa \"" + EMPRESA_ID_ADMIN + "\" está com o pagamento pendente. Entre em contato com o suporte para regularizar.";
+        }
+        overlay.style.display = 'flex';
+    } else {
+        overlay.style.display = 'none';
+    }
+
+    // Mesma contagem regressiva que o app mostra pro motorista — aqui pro admin acompanhar.
+    var faixaTempo = document.getElementById('avisoTempoAssinaturaAdmin');
+    if (faixaTempo) {
+        if (!suspenso && estadoEmpresaAtualAdmin.status === 'trial' && estadoEmpresaAtualAdmin.trialExpiraEm) {
+            var restanteTeste = new Date(estadoEmpresaAtualAdmin.trialExpiraEm).getTime() - Date.now();
+            faixaTempo.style.display = 'block';
+            faixaTempo.style.background = "rgba(45,212,255,.12)";
+            faixaTempo.style.color = "var(--telemetry)";
+            faixaTempo.style.border = "1px solid rgba(45,212,255,.35)";
+            faixaTempo.textContent = "🎁 Teste grátis — " + formatarTempoRestanteAdmin(restanteTeste) + " restantes";
+        } else if (!suspenso && estadoEmpresaAtualAdmin.status === 'ativo' && estadoEmpresaAtualAdmin.assinaturaExpiraEm) {
+            var restanteAssinatura = new Date(estadoEmpresaAtualAdmin.assinaturaExpiraEm).getTime() - Date.now();
+            faixaTempo.style.display = 'block';
+            faixaTempo.style.background = "rgba(0,255,166,.12)";
+            faixaTempo.style.color = "var(--signal-on)";
+            faixaTempo.style.border = "1px solid rgba(0,255,166,.35)";
+            faixaTempo.textContent = "✅ Assinatura — " + formatarTempoRestanteAdmin(restanteAssinatura) + " restantes";
+        } else {
+            faixaTempo.style.display = 'none';
+        }
+    }
 }
 
-async function biometriaDisponivelNoAparelho(){
-    if (!window.PublicKeyCredential || !navigator.credentials) return false;
-    try {
-        return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    } catch(e){ return false; }
-}
-
-function base64UrlParaBuffer(base64Url){
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const raw = atob(base64);
-    const buffer = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) buffer[i] = raw.charCodeAt(i);
-    return buffer;
-}
-function bufferParaBase64Url(buffer){
-    let binario = '';
-    const bytes = new Uint8Array(buffer);
-    for (let i = 0; i < bytes.byteLength; i++) binario += String.fromCharCode(bytes[i]);
-    return btoa(binario).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-async function registrarBiometria(){
-    if (!window.PublicKeyCredential) {
-        alert('Seu navegador não é compatível com login por digital.');
+function observarStatusEmpresaAdmin() {
+    if (refStatusEmpresaAdmin) refStatusEmpresaAdmin.off();
+    if (refTrialEmpresaAdmin) refTrialEmpresaAdmin.off();
+    if (refAssinaturaEmpresaAdmin) refAssinaturaEmpresaAdmin.off();
+    estadoEmpresaAtualAdmin = { status: null, trialExpiraEm: null, assinaturaExpiraEm: null };
+    if (!EMPRESA_ID_ADMIN) {
+        document.getElementById('avisoSuspensoAdmin').style.display = 'none';
+        var faixaTempoVazia = document.getElementById('avisoTempoAssinaturaAdmin');
+        if (faixaTempoVazia) faixaTempoVazia.style.display = 'none';
         return;
     }
-    try {
-        const desafio = crypto.getRandomValues(new Uint8Array(32));
-        const userId = crypto.getRandomValues(new Uint8Array(16));
 
-        const credencial = await navigator.credentials.create({
-            publicKey: {
-                challenge: desafio,
-                rp: { name: "Painel Josi Doces" },
-                user: { id: userId, name: "admin-josi", displayName: "Admin Josi Doces" },
-                pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-                authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-                timeout: 60000,
-                attestation: "none"
-            }
-        });
+    refStatusEmpresaAdmin = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/status');
+    refTrialEmpresaAdmin = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/trialExpiraEm');
+    refAssinaturaEmpresaAdmin = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/assinaturaExpiraEm');
 
-        if (credencial) {
-            try { localStorage.setItem(CHAVE_CRED_BIOMETRIA, bufferParaBase64Url(credencial.rawId)); } catch(e){}
-            fecharAvisoDigital();
-            alert('✅ Digital cadastrada! Da próxima vez você já pode entrar direto com a digital.');
-        }
-    } catch(erro){
-        console.error('Erro ao cadastrar digital:', erro);
-        alert('Não foi possível cadastrar a digital. Verifique se seu aparelho tem leitor configurado e se o site está em HTTPS.');
-    }
+    refStatusEmpresaAdmin.on('value', function(snap) {
+        estadoEmpresaAtualAdmin.status = snap.val();
+        avaliarEstadoEmpresaAdmin();
+    }, function(erro) { console.warn(erro); });
+    refTrialEmpresaAdmin.on('value', function(snap) {
+        estadoEmpresaAtualAdmin.trialExpiraEm = snap.val();
+        avaliarEstadoEmpresaAdmin();
+    }, function(erro) { console.warn(erro); });
+    refAssinaturaEmpresaAdmin.on('value', function(snap) {
+        estadoEmpresaAtualAdmin.assinaturaExpiraEm = snap.val();
+        avaliarEstadoEmpresaAdmin();
+    }, function(erro) { console.warn(erro); });
 }
 
-async function loginComBiometria(){
-    const credIdSalvo = localStorage.getItem(CHAVE_CRED_BIOMETRIA);
-    if (!credIdSalvo) { mostrarBlocoPin(); return; }
-    const erroEl = document.getElementById('loginErro');
-    erroEl.textContent = '';
-    try {
-        const desafio = crypto.getRandomValues(new Uint8Array(32));
-        const asserção = await navigator.credentials.get({
-            publicKey: {
-                challenge: desafio,
-                allowCredentials: [{ id: base64UrlParaBuffer(credIdSalvo), type: "public-key" }],
-                userVerification: "required",
-                timeout: 60000
-            }
-        });
-        if (asserção) {
-            try { sessionStorage.setItem('josiAdminOk', '1'); } catch(e){}
-            document.getElementById('telaLogin').style.display = 'none';
-            iniciarPainel();
-        }
-    } catch(erro){
-        console.error('Erro na autenticação por digital:', erro);
-        erroEl.textContent = 'Não reconhecemos sua digital. Tente novamente ou use o código.';
-    }
+// Reavalia periodicamente (o teste/assinatura pode vencer com o painel já aberto na tela).
+setInterval(function() {
+    if (auth.currentUser && EMPRESA_ID_ADMIN) avaliarEstadoEmpresaAdmin();
+}, 60000);
+
+// ===================== MAPA =====================
+var map = L.map('map', { zoomControl: true }).setView([-29.6133, -52.1919], 13);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+var marcadorVeiculo = L.marker([-29.6133, -52.1919]).addTo(map);
+
+// Setas ao longo do trajeto, na ordem real em que os pontos foram gravados — isso é o que
+// Cada ponto real ganha sua própria seta, girada na direção real de deslocamento
+// (calculada a partir do ponto seguinte). A seta é o próprio marcador clicável, com o
+// popup de dados grudado nela — não é mais uma linha de setas separada por cima do
+// traçado, e sim uma seta exatamente sobre cada ponto gravado. Quando o veículo passa
+// duas vezes pela mesma rua (ida e volta), cada passagem tem suas próprias setas, com
+// ângulo e dados independentes.
+function calcularRumoGrausAdmin(lat1, lon1, lat2, lon2) {
+    var toRad = function(g) { return g * Math.PI / 180; };
+    var toDeg = function(r) { return r * 180 / Math.PI; };
+    var dLon = toRad(lon2 - lon1);
+    var y = Math.sin(dLon) * Math.cos(toRad(lat2));
+    var x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+    var rumo = toDeg(Math.atan2(y, x));
+    return (rumo + 360) % 360;
 }
 
-function tentarLogin(){
-    const valor = document.getElementById('inputPin').value.trim();
-    const erroEl = document.getElementById('loginErro');
-    if (valor === PIN_ACESSO) {
-        try { sessionStorage.setItem('josiAdminOk', '1'); } catch(e){}
-        document.getElementById('telaLogin').style.display = 'none';
-        iniciarPainel();
-        setTimeout(ofertarCadastroDigital, 500);
-    } else {
-        erroEl.textContent = 'Código incorreto. Tente novamente.';
-        document.getElementById('inputPin').value = '';
-    }
-}
-
-async function ofertarCadastroDigital(){
-    if (biometriaCadastrada()) return;
-    const disponivel = await biometriaDisponivelNoAparelho();
-    if (!disponivel) return;
-    document.getElementById('telaLogin').style.display = 'flex';
-    document.getElementById('blocoBiometria').style.display = 'none';
-    document.getElementById('blocoPin').style.display = 'none';
-    document.getElementById('avisoCadastrarDigital').style.display = 'block';
-}
-function fecharAvisoDigital(){
-    document.getElementById('telaLogin').style.display = 'none';
-    document.getElementById('avisoCadastrarDigital').style.display = 'none';
-}
-
-function sair(){
-    try { sessionStorage.removeItem('josiAdminOk'); } catch(e){}
-    location.reload();
-}
-
-/* ==================== CONFIG DE STATUS ==================== */
-const STATUS_INFO = {
-    recebido:      { label: 'Recebido',            cor: '#c8860a', faixa: '#c8860a' },
-    preparando:    { label: 'Em preparação',        cor: '#7c5cbf', faixa: '#7c5cbf' },
-    pronto:        { label: 'Pronto',               cor: '#0088c7', faixa: '#0088c7' },
-    saiu_entrega:  { label: 'Saiu para entrega',    cor: '#0088c7', faixa: '#0088c7' },
-    entregue:      { label: 'Entregue',             cor: '#25D366', faixa: '#25D366' },
-    rejeitado:     { label: 'Rejeitado',            cor: '#d64545', faixa: '#d64545' }
-};
-
-const MOTIVOS_REJEICAO = {
-    fora_horario: 'Infelizmente seu pedido foi feito/agendado fora do nosso horário de atendimento.',
-    sem_capacidade: 'Infelizmente estamos com um volume muito grande de pedidos e não conseguiremos atender neste horário.',
-    outro: ''
-};
-
-const ABAS = [
-    { chave: 'todos', label: 'Todos' },
-    { chave: 'recebido', label: 'Recebidos' },
-    { chave: 'preparando', label: 'Em preparo' },
-    { chave: 'pronto_ou_saiu', label: 'Pronto/Saiu' },
-    { chave: 'entregue', label: 'Entregues' },
-    { chave: 'rejeitado', label: 'Rejeitados' }
-];
-
-let abaAtiva = 'todos';
-let somAtivo = true;
-let chaveEmRejeicao = null;
-
-/* ==================== RENDERIZAÇÃO DAS ABAS ==================== */
-function contarPorAba(chaveAba, lista){
-    if (chaveAba === 'todos') return lista.length;
-    if (chaveAba === 'pronto_ou_saiu') return lista.filter(p => p.status === 'pronto' || p.status === 'saiu_entrega').length;
-    return lista.filter(p => p.status === chaveAba).length;
-}
-
-function renderizarAbas(lista){
-    const wrap = document.getElementById('abasFiltro');
-    wrap.innerHTML = '';
-    ABAS.forEach(aba => {
-        const el = document.createElement('div');
-        el.className = 'aba' + (aba.chave === abaAtiva ? ' ativa' : '');
-        el.innerHTML = `${aba.label} <span class="contagem">${contarPorAba(aba.chave, lista)}</span>`;
-        el.onclick = () => { abaAtiva = aba.chave; renderizar(); };
-        wrap.appendChild(el);
+function criarIconeSetaPonto(anguloGraus, cor) {
+    return L.divIcon({
+        className: 'seta-ponto-admin',
+        html: '<div style="width:22px;height:22px;transform:rotate(' + anguloGraus + 'deg);transform-origin:50% 50%;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));">' +
+              '<svg viewBox="0 0 24 24" width="22" height="22">' +
+              '<path d="M12 1.5 L21 21 L12 16.5 L3 21 Z" fill="' + cor + '" stroke="#04120e" stroke-width="1.2" stroke-linejoin="round"/>' +
+              '</svg></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
     });
 }
 
-/* ==================== HELPERS ==================== */
-function formatarMoeda(v){ return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ','); }
+// Camada separada com um marcador em cada ponto REAL gravado (lat/lon originais do GPS,
+// não os pontos de encaixe que o motor de rotas cria). Cada um mostra, ao tocar, os mesmos
+// dados que o app já grava por ponto: rua/km da rodovia, bairro, cidade, velocidade e
+// precisão do GPS — igual ao popup de exemplo que já existia antes.
+var camadaPontosTelemetria = L.layerGroup().addTo(map);
 
-function telefoneParaWhats(telefone){
-    const digits = (telefone || '').replace(/\D/g, '');
-    if (digits.length >= 10) return '55' + digits;
-    return null;
+function iconeStatusPonto(status) {
+    if (status === 'VELOCIDADE ACIMA DO LIMITE') return '⚠️';
+    if (status === 'PARADO') return '🅿️';
+    return '🚗';
 }
 
-/* Interpreta pedido.criadoEm de forma robusta: aceita timestamp numérico
-   (epoch ms) ou string "AAAA-MM-DD HH:MM:SS" / ISO. Quando a string não
-   tem fuso horário, trocamos o espaço por "T" para o navegador tratar
-   como horário local — isso evita horários "errados" por causa de fuso. */
-function parseDataCriacao(criadoEm){
-    if (!criadoEm) return null;
-    if (typeof criadoEm === 'number') return new Date(criadoEm);
-    let texto = String(criadoEm).trim();
-    if (texto.includes(' ') && !texto.includes('T')) texto = texto.replace(' ', 'T');
-    const data = new Date(texto);
-    return isNaN(data.getTime()) ? null : data;
+function corPontoPorStatus(status) {
+    if (status === 'VELOCIDADE ACIMA DO LIMITE') return '#ff5470';
+    if (status === 'PARADO') return '#ffb020';
+    return '#00ffa6';
 }
 
-function tempoDecorrido(criadoEm){
-    const data = parseDataCriacao(criadoEm);
-    if (!data) return '';
-    const diffSeg = Math.floor((Date.now() - data.getTime()) / 1000);
-    if (diffSeg < 60) return 'agora mesmo';
-    const diffMin = Math.floor(diffSeg / 60);
-    if (diffMin < 60) return `há ${diffMin} min`;
-    const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `há ${diffH}h${diffMin % 60 ? ' ' + (diffMin % 60) + 'min' : ''}`;
-    const diffDias = Math.floor(diffH / 24);
-    return `há ${diffDias} dia${diffDias > 1 ? 's' : ''}`;
-}
-
-function horaCriacao(pedido){
-    const data = parseDataCriacao(pedido.criadoEm);
-    if (!data) return '';
-    try { return data.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}); } catch(e){ return ''; }
-}
-
-/* ==================== NOTIFICAÇÃO SONORA ==================== */
-let audioCtx = null;
-function tocarBeep(){
-    if (!somAtivo) return;
-    try {
-        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-        [0, 0.18].forEach(delay => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = 880;
-            gain.gain.setValueAtTime(0.001, audioCtx.currentTime + delay);
-            gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + delay + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.3);
-            osc.connect(gain).connect(audioCtx.destination);
-            osc.start(audioCtx.currentTime + delay);
-            osc.stop(audioCtx.currentTime + delay + 0.32);
-        });
-    } catch(e) { console.warn('Áudio não disponível:', e); }
-}
-function alternarSom(){
-    somAtivo = !somAtivo;
-    document.getElementById('btnSom').innerHTML = somAtivo
-        ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
-}
-
-window.notificarNovoPedido = function(pedido){
-    tocarBeep();
-    const toast = document.getElementById('toastNovoPedido');
-    document.getElementById('toastTexto').textContent = `Novo pedido de ${pedido.nome || 'cliente'} — ${formatarMoeda(pedido.total)}`;
-    toast.classList.add('mostrar');
-    setTimeout(() => toast.classList.remove('mostrar'), 4500);
-    document.title = '🔔 Novo pedido! — Painel Josi Doces';
-    setTimeout(() => { document.title = 'Painel Josi Doces'; }, 6000);
-};
-
-/* ==================== WHATSAPP ==================== */
-function mensagemStatus(pedido, status, motivoTexto){
-    const nome = pedido.nome || '';
-    const num = pedido.numeroPedido || '';
-    switch(status){
-        case 'preparando':
-            return `Oi ${nome}! 🍰 Seu pedido #${num} foi confirmado e já está em preparação na cozinha da Josi Doces. Assim que estiver pronto te aviso! 🤎`;
-        case 'pronto':
-            if (pedido.tipoEntrega === 'entrega') {
-                return `Oi ${nome}! ✅ Seu pedido #${num} está pronto e já vai sair para entrega em instantes! 🚀🍰`;
-            }
-            return `Oi ${nome}! ✅ Seu pedido #${num} está pronto para retirada! Pode vir buscar quando quiser. Endereço: Rua Marechal Floriano, 3197, Coronel Brito. 🍰`;
-        case 'saiu_entrega':
-            return `Oi ${nome}! 🚀 Seu pedido #${num} acabou de sair para entrega! Já já chega até você. 🤎`;
-        case 'entregue':
-            if (pedido.tipoEntrega === 'entrega') {
-                return `Oi ${nome}! 🎉 Seu pedido #${num} foi entregue! Esperamos que aproveite muito! Obrigada por escolher a Josi Doces Gourmet 🍰🤎`;
-            }
-            return `Oi ${nome}! 🎉 Seu pedido #${num} foi retirado. Esperamos que aproveite muito! Obrigada por escolher a Josi Doces Gourmet 🍰🤎`;
-        case 'rejeitado':
-            return `Oi ${nome}, tudo bem? 😊 Infelizmente não conseguiremos atender seu pedido #${num}. ${motivoTexto || ''} Sinta-se à vontade para fazer um novo pedido dentro do nosso horário de atendimento. Desculpe o transtorno! 🤎`;
-        default:
-            return `Oi ${nome}! Atualização sobre seu pedido #${num} na Josi Doces Gourmet. 🍰`;
-    }
-}
-
-function abrirWhatsCliente(pedido, status, motivoTexto){
-    const numero = telefoneParaWhats(pedido.telefone);
-    if (!numero) { alert('Telefone do cliente inválido ou não informado.'); return; }
-    const texto = mensagemStatus(pedido, status, motivoTexto);
-    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`, '_blank');
-}
-
-/* ==================== AÇÕES DE STATUS ====================
-   Fluxo agora tem mais uma etapa intermediária para os dois tipos
-   de pedido (retirada e entrega):
-   recebido -> preparando -> pronto -> (saiu_entrega, só se for entrega) -> entregue
-*/
-function avancarStatus(chave, statusAtual, tipoEntrega){
-    let proximo;
-    if (statusAtual === 'recebido') proximo = 'preparando';
-    else if (statusAtual === 'preparando') proximo = 'pronto';
-    else if (statusAtual === 'pronto') proximo = (tipoEntrega === 'entrega') ? 'saiu_entrega' : 'entregue';
-    else if (statusAtual === 'saiu_entrega') proximo = 'entregue';
-    else return;
-
-    window.atualizarStatusPedido(chave, proximo).then(() => {
-        const pedido = window._pedidos[chave];
-        if (pedido && confirm('Status atualizado! Deseja avisar o cliente pelo WhatsApp?')) {
-            abrirWhatsCliente(pedido, proximo, '');
+function montarPopupPonto(ponto, indice, total) {
+    var precisaoTxt = ponto.precisao ? ("±" + ponto.precisao + "m") : "—";
+    var bairroTxt = (ponto.bairro && ponto.bairro !== "—") ? (" — " + ponto.bairro) : "";
+    var ordemTxt = (indice != null && total != null) ? ("Ponto " + (indice + 1) + " de " + total + "<br>") : "";
+    // Mostra o limite oficial da via junto com o status — sem isso, "VELOCIDADE ACIMA DO
+    // LIMITE" não dizia qual era o limite permitido ali (30/40/80/100/110, varia por via).
+    var limiteTxt = "";
+    if (ponto.limiteVia != null) {
+        limiteTxt = "🚦 Limite da via: " + ponto.limiteVia + " km/h";
+        if (ponto.excessoKmh != null && ponto.excessoKmh > 0) {
+            limiteTxt += " (excedeu em " + ponto.excessoKmh + " km/h)";
         }
-    }).catch(err => alert('Erro ao atualizar pedido: ' + err.message));
+        limiteTxt += "<br>";
+    }
+    return '<div style="font-family: system-ui, sans-serif; font-size: 0.85em; line-height: 1.7; color:#111;">' +
+        ordemTxt +
+        '<b>' + iconeStatusPonto(ponto.status) + ' ' + (ponto.status || 'PARADO') + '</b><br>' +
+        limiteTxt +
+        '📍 ' + (ponto.rua || 'Rua não localizada') + '<br>' +
+        '🏙️ ' + (ponto.cidade || '—') + bairroTxt + '<br>' +
+        '🕐 ' + (ponto.data || '') + ' ' + (ponto.hora || '') + '<br>' +
+        '⚡ ' + (ponto.velocidade != null ? ponto.velocidade : 0) + ' km/h<br>' +
+        '🎯 Precisão GPS: ' + precisaoTxt +
+        '</div>';
 }
 
-function abrirModalRejeitar(chave){
-    chaveEmRejeicao = chave;
-    document.getElementById('modalRejeitar').classList.add('aberto');
-}
-function fecharModalRejeitar(){
-    document.getElementById('modalRejeitar').classList.remove('aberto');
-    chaveEmRejeicao = null;
-}
-function confirmarRejeicao(motivoChave){
-    if (!chaveEmRejeicao) return;
-    let motivoTexto = MOTIVOS_REJEICAO[motivoChave];
-    if (motivoChave === 'outro') {
-        motivoTexto = prompt('Digite o motivo da rejeição:', '') || '';
-    }
-    const chave = chaveEmRejeicao;
-    window.atualizarStatusPedido(chave, 'rejeitado', { motivoRejeicao: motivoTexto, motivoRejeicaoTipo: motivoChave })
-        .then(() => {
-            const pedido = window._pedidos[chave];
-            fecharModalRejeitar();
-            if (pedido && confirm('Pedido rejeitado. Deseja avisar o cliente pelo WhatsApp?')) {
-                abrirWhatsCliente(pedido, 'rejeitado', motivoTexto);
-            }
+// Redesenha todas as setas clicáveis a partir de uma lista de pontos completos (com
+// rua/bairro/cidade/velocidade/etc, não só lat/lon). A ordem da lista precisa ser a ordem
+// real de gravação, pra o ângulo de cada seta e o número do ponto ficarem corretos.
+function desenharMarcadoresTelemetria(pontos) {
+    camadaPontosTelemetria.clearLayers();
+    pontos.forEach(function(ponto, indice) {
+        if (!ponto || !ponto.lat || !ponto.lon) return;
+        L.circleMarker([ponto.lat, ponto.lon], {
+            radius: 5, color: '#04120e', weight: 1.5,
+            fillColor: corPontoPorStatus(ponto.status), fillOpacity: 0.95
         })
-        .catch(err => alert('Erro ao rejeitar pedido: ' + err.message));
-}
-
-/* ==================== RENDERIZAÇÃO PRINCIPAL ==================== */
-function pedidoPassaFiltro(pedido, termoBusca){
-    if (!termoBusca) return true;
-    const alvo = `${pedido.nome || ''} ${pedido.telefone || ''} ${pedido.numeroPedido || ''}`.toLowerCase();
-    return alvo.includes(termoBusca.toLowerCase());
-}
-
-function pedidoPassaAba(pedido){
-    if (abaAtiva === 'todos') return true;
-    if (abaAtiva === 'pronto_ou_saiu') return pedido.status === 'pronto' || pedido.status === 'saiu_entrega';
-    return pedido.status === abaAtiva;
-}
-
-function criarCardPedido(chave, pedido){
-    const status = pedido.status || 'recebido';
-    const info = Object.assign({}, STATUS_INFO[status] || STATUS_INFO.recebido);
-    if (status === 'entregue') {
-        info.label = (pedido.tipoEntrega === 'entrega') ? 'Entregue' : 'Retirado';
-    }
-    const card = document.createElement('div');
-    card.className = 'pedido-card';
-
-    const faixa = document.createElement('div');
-    faixa.className = 'pedido-faixa';
-    faixa.style.background = info.faixa;
-    card.appendChild(faixa);
-
-    const head = document.createElement('div');
-    head.className = 'pedido-head';
-    head.innerHTML = `
-        <div>
-            <div class="pedido-num">#${pedido.numeroPedido || '—'}${pedido.nome ? ` <span style="font-weight:400;font-size:12.5px;color:var(--marrom-claro)">· ${pedido.nome}</span>` : ''}</div>
-            <div class="pedido-hora">${horaCriacao(pedido)} · ${tempoDecorrido(pedido.criadoEm)}</div>
-        </div>
-        <span class="badge-status" style="background:${info.cor}">${info.label}</span>
-    `;
-    card.appendChild(head);
-
-    const corpo = document.createElement('div');
-    corpo.className = 'pedido-corpo';
-
-    let htmlCorpo = `
-        <div class="linha-info"><i class="fas fa-user"></i><span><b>${pedido.nome || '—'}</b></span></div>
-        <div class="linha-info"><i class="fas fa-phone"></i><span>${pedido.telefone || '—'}</span></div>
-        <div class="linha-info"><i class="fas fa-${pedido.tipoEntrega === 'entrega' ? 'motorcycle' : 'store'}"></i>
-            <span>${pedido.tipoEntrega === 'entrega' ? (pedido.enderecoTexto || 'Entrega') + ' — ' + (pedido.endereco || '') : 'Retirada no local'}</span></div>
-        <div class="linha-info"><i class="fas fa-calendar"></i><span>${pedido.data ? new Date(pedido.data+'T00:00:00').toLocaleDateString('pt-BR') : '—'} às ${pedido.hora || '—'}</span></div>
-    `;
-
-    const itens = pedido.itens || [];
-    let itensHtml = '<div class="itens-lista">';
-    itens.forEach(it => {
-        itensHtml += `<div class="item-linha"><span>${it.qtd}x ${it.nome}</span><span>${formatarMoeda(it.preco * it.qtd)}</span></div>`;
+            .bindPopup(montarPopupPonto(ponto, indice, pontos.length))
+            .addTo(camadaPontosTelemetria);
     });
-    itensHtml += '</div>';
-    htmlCorpo += itensHtml;
+}
 
-    htmlCorpo += `<div class="total-linha"><span>Total</span><b>${formatarMoeda(pedido.total)}</b></div>`;
-    htmlCorpo += `<span class="tag-pagamento"><i class="fas fa-credit-card"></i> ${pedido.pagamento || '—'}</span>`;
+// Instanciando o controle de rotas nativo do Leaflet
+var controleRotas = L.Routing.control({
+    waypoints: [],
+    router: L.Routing.osrmv1({
+        serviceUrl: 'https://router.project-osrm.org/route/v1'
+    }),
+    lineOptions: {
+        styles: [{ color: '#00ffa6', weight: 6, opacity: 0.85 }]
+    },
+    createMarker: function() { return null; }, // Não cria balões extras nos pontos do meio da rua
+    addWaypoints: false,
+    fitSelectedRoutes: false
+}).addTo(map);
 
-    if (status === 'rejeitado' && pedido.motivoRejeicao) {
-        htmlCorpo += `<div class="motivo-rejeicao">Motivo: ${pedido.motivoRejeicao}</div>`;
-    }
-    if (pedido.statusAtualizadoEm) {
-        htmlCorpo += `<div class="historico-mini">Última atualização: ${new Date(pedido.statusAtualizadoEm).toLocaleString('pt-BR')}</div>`;
-    }
+// CORREÇÃO: o painel lia direto de 'veiculos/{nome}' na raiz do banco — um caminho antigo,
+// de antes do app ter suporte a várias empresas. O app principal (index.html) já não grava
+// mais ali há tempos; ele grava em 'empresas/{empresaId}/veiculos/{nome}'. Por isso o painel
+// mostrava dados congelados, de rua e horário desatualizados — nunca eram os dados novos.
+// Agora o painel exige escolher a empresa primeiro, e lê do caminho certo.
+var EMPRESA_ID_ADMIN = localStorage.getItem('admin_empresa_id') || "";
+document.getElementById('empresaIdInput').value = EMPRESA_ID_ADMIN;
 
-    corpo.innerHTML = htmlCorpo;
-    card.appendChild(corpo);
+var veiculoSelecionado = "";
+var listenerTempoReal = null;
+var refListaVeiculos = null;
+var dadosHistoricoCarregados = [];
 
-    const acoes = document.createElement('div');
-    acoes.className = 'pedido-acoes';
+document.getElementById('filtroData').value = new Date().toISOString().slice(0, 10);
 
-    if (status === 'recebido' || status === 'preparando' || status === 'pronto' || status === 'saiu_entrega') {
-        const linhaBtns = document.createElement('div');
-        linhaBtns.className = 'linha-btns';
+function atualizarInfoEmpresaAdmin() {
+    document.getElementById('empresaAtualInfo').textContent = EMPRESA_ID_ADMIN
+        ? "Monitorando empresa: " + EMPRESA_ID_ADMIN
+        : "⚠️ Nenhuma empresa carregada — digite o ID acima e toque em Carregar.";
+}
+atualizarInfoEmpresaAdmin();
 
-        const btnAvancar = document.createElement('button');
-        btnAvancar.className = 'btn-acao btn-avancar';
-        let textoBtn = '';
-        if (status === 'recebido') textoBtn = '👍 Aceitar / Preparar';
-        else if (status === 'preparando') textoBtn = '📦 Marcar como pronto';
-        else if (status === 'pronto') textoBtn = pedido.tipoEntrega === 'entrega' ? '🚀 Saiu p/ entrega' : '🎉 Marcar entregue';
-        else textoBtn = '🎉 Marcar entregue';
-        btnAvancar.innerHTML = textoBtn;
-        btnAvancar.onclick = () => avancarStatus(chave, status, pedido.tipoEntrega);
-        linhaBtns.appendChild(btnAvancar);
+document.getElementById('btnCarregarEmpresa').addEventListener('click', function() {
+    var novo = document.getElementById('empresaIdInput').value.trim();
+    if (!novo) return alert("Digite o ID da empresa.");
+    EMPRESA_ID_ADMIN = novo;
+    localStorage.setItem('admin_empresa_id', novo);
+    atualizarInfoEmpresaAdmin();
+    veiculoSelecionado = "";
+    document.getElementById('statusModo').innerHTML = 'Aguardando seleção...';
+    observarStatusEmpresaAdmin();
+    if (auth.currentUser) inicializarEscutaBanco();
+});
 
-        if (status === 'recebido') {
-            const btnRejeitar = document.createElement('button');
-            btnRejeitar.className = 'btn-acao btn-rejeitar';
-            btnRejeitar.innerHTML = '❌ Rejeitar';
-            btnRejeitar.onclick = () => abrirModalRejeitar(chave);
-            linhaBtns.appendChild(btnRejeitar);
+// ===================== AUTENTICAÇÃO =====================
+document.getElementById('btnEntrarPainel').addEventListener('click', function() {
+    var email = document.getElementById('authEmail').value.trim();
+    var senha = document.getElementById('authSenha').value;
+    var erroDiv = document.getElementById('erroLogin');
+    if(!email || !senha) return alert("Preencha todos os campos!");
+    erroDiv.style.display = "none";
+    auth.signInWithEmailAndPassword(email, senha)
+        .catch(function() {
+            erroDiv.textContent = "Acesso negado: dados incorretos.";
+            erroDiv.style.display = "block";
+        });
+});
+
+auth.onAuthStateChanged(function(user) {
+    if (user) {
+        document.getElementById('authOverlay').style.display = "none";
+        document.getElementById('userLogado').textContent = "🟢 Admin: " + user.email;
+        if (EMPRESA_ID_ADMIN) { observarStatusEmpresaAdmin(); inicializarEscutaBanco(); }
+    } else {
+        document.getElementById('authOverlay').style.display = "flex";
+        document.getElementById('selectVeiculo').innerHTML = '<option value="">Aguardando login...</option>';
+        if (refListaVeiculos) refListaVeiculos.off('value');
+        if (listenerTempoReal && veiculoSelecionado && EMPRESA_ID_ADMIN) {
+            db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/veiculos/' + sanitizarChavePath(veiculoSelecionado) + '/atual').off('value', listenerTempoReal);
         }
-        acoes.appendChild(linhaBtns);
-    }
-
-    const btnWhats = document.createElement('button');
-    btnWhats.className = 'btn-acao btn-whats';
-    btnWhats.innerHTML = '<i class="fab fa-whatsapp"></i> Falar com cliente';
-    btnWhats.onclick = () => abrirWhatsCliente(pedido, status, pedido.motivoRejeicao || '');
-    acoes.appendChild(btnWhats);
-
-    card.appendChild(acoes);
-    return card;
-}
-
-window.renderizar = function(){
-    const lista = Object.entries(window._pedidos || {})
-        .map(([chave, pedido]) => ({ chave, ...pedido }))
-        .sort((a, b) => (b.criadoEm ? new Date(b.criadoEm).getTime() : 0) - (a.criadoEm ? new Date(a.criadoEm).getTime() : 0));
-
-    renderizarAbas(lista);
-
-    const termoBusca = document.getElementById('busca').value.trim();
-    const filtrada = lista.filter(p => pedidoPassaAba(p) && pedidoPassaFiltro(p, termoBusca));
-
-    const grid = document.getElementById('gridPedidos');
-    const vazio = document.getElementById('vazioMsg');
-    grid.innerHTML = '';
-
-    if (filtrada.length === 0) {
-        vazio.style.display = 'block';
-    } else {
-        vazio.style.display = 'none';
-        filtrada.forEach(p => grid.appendChild(criarCardPedido(p.chave, p)));
-    }
-};
-
-/* ==================== INICIALIZAÇÃO ==================== */
-function iniciarPainel(){
-    window.iniciarEscutaPedidos();
-    /* Atualiza a cada 20s para o "há X min" ficar mais preciso */
-    setInterval(() => { if (typeof window.renderizar === 'function') window.renderizar(); }, 20000);
-}
-
-window.addEventListener('DOMContentLoaded', async () => {
-    let logado = false;
-    try { logado = sessionStorage.getItem('josiAdminOk') === '1'; } catch(e) {}
-    if (logado) {
-        document.getElementById('telaLogin').style.display = 'none';
-        iniciarPainel();
-        return;
-    }
-
-    if (biometriaCadastrada() && await biometriaDisponivelNoAparelho()) {
-        mostrarBlocoBiometria();
-    } else {
-        mostrarBlocoPin();
     }
 });
+
+document.getElementById('btnSair').addEventListener('click', function() {
+    auth.signOut();
+});
+
+function inicializarEscutaBanco() {
+    if (refListaVeiculos) refListaVeiculos.off('value');
+    refListaVeiculos = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/veiculos');
+    refListaVeiculos.on('value', function(snapshot) {
+        var select = document.getElementById('selectVeiculo');
+        select.innerHTML = '<option value="">-- Escolha um Veículo --</option>';
+        if(snapshot.exists()) {
+            snapshot.forEach(function(childSnapshot) {
+                var nomeVeiculo = childSnapshot.key;
+                var option = document.createElement('option');
+                option.value = nomeVeiculo;
+                option.textContent = "🚗 " + nomeVeiculo;
+                select.appendChild(option);
+            });
+            if(veiculoSelecionado) select.value = veiculoSelecionado;
+        } else {
+            select.innerHTML = '<option value="">Nenhum veículo ativo nesta empresa</option>';
+        }
+    });
+}
+
+document.getElementById('selectVeiculo').addEventListener('change', function(e) {
+    veiculoSelecionado = e.target.value;
+    if(veiculoSelecionado) verificarEAtivarTempoReal();
+    if (typeof atualizarAbaAdminChat === 'function') atualizarAbaAdminChat();
+});
+
+function verificarEAtivarTempoReal() {
+    if (listenerTempoReal) db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/veiculos/' + sanitizarChavePath(veiculoSelecionado) + '/atual').off('value', listenerTempoReal);
+    document.getElementById('statusModo').innerHTML = '<span class="live-indicator"></span> MONITORANDO EM TEMPO REAL';
+    document.getElementById('statusModo').style.color = "var(--signal-on)";
+    document.getElementById('statusModo').style.borderColor = "var(--signal-on)";
+    document.getElementById('btnVoltarTempoReal').style.display = "none";
+
+    listenerTempoReal = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/veiculos/' + sanitizarChavePath(veiculoSelecionado) + '/atual').on('value', function(snapshot) {
+        if(!snapshot.exists()) return;
+        atualizarPainelEletrico(snapshot.val());
+        desenharLinhaDoTempoReal();
+    });
+}
+
+function desenharLinhaDoTempoReal() {
+    db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/veiculos/' + sanitizarChavePath(veiculoSelecionado) + '/historico').limitToLast(30).once('value', function(snapshot) {
+        var pontos = [];
+        var pontosCompletos = [];
+        snapshot.forEach(function(child) {
+            var p = child.val();
+            if(p.lat && p.lon) { pontos.push([p.lat, p.lon]); pontosCompletos.push(p); }
+        });
+        desenharMarcadoresTelemetria(pontosCompletos);
+        if(pontos.length >= 2) processarEncaixeNasRuas(pontos);
+    });
+}
+
+// ===================== BUSCA DE HISTÓRICO =====================
+document.getElementById('btnBuscarHistorico').addEventListener('click', function() {
+    if (!EMPRESA_ID_ADMIN) return alert("Carregue uma empresa primeiro!");
+    if (!veiculoSelecionado) return alert("Selecione um veículo primeiro!");
+    var dataFiltro = document.getElementById('filtroData').value;
+    var horaInicio = document.getElementById('filtroHoraInicio').value;
+    var horaFim = document.getElementById('filtroHoraFim').value;
+    if(!dataFiltro) return alert("Selecione a data!");
+
+    var partesData = dataFiltro.split('-');
+    var dataFormatadaBr = partesData[2] + "/" + partesData[1] + "/" + partesData[0];
+
+    if (listenerTempoReal) db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/veiculos/' + sanitizarChavePath(veiculoSelecionado) + '/atual').off('value', listenerTempoReal);
+    document.getElementById('statusModo').innerHTML = '📅 EXIBINDO HISTÓRICO PASSADO';
+    document.getElementById('statusModo').style.color = "var(--signal-off)";
+    document.getElementById('statusModo').style.borderColor = "var(--signal-off)";
+    document.getElementById('btnVoltarTempoReal').style.display = "block";
+
+    db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/veiculos/' + sanitizarChavePath(veiculoSelecionado) + '/historico').once('value', function(snapshot) {
+        dadosHistoricoCarregados = [];
+        var coordenadasParaLinha = [];
+        snapshot.forEach(function(child) {
+            var ponto = child.val();
+            if (ponto.data === dataFormatadaBr) {
+                if (ponto.hora >= horaInicio && ponto.hora <= horaFim) {
+                    dadosHistoricoCarregados.push(ponto);
+                    coordenadasParaLinha.push([ponto.lat, ponto.lon]);
+                }
+            }
+        });
+
+        if(dadosHistoricoCarregados.length === 0) {
+            alert("Nenhum registro encontrado para este período.");
+            verificarEAtivarTempoReal();
+            return;
+        }
+
+        atualizarPainelEletrico(dadosHistoricoCarregados[dadosHistoricoCarregados.length - 1]);
+        desenharMarcadoresTelemetria(dadosHistoricoCarregados);
+        if (coordenadasParaLinha.length >= 2) processarEncaixeNasRuas(coordenadasParaLinha);
+    });
+});
+
+document.getElementById('btnVoltarTempoReal').addEventListener('click', verificarEAtivarTempoReal);
+
+function atualizarPainelEletrico(dados) {
+    if(!dados || !dados.lat || !dados.lon) return;
+    var latlng = [dados.lat, dados.lon];
+    marcadorVeiculo.setLatLng(latlng);
+    map.setView(latlng, map.getZoom() < 14 ? 16 : map.getZoom());
+
+    document.getElementById('txtVelocidade').textContent = (dados.velocidade || 0) + " km/h";
+    // Limite da via muda conforme a rua/rodovia (30/40/80/100/110 etc), então mostramos o
+    // valor que veio gravado junto com o ponto, e o quanto foi excedido quando houver.
+    var limiteTxt = dados.limiteVia != null ? (dados.limiteVia + " km/h") : "—";
+    if (dados.excessoKmh != null && dados.excessoKmh > 0) {
+        limiteTxt += " (excedeu em " + dados.excessoKmh + " km/h)";
+    }
+    document.getElementById('txtLimiteVia').textContent = limiteTxt;
+    document.getElementById('txtTempoParado').textContent = dados.tempoParado || "00:00:00";
+    document.getElementById('txtRua').textContent = dados.rua || "Não localizada";
+    document.getElementById('txtBairro').textContent = dados.bairro || "—";
+    document.getElementById('txtCidadeEstado').textContent = (dados.cidade || "—") + " / " + (dados.estado || "—");
+    document.getElementById('txtDataHora').textContent = dados.data + " às " + dados.hora;
+    document.getElementById('txtCoords').textContent = dados.lat.toFixed(6) + ", " + dados.lon.toFixed(6);
+
+    var badge = document.getElementById('txtStatus');
+    badge.textContent = dados.status || "PARADO";
+    // CORREÇÃO: antes o badge de perigo usava um limite fixo de 80 km/h aqui, mas o app
+    // agora calcula o limite por via (30/40/80/100/110...). Usar o "status" que o app já
+    // gravou no ponto é a fonte correta — ele já reflete o limite certo daquela via.
+    badge.className = dados.status === "VELOCIDADE ACIMA DO LIMITE" ? "badge badge-perigo" : ((dados.velocidade || 0) > 2 ? "badge badge-movimento" : "badge badge-parado");
+}
+
+// ===================== NOVO MOTOR DE ENCAIXE INTELIGENTE =====================
+function processarEncaixeNasRuas(historicoCoordenadas) {
+    // 1. Filtrar pontos consecutivos duplicados
+    var coordenadasFiltradas = [];
+    for (var i = 0; i < historicoCoordenadas.length; i++) {
+        if (i === 0) {
+            coordenadasFiltradas.push(historicoCoordenadas[i]);
+        } else {
+            var anterior = historicoCoordenadas[i - 1];
+            var atual = historicoCoordenadas[i];
+            if (atual[0] !== anterior[0] || atual[1] !== anterior[1]) {
+                coordenadasFiltradas.push(atual);
+            }
+        }
+    }
+
+    if (coordenadasFiltradas.length < 2) return;
+
+    // 2. Limitar amostragem máxima para não sobrecarregar a máquina de rotas
+    var pontosAmostra = [];
+    var maxPontosAPI = 25; // Reduzido o bloco para garantir precisão absoluta nas curvas
+    if (coordenadasFiltradas.length > maxPontosAPI) {
+        var passo = Math.ceil(coordenadasFiltradas.length / maxPontosAPI);
+        for (var j = 0; j < coordenadasFiltradas.length; j += passo) {
+            pontosAmostra.push(coordenadasFiltradas[j]);
+        }
+        pontosAmostra.push(coordenadasFiltradas[coordenadasFiltradas.length - 1]);
+    } else {
+        pontosAmostra = coordenadasFiltradas;
+    }
+
+    // Convertendo os pontos para o formato do Leaflet Routing Machine (L.latLng)
+    var waypoints = pontosAmostra.map(p => L.latLng(p[0], p[1]));
+
+    // 3. Forçar o recalculo e desenho contornando os quarteirões nativamente
+    try {
+        controleRotas.setWaypoints(waypoints);
+    } catch(e) {
+        console.log("Aguardando estabilização do mapa...");
+    }
+}
+
+// ===================== CHAT (mural + conversa direta com um veículo) =====================
+var refMensagensAdminChat = null;
+var adminChatAba = 'mural';
+
+function iniciarAdminChatSeNecessario() {
+    if (refMensagensAdminChat || !EMPRESA_ID_ADMIN) return;
+    refMensagensAdminChat = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/mensagens').limitToLast(200);
+    refMensagensAdminChat.on('value', function(snapshot) {
+        var todas = [];
+        snapshot.forEach(function(child) { todas.push(Object.assign({ id: child.key }, child.val())); });
+        renderizarAdminChat(todas);
+    }, function(erro) { console.warn("Erro ao ler mensagens do chat:", erro); });
+}
+
+function renderizarAdminChat(todasMensagens) {
+    var lista = document.getElementById('adminChatLista');
+    var relevantes = todasMensagens.filter(function(msg) {
+        if (adminChatAba === 'mural') return msg.destinatario === 'todos';
+        if (!veiculoSelecionado) return false;
+        return (msg.remetente === 'Admin' && msg.destinatario === veiculoSelecionado) ||
+               (msg.remetente === veiculoSelecionado && msg.destinatario === 'Admin');
+    }).sort(function(a, b) { return (a.ts || 0) - (b.ts || 0); });
+
+    lista.innerHTML = '';
+    if (relevantes.length === 0) {
+        lista.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:0.82em;padding:16px 0;">Nenhuma mensagem ainda.</div>';
+        return;
+    }
+    relevantes.forEach(function(msg) {
+        var bolha = document.createElement('div');
+        bolha.className = 'msg-bolha-admin' + (msg.remetente === 'Admin' ? ' minha' : '');
+        var nomeExibido = msg.remetente === 'Admin' ? 'Você (Admin)' : msg.remetente;
+        bolha.innerHTML = '<div class="msg-remetente-admin">' + nomeExibido + '</div>' +
+            '<div class="msg-texto-admin"></div>' +
+            '<div class="msg-hora-admin">' + (msg.hora || '') + '</div>';
+        bolha.querySelector('.msg-texto-admin').textContent = msg.texto || '';
+        lista.appendChild(bolha);
+    });
+    lista.scrollTop = lista.scrollHeight;
+}
+
+function atualizarAbaAdminChat() {
+    var avisoSelecione = document.getElementById('adminChatAvisoSelecioneVeiculo');
+    avisoSelecione.style.display = (adminChatAba === 'direta' && !veiculoSelecionado) ? 'block' : 'none';
+    iniciarAdminChatSeNecessario();
+    if (refMensagensAdminChat) {
+        refMensagensAdminChat.once('value', function(s) {
+            var todas = []; s.forEach(function(c) { todas.push(Object.assign({ id: c.key }, c.val())); });
+            renderizarAdminChat(todas);
+        });
+    }
+}
+
+document.getElementById('adminChatTabMural').addEventListener('click', function() {
+    adminChatAba = 'mural';
+    document.getElementById('adminChatTabMural').classList.add('ativa');
+    document.getElementById('adminChatTabDireta').classList.remove('ativa');
+    atualizarAbaAdminChat();
+});
+document.getElementById('adminChatTabDireta').addEventListener('click', function() {
+    adminChatAba = 'direta';
+    document.getElementById('adminChatTabDireta').classList.add('ativa');
+    document.getElementById('adminChatTabMural').classList.remove('ativa');
+    atualizarAbaAdminChat();
+});
+
+function enviarMensagemAdminChat() {
+    var input = document.getElementById('adminChatInput');
+    var texto = input.value.trim();
+    if (!texto) return;
+    if (adminChatAba === 'direta' && !veiculoSelecionado) { alert("Selecione um veículo lá em cima primeiro."); return; }
+    if (!EMPRESA_ID_ADMIN) { alert("Carregue uma empresa primeiro."); return; }
+    var agora = new Date();
+    var novaMensagem = {
+        remetente: 'Admin',
+        destinatario: adminChatAba === 'mural' ? 'todos' : veiculoSelecionado,
+        texto: texto,
+        ts: firebase.database.ServerValue.TIMESTAMP,
+        hora: agora.toLocaleTimeString('pt-BR'),
+        data: agora.toLocaleDateString('pt-BR')
+    };
+    db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID_ADMIN) + '/mensagens').push(novaMensagem).then(function() {
+        input.value = '';
+    }).catch(function(e) { console.warn("Falha ao enviar mensagem:", e); alert("Não foi possível enviar a mensagem agora."); });
+}
+document.getElementById('adminChatBtnEnviar').addEventListener('click', enviarMensagemAdminChat);
+document.getElementById('adminChatInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); enviarMensagemAdminChat(); }
+});
+
+// Inicia o chat assim que uma empresa é carregada (mesmo botão que já carrega os veículos)
+document.getElementById('btnCarregarEmpresa').addEventListener('click', function() {
+    setTimeout(iniciarAdminChatSeNecessario, 300);
+});
+
+// Se já havia uma empresa salva localmente e o admin já estava autenticado ao recarregar
+// a página, garante que o bloqueio por assinatura seja avaliado desde o início.
+if (EMPRESA_ID_ADMIN && auth.currentUser) observarStatusEmpresaAdmin();
 </script>
 </body>
 </html>
