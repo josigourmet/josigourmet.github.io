@@ -3,1949 +3,2022 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rastreador Everton GPS - Multi-Frota</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <meta http-equiv="Content-Security-Policy"
+        content="
+            default-src 'self';
+            script-src  'self' 'unsafe-inline'
+                        https://cdnjs.cloudflare.com
+                        https://www.gstatic.com
+                        https://www.googleapis.com;
+            style-src   'self' 'unsafe-inline'
+                        https://fonts.googleapis.com
+                        https://cdnjs.cloudflare.com;
+            font-src    https://fonts.gstatic.com
+                        https://cdnjs.cloudflare.com;
+            img-src     'self' data: https: blob:;
+            connect-src 'self'
+                        https://*.firebaseio.com
+                        https://firebaseinstallations.googleapis.com
+                        wss://*.firebaseio.com
+                        https://*.googleapis.com
+                        https://josidocesgoumert.netlify.app;
+            frame-ancestors 'none';
+        ">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <name="referrer" content="strict-origin-when-cross-origin">
+
+    <title>Josi Doces Gourmet</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
-            --bg-main: #070a10;
-            --bg-panel: #0e1420;
-            --bg-card: #121a26;
-            --bg-input: #182131;
-            --border: rgba(255,255,255,.08);
-            --border-strong: rgba(255,255,255,.14);
-
-            --brand: #00e0a8;
-            --brand-dim: #00b389;
-            --accent: #34b3ff;
-            --warn: #ffb020;
-            --danger: #ff4d6d;
-
-            --text: #eef3f8;
-            --text-dim: #7c8aa0;
-            --text-faint: #4c5870;
-
-            --font-display: 'Space Grotesk', system-ui, sans-serif;
-            --font-body: 'Inter', system-ui, sans-serif;
-            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-            --radius: 12px;
-            --radius-sm: 8px;
+            --marrom-escuro: #3e2723;
+            --marrom-medio: #5d4037;
+            --marrom-claro: #8d6e63;
+            --creme-escuro: #d7ccc8;
+            --creme-medio: #efebe9;
+            --creme-fundo: #fdf5e6;
+            --verde-whats: #25D366;
+            --destaque: #c8860a;
+            --sombra-suave: 0 4px 20px rgba(62,39,35,0.1);
+            --sombra-media: 0 6px 25px rgba(62,39,35,0.18);
         }
+
         * { box-sizing: border-box; }
+
         body {
-            margin: 0; padding: 0; font-family: var(--font-body);
-            background: var(--bg-main); color: var(--text);
-            display: flex; flex-direction: column; height: 100vh;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Lato', 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            background: var(--creme-fundo);
+            color: var(--marrom-escuro);
+            scroll-behavior: smooth;
         }
 
-        .brand-bar {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 16px; background: var(--bg-panel);
-            border-bottom: 1px solid var(--border); flex-shrink: 0;
-            position: relative; z-index: 20;
+        .splash-boas-vindas {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: linear-gradient(155deg, var(--marrom-escuro) 0%, var(--marrom-medio) 55%, var(--marrom-claro) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 30px;
+            opacity: 1;
+            visibility: visible;
+            animation: splashFade 4s ease-in-out forwards;
         }
-        .brand-mark {
-            width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
-            background: linear-gradient(155deg, var(--brand), #0091c8);
+        .splash-boas-vindas::before {
+            content: '';
+            position: absolute;
+            top: -70px; right: -70px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        .splash-boas-vindas::after {
+            content: '';
+            position: absolute;
+            bottom: -50px; left: -50px;
+            width: 180px; height: 180px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        .splash-conteudo {
+            position: relative;
+            z-index: 1;
+            color: #fff;
+            opacity: 0;
+            transform: translateY(14px) scale(0.96);
+            animation: splashConteudoEntra 0.9s ease 0.15s forwards;
+        }
+        .splash-emoji {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 14px;
+            animation: splashFlutuar 2.4s ease-in-out infinite;
+        }
+        .splash-saudacao {
+            display: block;
+            font-family: 'Lato', sans-serif;
+            font-size: 14px;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .splash-conteudo h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 4px;
+            line-height: 1.3;
+        }
+        .splash-conteudo h1 strong {
+            display: block;
+            color: var(--destaque);
+            font-size: 32px;
+        }
+        .splash-linha {
+            width: 56px; height: 2px;
+            background: var(--destaque);
+            margin: 16px auto;
+            opacity: 0.85;
+        }
+        .splash-conteudo p {
+            font-family: 'Lato', sans-serif;
+            font-size: 15px;
+            color: rgba(255,255,255,0.9);
+            max-width: 270px;
+            margin: 0 auto;
+            line-height: 1.55;
+            letter-spacing: 0.2px;
+        }
+        @keyframes splashFade {
+            0%   { opacity: 1; visibility: visible; }
+            85%  { opacity: 1; visibility: visible; }
+            100% { opacity: 0; visibility: hidden; pointer-events: none; }
+        }
+        @keyframes splashConteudoEntra {
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes splashFlutuar {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .barra-cupom {
+            background: linear-gradient(90deg, #c8860a, #a06810);
+            color: white;
+            text-align: center;
+            padding: 9px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'Lato', sans-serif;
+            position: sticky;
+            top: 0;
+            z-index: 1005;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+            letter-spacing: 0.6px;
+        }
+
+        .alerta-progresso-cupom {
+            background: linear-gradient(135deg, #fff8e1, #fff3cd);
+            color: #7a5800;
+            border: 1.5px dashed #f0c040;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            line-height: 1.5;
+            text-align: left;
+        }
+        .alerta-sucesso-cupom {
+            background: linear-gradient(135deg, #e8f5e9, #d4edda);
+            color: #1b5e20;
+            border: 1.5px dashed #81c784;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-align: left;
+        }
+
+        header {
+            background: linear-gradient(155deg, var(--marrom-escuro) 0%, var(--marrom-medio) 60%, var(--marrom-claro) 100%);
+            color: #fff;
+            text-align: center;
+            padding: 45px 20px 50px;
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
+            box-shadow: var(--sombra-media);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 220px; height: 220px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; left: -40px;
+            width: 160px; height: 160px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+
+        .logo-container {
+            width: 138px; height: 138px;
+            background: linear-gradient(145deg, #fff, var(--creme-medio));
+            border-radius: 50%;
+            margin: 0 auto 18px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.05em; box-shadow: 0 4px 14px rgba(0,224,168,.25);
+            border: 4px solid rgba(255,255,255,0.35);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25), 0 0 0 8px rgba(255,255,255,0.07);
+            position: relative; z-index: 1;
+            overflow: hidden;
         }
-        .brand-text { line-height: 1.2; }
-        .brand-text .nome { font-family: var(--font-display); font-weight: 700; font-size: 1em; letter-spacing: .2px; }
-        .brand-text .tagline { font-size: .68em; color: var(--text-dim); letter-spacing: .3px; }
-        .brand-bar .conta-pill {
-            margin-left: auto; font-size: .68em; color: var(--text-dim);
-            border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .conta-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); }
-        .conta-pill.ativa .dot { background: var(--brand); box-shadow: 0 0 6px var(--brand); }
-
-        #map { width: 100%; height: 30vh; background: #060810; flex-shrink: 0; }
-        .container { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-
-        h4.section-label {
-            font-family: var(--font-display); font-size: .7em; text-transform: uppercase;
-            letter-spacing: 1px; color: var(--text-dim); font-weight: 600; margin: 4px 0 0 2px;
+        
+        .logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
-        .input-box { background: var(--bg-card); border: 1px solid var(--border); padding: 14px; border-radius: var(--radius); }
-        .input-box label { font-size: 0.72em; text-transform: uppercase; letter-spacing: .5px; color: var(--text-dim); display: block; margin-bottom: 7px; font-weight: 600; font-family: var(--font-display); }
-        .row { display: flex; gap: 8px; }
-        input {
-            flex: 1; background: var(--bg-input); border: 1px solid var(--border); padding: 12px 13px;
-            border-radius: var(--radius-sm); color: var(--text); font-size: .95em; font-family: var(--font-body);
-            transition: border-color .15s ease;
+        .logo-content { text-align: center; color: var(--marrom-medio); line-height: 1.1; }
+        .logo-content .name-josi {
+            font-size: 26px; font-weight: 700;
+            font-family: 'Playfair Display', Georgia, serif;
+            display: block; color: var(--marrom-escuro);
         }
-        input::placeholder { color: var(--text-faint); }
-        input:focus { outline: none; border-color: var(--brand); }
+        .logo-content .name-doces {
+            font-size: 14px; text-transform: uppercase;
+            letter-spacing: 2px; display: block;
+            border-top: 1px solid var(--creme-escuro);
+            margin-top: 3px; padding-top: 3px;
+            color: var(--marrom-claro); font-weight: 700;
+        }
+        .logo-content .name-gourmet {
+            font-size: 10px; font-weight: 700;
+            color: var(--destaque); display: block;
+            letter-spacing: 1px;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px; margin: 0 0 5px;
+            letter-spacing: 0.5px;
+            position: relative; z-index: 1;
+        }
+
+        .insta-header {
+            display: inline-flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(8px);
+            color: #fff !important;
+            padding: 9px 18px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 15px;
+            font-weight: 700;
+            transition: 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.3);
+            position: relative; z-index: 1;
+            letter-spacing: 0.3px;
+        }
+        .insta-header img { margin-right: 8px; filter: brightness(0) invert(1); }
+        .insta-header:hover {
+            transform: scale(1.06);
+            background: rgba(255,255,255,0.25);
+        }
+
+        .insta-float {
+            position: fixed; top: 50px; right: 16px; z-index: 1002;
+            background: white; padding: 10px; border-radius: 50%;
+            box-shadow: var(--sombra-media);
+            width: 46px; height: 46px;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.3s;
+            border: 2px solid var(--creme-escuro);
+        }
+        .insta-float:hover { transform: rotate(15deg) scale(1.12); }
+
+        .container {
+            padding: 24px 18px;
+            max-width: 500px;
+            margin: auto;
+            padding-bottom: 120px;
+        }
+
+        label {
+            display: block;
+            margin-top: 22px;
+            font-weight: 700;
+            color: var(--marrom-medio);
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        input, select, textarea {
+            width: 100%; padding: 13px 15px;
+            margin-top: 8px;
+            border-radius: 12px;
+            border: 1.5px solid var(--creme-escuro);
+            background: white;
+            font-size: 15px;
+            color: var(--marrom-escuro);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: 'Lato', sans-serif;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--marrom-claro);
+            box-shadow: 0 0 0 3px rgba(141,110,99,0.12);
+        }
+
+        .card-evento {
+            background: linear-gradient(135deg, var(--marrom-medio), var(--marrom-escuro));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 28px;
+            box-shadow: var(--sombra-media);
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .card-evento::after {
+            content: '✨';
+            position: absolute; right: 15px; top: 10px;
+            font-size: 32px; opacity: 0.15;
+        }
+        .card-evento h3 {
+            margin-top: 0;
+            font-family: 'Playfair Display', serif;
+            color: #fdf5e6;
+            font-size: 20px;
+        }
+        .card-evento p { color: rgba(255,255,255,0.85); font-size: 14px; margin-bottom: 0; }
+        .btn-evento {
+            background: linear-gradient(135deg, var(--creme-fundo), #fff);
+            color: var(--marrom-medio);
+            border: none; padding: 11px 22px;
+            border-radius: 10px; font-weight: 700;
+            cursor: pointer; margin-top: 14px;
+            display: inline-block; text-decoration: none;
+            transition: 0.3s; font-size: 14px;
+            letter-spacing: 0.2px;
+        }
+        .btn-evento:hover { transform: scale(1.04); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        .card {
+            background: white;
+            padding: 20px 18px;
+            border-radius: 18px;
+            text-align: center;
+            box-shadow: var(--sombra-suave);
+            margin-bottom: 14px;
+            border: 1px solid rgba(215,204,200,0.5);
+            transition: box-shadow 0.25s, transform 0.25s;
+        }
+        .card:hover {
+            box-shadow: var(--sombra-media);
+            transform: translateY(-2px);
+        }
+        .card h3 {
+            margin: 0 0 4px;
+            font-family: 'Playfair Display', serif;
+            font-size: 17px;
+            color: var(--marrom-escuro);
+        }
+
+        .price {
+            color: var(--destaque);
+            font-weight: 700;
+            font-size: 1.35em;
+            margin: 8px 0 4px;
+            font-family: 'Lato', sans-serif;
+        }
+
+        .sabores-tags {
+            font-size: 13px;
+            color: var(--marrom-escuro);
+            margin: 8px auto 12px;
+            max-width: 94%;
+            line-height: 1.5;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff8e1, #fff3cd);
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: 1.5px dashed var(--destaque);
+            position: relative;
+        }
+        .sabores-tags .sabores-tags-label {
+            display: block;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--destaque);
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        .sabores-tags .sabores-tags-lista {
+            font-style: normal;
+        }
+
+        .controles-quantidade {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .adicionar-texto {
+            font-size: 12px;
+            color: var(--marrom-claro);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .qtd-display {
+            font-weight: 700;
+            font-size: 20px;
+            min-width: 24px;
+            color: var(--marrom-escuro);
+        }
+
         button {
-            background: var(--brand); color: #04120e; border: none; padding: 12px 20px; font-weight: 700;
-            border-radius: var(--radius-sm); cursor: pointer; font-family: var(--font-display);
-            letter-spacing: .2px; transition: transform .1s ease, filter .15s ease;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            width: 100%;
+            cursor: pointer;
+            font-weight: 700;
+            margin-top: 10px;
+            transition: 0.25s;
+            font-family: 'Lato', sans-serif;
+            letter-spacing: 0.3px;
         }
-        button:active { transform: scale(.97); }
-        button:hover { filter: brightness(1.08); }
+        button:active { transform: scale(0.97); }
 
-        .frota-container { background: var(--bg-card); border: 1px solid var(--border); padding: 14px; border-radius: var(--radius); }
-        .frota-lista { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .tag-veiculo {
-            background: var(--bg-input); border: 1px solid var(--border); padding: 7px 8px 7px 14px;
-            border-radius: 20px; font-size: 0.83em; font-weight: 600; display: flex; align-items: center; gap: 8px;
+        .btn-menor {
+            background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+            width: 42px !important; height: 42px !important;
+            border-radius: 50% !important;
+            margin: 0 !important; padding: 0 !important;
+            font-size: 20px !important; font-weight: 700 !important;
+            display: flex !important; align-items: center; justify-content: center;
+            box-shadow: 0 3px 8px rgba(231,76,60,0.35);
         }
-        .btn-remover {
-            color: var(--danger); cursor: pointer; font-weight: bold; border: none; background: rgba(255,77,109,.12);
-            width: 20px; height: 20px; border-radius: 50%; padding: 0; font-size: 1em; line-height: 1;
+        .btn-maior {
+            background: linear-gradient(135deg, #25D366, #1da851) !important;
+            width: 42px !important; height: 42px !important;
+            border-radius: 50% !important;
+            margin: 0 !important; padding: 0 !important;
+            font-size: 20px !important; font-weight: 700 !important;
+            display: flex !important; align-items: center; justify-content: center;
+            box-shadow: 0 3px 8px rgba(37,211,102,0.35);
+        }
+        .btn-menor:hover, .btn-maior:hover { filter: brightness(1.1); transform: scale(1.08); }
+
+        .btn-finalizar {
+            background: linear-gradient(135deg, #25D366, #1da851);
+            padding: 13px; font-size: 15px; margin-top: 15px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(37,211,102,0.3);
+        }
+        .btn-finalizar:not(:disabled):hover { filter: brightness(1.05); transform: translateY(-1px); }
+        .btn-finalizar:disabled, .btn-pix:disabled, .btn-mp:disabled {
+            background: linear-gradient(135deg, #bbb, #ccc) !important;
+            cursor: not-allowed; opacity: 0.65;
+            box-shadow: none; transform: none;
+        }
+
+        .btn-pix {
+            background: linear-gradient(135deg, var(--marrom-medio), var(--marrom-escuro));
+            padding: 13px; font-size: 14px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(93,64,55,0.3);
+        }
+        .btn-mp {
+            background: linear-gradient(135deg, #009ee3, #0077b3);
+            padding: 13px; font-size: 14px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,158,227,0.3);
+        }
+        .btn-limpar {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            padding: 9px; font-size: 12px; margin-top: 10px;
+            opacity: 0.85; border-radius: 10px;
+        }
+        .btn-limpar:hover { opacity: 1; }
+
+        #secaoDadosPedido {
+            display: none;
+            margin-top: 32px;
+            border-top: 2px dashed var(--creme-escuro);
+            padding-top: 15px;
+        }
+
+        .modal-aviso {
+            display: none; position: fixed; z-index: 9999;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(30,15,10,0.92);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+
+        .modal-conteudo {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 28px 24px;
+            border-radius: 28px;
+            width: 90%; max-width: 440px;
+            text-align: center;
+            border: 2px solid var(--creme-escuro);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: bounceIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-conteudo h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--marrom-medio);
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .modal-conteudo ul {
+            text-align: left;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.7;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .btn-entendi {
+            background: linear-gradient(135deg, var(--marrom-medio), var(--marrom-escuro));
+            color: white; border: none; padding: 13px 30px;
+            border-radius: 12px; font-weight: 700; cursor: pointer;
+            font-size: 15px; width: 100%; margin-top: 10px;
+            font-family: 'Lato', sans-serif;
+            transition: 0.25s;
+        }
+        .btn-entendi:hover { filter: brightness(1.1); }
+
+        .btn-duvida {
+            background: linear-gradient(135deg, var(--verde-whats), #1da851);
+            color: white; border: none; padding: 13px 30px;
+            border-radius: 12px; font-weight: 700; cursor: pointer;
+            font-size: 15px; width: 100%; text-decoration: none;
+            display: block; box-sizing: border-box; margin-bottom: 10px;
+            font-family: 'Lato', sans-serif;
+            transition: 0.25s;
+        }
+        .btn-duvida:hover { filter: brightness(1.08); }
+
+        #modalPromo { display: none; }
+        .promo-fullscreen-content {
+            background: #fff;
+            margin: 5% auto;
+            padding: 14px;
+            border-radius: 24px;
+            width: 85%; max-width: 360px;
+            text-align: center;
+            position: relative;
+            border: 3px solid var(--marrom-medio);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: bounceIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .promo-fullscreen-content img {
+            width: 100%; max-height: 55vh;
+            object-fit: cover;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            box-shadow: var(--sombra-suave);
+        }
+        .btn-promo-add {
+            background: linear-gradient(135deg, var(--verde-whats), #1da851);
+            color: white; font-size: 15px; padding: 13px;
+            border-radius: 14px; border: none; cursor: pointer;
+            width: 100%; font-weight: 700; margin-bottom: 10px;
+            font-family: 'Lato', sans-serif;
+            box-shadow: 0 4px 15px rgba(37,211,102,0.3);
+        }
+        .btn-promo-close {
+            background: var(--creme-medio); color: var(--marrom-medio);
+            font-size: 13px; padding: 10px; border-radius: 10px;
+            border: 1px solid var(--creme-escuro); cursor: pointer;
+            width: 100%; font-family: 'Lato', sans-serif;
+        }
+
+        .reabrir-promo {
+            position: fixed; top: 110px; left: 12px; z-index: 998;
+            background: linear-gradient(135deg, #c8860a, #a06810);
+            color: white; padding: 8px 13px;
+            border-radius: 20px; font-size: 12px; font-weight: 700;
+            box-shadow: 0 4px 12px rgba(200,134,10,0.35);
+            cursor: pointer; border: 2px solid rgba(255,255,255,0.4);
+            animation: pulse 2s infinite;
+            font-family: 'Lato', sans-serif;
+        }
+
+        #carrinhoBox {
+            position: fixed; bottom: 10px; right: 10px; left: 55px;
+            background: white; padding: 16px;
+            border-radius: 22px;
+            box-shadow: 0 -6px 30px rgba(62,39,35,0.15);
+            z-index: 1000; max-height: 80vh; overflow-y: auto;
+            display: none;
+            border: 1.5px solid var(--creme-escuro);
+        }
+
+        #carrinhoBox h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--marrom-medio);
+            margin-top: 0; margin-bottom: 12px;
+        }
+
+        .fechar-carrinho-btn {
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--marrom-claro);
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+        .fechar-carrinho-btn:hover { color: var(--marrom-escuro); }
+
+        .toggle-carrinho {
+            position: fixed; bottom: 20px; left: 10px;
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #007bff, #0055cc);
+            color: white; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
+            z-index: 1001;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.35);
+            font-size: 20px; cursor: pointer;
+            transition: 0.3s;
+        }
+        .toggle-carrinho:hover { transform: scale(1.08); }
+
+        .cart-badge {
+            position: absolute; top: -5px; right: -5px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white; border-radius: 50%;
+            padding: 2px 6px; font-size: 11px;
+            font-weight: 700; border: 2px solid white;
+            min-width: 20px; text-align: center;
         }
 
-        .status-bar {
-            padding: 13px; border-radius: var(--radius-sm); text-align: center; font-weight: 700;
-            font-size: 0.85em; font-family: var(--font-display); letter-spacing: .2px;
+        .item-carrinho {
+            display: flex; justify-content: space-between;
+            border-bottom: 1px solid var(--creme-medio);
+            padding: 9px 0; font-size: 14px;
+            color: var(--marrom-escuro);
+            line-height: 1.4;
         }
-        .status-online { background: rgba(0, 224, 168, 0.12); color: var(--brand); border: 1px solid rgba(0,224,168,.35); }
-        .status-offline { background: rgba(255, 176, 32, 0.12); color: var(--warn); border: 1px solid rgba(255,176,32,.35); }
-        .status-erro { background: rgba(255, 77, 109, 0.12); color: var(--danger); border: 1px solid rgba(255,77,109,.35); }
-        .status-bg { background: rgba(52, 179, 255, 0.12); color: var(--accent); border: 1px solid rgba(52,179,255,.35); }
+        .item-carrinho span:first-child { max-width: 68%; }
+        .remover {
+            color: #e74c3c; cursor: pointer; font-weight: 700;
+            margin-left: 8px; font-size: 16px;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .remover:hover { transform: scale(1.3); }
 
-        .btn-row { display: flex; gap: 8px; }
-        .btn-force {
-            background: linear-gradient(135deg, var(--accent), #1b8fe0); color: #04141f; flex: 2; padding: 15px;
-            font-size: 0.88em; text-transform: uppercase; font-weight: 700; border-radius: var(--radius-sm);
-            border: none; cursor: pointer; font-family: var(--font-display); letter-spacing: .4px;
-        }
-        .btn-export {
-            background: var(--bg-card); color: var(--text); border: 1px solid var(--border); flex: 1; padding: 15px;
-            font-size: 0.82em; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; font-family: var(--font-display);
+        #resumo {
+            margin-top: 15px; font-size: 17px;
+            text-align: center; color: var(--marrom-medio);
+            border-top: 2px solid var(--creme-medio);
+            padding-top: 12px;
         }
 
-        .telemetry-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 14px; }
-        .telemetry-row {
-            display: flex; justify-content: space-between; align-items: center; padding: 11px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.045); font-size: 0.88em; gap: 10px;
+        .galeria-inicial {
+            display: flex; overflow-x: auto; gap: 12px;
+            padding: 12px 0; scroll-snap-type: x mandatory;
+            scrollbar-width: none;
         }
-        .telemetry-row span:first-child { color: var(--text-dim); font-size: .92em; }
-        .telemetry-row b, .telemetry-row span:last-child {
-            text-align: right; font-family: var(--font-mono); font-weight: 600; letter-spacing: .2px;
+        .galeria-inicial::-webkit-scrollbar { display: none; }
+        .galeria-inicial img {
+            width: 290px; height: 290px;
+            object-fit: cover; border-radius: 18px;
+            scroll-snap-align: center;
+            box-shadow: var(--sombra-suave);
+            border: 2px solid var(--creme-escuro);
+            flex-shrink: 0;
         }
-        .telemetry-row:last-child { border-bottom: none; }
 
-        .badge { font-size: 0.72em; padding: 4px 10px; border-radius: 5px; font-weight: 700; font-family: var(--font-display); letter-spacing: .3px; }
-        .badge-movimento { background: rgba(0,224,168,0.14); color: var(--brand); }
-        .badge-parado { background: rgba(255, 176, 32, 0.14); color: var(--warn); }
-        .badge-perigo { background: rgba(255, 77, 109, 0.14); color: var(--danger); }
-
-        .gps-warning { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,.35); color: var(--danger); padding: 11px 13px; border-radius: var(--radius-sm); font-size: 0.83em; display: none; }
-        .fila-info { font-size: 0.73em; color: var(--text-faint); text-align: center; }
-
-        /* ===================== CHAT (fala do veículo com a empresa) ===================== */
-        .chat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0; overflow: hidden; }
-        .chat-card-titulo { font-size: 0.72em; text-transform: uppercase; letter-spacing: .5px; color: var(--text-dim); font-weight: 600; font-family: var(--font-display); padding: 14px 14px 0; }
-        .chat-remetente-row { padding: 10px 14px 0; }
-        .chat-remetente-row select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 10px 12px; border-radius: var(--radius-sm); color: var(--text); font-size: 0.88em; font-family: var(--font-body); }
-        .chat-tabs { display: flex; border-bottom: 1px solid var(--border); margin-top: 10px; }
-        .chat-tab-btn { flex: 1; border-radius: 0; background: transparent; color: var(--text-dim); padding: 10px; font-size: 0.8em; box-shadow: none; border: none; cursor: pointer; font-family: var(--font-display); font-weight: 600; }
-        .chat-tab-btn.ativa { background: var(--bg-input); color: var(--accent); }
-        .chat-aviso-vazio { display:none; padding:10px 14px; font-size:0.8em; color: var(--warn); }
-        .chat-lista { height: 220px; overflow-y: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
-        .msg-bolha { max-width: 82%; padding: 8px 12px; border-radius: 12px; font-size: 0.85em; line-height: 1.4; word-break: break-word; align-self: flex-start; background: var(--bg-input); border: 1px solid var(--border); color: var(--text); }
-        .msg-bolha.minha { align-self: flex-end; background: rgba(0,224,168,.14); border-color: rgba(0,224,168,.3); }
-        .msg-bolha .msg-remetente { font-size: 0.72em; font-weight: 700; color: var(--accent); margin-bottom: 2px; font-family: var(--font-display); }
-        .msg-bolha .msg-hora { font-size: 0.68em; color: var(--text-dim); margin-top: 3px; text-align: right; }
-        .chat-input-row { display: flex; gap: 8px; padding: 10px 14px 14px; border-top: 1px solid var(--border); }
-        .chat-input-row input { margin: 0; }
-        .chat-input-row button { width: auto; padding: 10px 16px; margin: 0; }
-
-        .auth-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(4,6,10,0.92); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 10000; display: none; }
-        .auth-card {
-            background: var(--bg-panel); border: 1px solid var(--border-strong); padding: 28px 24px; border-radius: 18px;
-            width: 90%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; position: relative;
-            box-shadow: 0 20px 60px rgba(0,0,0,.5);
+        .instrucao-slide {
+            font-size: 12px; color: var(--marrom-claro);
+            margin-bottom: 8px; font-weight: 600;
+            letter-spacing: 0.3px;
         }
-        .auth-card .auth-logo {
-            width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 4px;
-            background: linear-gradient(155deg, var(--brand), #0091c8);
-            display: flex; align-items: center; justify-content: center; font-size: 1.5em;
-            box-shadow: 0 6px 20px rgba(0,224,168,.3);
+
+        #pixDisplay {
+            display: none; margin-top: 12px;
+            background: var(--creme-medio);
+            padding: 14px; border-radius: 14px;
+            border: 1px solid var(--creme-escuro);
         }
-        .auth-card h3 { margin: 0; color: var(--text); font-size: 1.15em; text-align: center; font-family: var(--font-display); font-weight: 700; }
-        .btn-fechar-modal { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--text-dim); font-size: 1.2em; cursor: pointer; padding: 0; }
-        .user-logado-info { font-size: 0.75em; color: var(--brand); text-align: center; margin-top: -4px; display: none; font-weight: 600; }
+
+        .erro-tel {
+            color: #e74c3c; font-size: 11px; font-weight: 700;
+            display: none; margin-top: 5px;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+
+        #secaoDadosPedido > label:first-child {
+            font-size: 16px; margin-top: 24px;
+            color: var(--marrom-escuro);
+        }
+
+        #carrinhoBox::-webkit-scrollbar { width: 4px; }
+        #carrinhoBox::-webkit-scrollbar-track { background: var(--creme-medio); border-radius: 4px; }
+        #carrinhoBox::-webkit-scrollbar-thumb { background: var(--creme-escuro); border-radius: 4px; }
+
+        /* ===== Modal de seleção de sabores ===== */
+        .modal-sabores-conteudo {
+            max-width: 420px;
+            padding: 26px 20px;
+        }
+        .sabores-instrucao {
+            font-size: 13px;
+            color: var(--marrom-claro);
+            margin: 0 0 16px;
+            font-weight: 600;
+        }
+        .sabores-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+            max-height: 46vh;
+            overflow-y: auto;
+            padding: 4px 2px;
+        }
+        .sabor-opcao {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 2px solid var(--creme-escuro);
+            background: var(--creme-medio);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--marrom-escuro);
+        }
+        .sabor-opcao:active { transform: scale(0.98); }
+        .sabor-check {
+            width: 24px; height: 24px;
+            min-width: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--marrom-claro);
+            background: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700;
+            color: transparent;
+            transition: all 0.2s ease;
+        }
+        .sabor-nome { flex: 1; }
+        .sabor-opcao.selecionado {
+            background: linear-gradient(135deg, #fff8e1, #fff3cd);
+            border-color: var(--destaque);
+            box-shadow: 0 4px 14px rgba(200,134,10,0.25);
+            color: var(--marrom-escuro);
+        }
+        .sabor-opcao.selecionado .sabor-check {
+            background: var(--destaque);
+            border-color: var(--destaque);
+            color: #fff;
+        }
+        .sabores-preco-resumo {
+            background: var(--creme-medio);
+            border: 1.5px dashed var(--destaque);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            min-height: 24px;
+        }
+        .sabores-selecionados-tags {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            margin-bottom: 8px;
+        }
+        .tag-sabor-escolhido {
+            background: var(--destaque);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .sabores-preco-final {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--marrom-escuro);
+            text-align: left;
+        }
+        .sabores-preco-final b { color: var(--destaque); font-size: 17px; }
+        .sabores-extra {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--marrom-claro);
+        }
+        .sabores-aviso-vazio {
+            font-size: 13px;
+            font-weight: 700;
+            color: #b25a00;
+        }
+        #btnConfirmarSabores:disabled {
+            background: linear-gradient(135deg, #bbb, #ccc);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* ===== Estilos do Chatbot IA ===== */
+        .chatbot-flutuante {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            z-index: 10001;
+            font-family: 'Lato', sans-serif;
+        }
+        .chatbot-botao {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--marrom-medio), var(--marrom-escuro));
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; cursor: pointer; box-shadow: var(--sombra-media);
+            transition: transform 0.3s; border: 2px solid var(--creme-escuro);
+        }
+        .chatbot-botao:hover { transform: scale(1.08); }
+        
+        .chatbot-janela {
+            display: none; position: fixed;
+            bottom: 145px; right: 16px;
+            width: 320px; height: 420px;
+            background: white; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(62,39,35,0.25);
+            border: 1.5px solid var(--creme-escuro);
+            flex-direction: column; overflow: hidden;
+            animation: bounceIn 0.4s ease;
+        }
+        .chatbot-header {
+            background: linear-gradient(135deg, var(--marrom-escuro), var(--marrom-medio));
+            color: white; padding: 14px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .chatbot-header h4 { margin: 0; font-family: 'Playfair Display', serif; font-size: 16px; letter-spacing: 0.5px; }
+        .chatbot-header span { cursor: pointer; opacity: 0.85; font-size: 16px; transition: opacity 0.2s; }
+        .chatbot-header span:hover { opacity: 1; }
+        
+        .chatbot-mensagens {
+            flex: 1; padding: 14px; overflow-y: auto;
+            background: var(--creme-fundo); display: flex; flex-direction: column; gap: 10px;
+        }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.45; word-wrap: break-word; }
+        .msg.ia { background: white; align-self: flex-start; color: var(--marrom-escuro); box-shadow: 0 2px 8px rgba(62,39,35,0.06); border: 1px solid rgba(215,204,200,0.4); }
+        .msg.user { background: linear-gradient(135deg, var(--marrom-claro), var(--marrom-medio)); color: white; align-self: flex-end; box-shadow: 0 2px 8px rgba(93,64,55,0.2); }
+        
+        .chatbot-input-area {
+            display: flex; padding: 10px; background: white; border-top: 1px solid var(--creme-medio); align-items: center; gap: 8px;
+        }
+        .chatbot-input-area input { margin-top: 0; padding: 10px 12px; border-radius: 10px; flex: 1; height: 40px; font-size: 14px; }
+        .chatbot-input-area button { margin-top: 0; width: 40px; height: 40px; padding: 0; border-radius: 10px; background: linear-gradient(135deg, #25D366, #1da851); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+        .chat-notif-dot {
+            position: absolute; top: -3px; right: -3px;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #e74c3c; border: 2px solid #fff;
+            animation: pulse 1.5s infinite;
+        }
     </style>
 </head>
-<body>
+<body onload="mostrarSplashBoasVindas(); carregarBannerDinamico(); carregarDados(); agendarChatAutomatico(); reenviarPedidosPendentes();">
 
-<div class="brand-bar">
-    <div class="brand-mark">📡</div>
-    <div class="brand-text">
-        <div class="nome">EVERTON GPS</div>
-        <div class="tagline">Rastreamento de frotas em tempo real</div>
+<div id="splashBoasVindas" class="splash-boas-vindas" aria-hidden="true">
+    <div class="splash-conteudo">
+        <span class="splash-emoji">🍰</span>
+        <span class="splash-saudacao" id="splashSaudacao">Bem-vindo(a)</span>
+        <h1>Sejam Bem-vindos à<strong>Josi Doces Gourmet</strong></h1>
+        <div class="splash-linha"></div>
+        <p>As melhores tortas de Venâncio Aires</p>
     </div>
-    <div class="conta-pill" id="pillConta"><span class="dot"></span><span id="pillContaTexto">sem empresa</span></div>
 </div>
 
-<div id="authModal" class="auth-overlay">
-    <div class="auth-card">
-        <div class="auth-logo">📡</div>
-        <h3 id="authTitulo">Login da Empresa</h3>
-        <p id="authSubtitulo" style="font-size:0.8em;color:var(--text-dim);text-align:center;margin:0 0 4px;">Faça login com o e-mail/senha da sua empresa para liberar o aplicativo. É só uma vez — o aparelho fica logado.</p>
+<div class="barra-cupom" id="barraCupom">
+    🎉 PROMOÇÃO: Ganhe 5% de DESCONTO + FRETE GRÁTIS em compras a partir de R$ 50,00! 🍰
+</div>
 
-        <div id="painelLogin">
-            <div>
-                <label style="font-size: 0.72em; color: var(--text-dim); text-transform: uppercase; letter-spacing:.5px; font-weight: 600; font-family: var(--font-display); display: block; margin-bottom: 6px;">E-mail</label>
-                <input type="email" id="authEmail" placeholder="seu-email@gmail.com" autocomplete="off" style="width: 100%; box-sizing: border-box;">
-            </div>
-            <div>
-                <label style="font-size: 0.72em; color: var(--text-dim); text-transform: uppercase; letter-spacing:.5px; font-weight: 600; font-family: var(--font-display); display: block; margin-bottom: 6px;">Senha</label>
-                <input type="password" id="authSenha" placeholder="******" autocomplete="new-password" style="width: 100%; box-sizing: border-box;">
-            </div>
-            <button id="btnConfirmarLogin" style="background: var(--accent); color:#04141f; width: 100%; padding:14px; font-size:.95em;">Entrar e liberar o app</button>
-            <div style="text-align:center;margin-top:14px;font-size:0.82em;">
-                <span style="color:var(--text-dim);">Ainda não tem conta?</span>
-                <a href="#" id="linkIrParaCadastro" style="color:var(--brand);font-weight:bold;text-decoration:none;"> Criar conta — 7 dias grátis</a>
-            </div>
+<a href="https://www.instagram.com/josigourmet" target="_blank" class="insta-float">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" width="25" alt="Instagram">
+</a>
+
+<div class="reabrir-promo" id="btnReabrirPromo" onclick="abrirBannerPromo()">🔥 PROMOÇÃO</div>
+
+<div id="modalPromo" class="modal-aviso">
+    <div class="promo-fullscreen-content" id="conteudoBanner"></div>
+</div>
+
+<div id="modalFotosIniciais" class="modal-aviso" style="display: block;">
+    <div class="modal-conteudo">
+        <h2 style="margin-bottom: 5px;">📸 Nossas Delícias</h2>
+        <p class="instrucao-slide">Deslize para o lado para ver mais ➔</p>
+        <div class="galeria-inicial">
+          <img src="https://i.postimg.cc/zBcTdCcZ/IMG-20260621-WA0015.jpg" alt="Doce Josi">
+          <img src="https://i.postimg.cc/SKmLjN9p/IMG-20260621-WA0014.jpg" alt="Doce Josi">
+          <img src="https://i.postimg.cc/BQtwsX6P/IMG-20260508-WA0009.jpg" alt="Doce Josi">
+          <img src="https://i.postimg.cc/0yR3f9k8/IMG-20260508-WA0008.jpg" alt="Doce Josi">
+          <img src="https://i.postimg.cc/tJP0qJqM/IMG-20260507-WA0006.jpg" alt="Doce Josi">
+          <img src="https://i.postimg.cc/T5p2j48b/IMG-20260418-WA0008.jpg" alt="Doce Josi">
+          <img src="https://i.postimg.cc/WF9bkPyX/IMG-20260418-WA0010.jpg" alt="Doce Josi">
+          <img src="https://i.postimg.cc/28M6M4QK/1777779837866.png" alt="Doce Josi">
         </div>
-
-        <div id="painelCadastro" style="display:none;">
-            <div class="beneficio-trial" style="background: rgba(0,255,166,.08); border: 1px solid rgba(0,255,166,.3); border-radius: 10px; padding: 10px 12px; font-size: .8em; color: var(--text-dim); margin-bottom: 14px; line-height: 1.5;">
-                <b style="color:var(--brand);">7 dias grátis</b> pra testar com sua frota. Sem cartão de crédito agora.
-            </div>
-            <div>
-                <label style="font-size: 0.72em; color: var(--text-dim); text-transform: uppercase; letter-spacing:.5px; font-weight: 600; font-family: var(--font-display); display: block; margin-bottom: 6px;">Nome da empresa</label>
-                <input type="text" id="cadNomeEmpresa" placeholder="Ex: Transportes Silva Ltda" autocomplete="off" style="width: 100%; box-sizing: border-box;">
-            </div>
-            <div>
-                <label style="font-size: 0.72em; color: var(--text-dim); text-transform: uppercase; letter-spacing:.5px; font-weight: 600; font-family: var(--font-display); display: block; margin-bottom: 6px;">E-mail</label>
-                <input type="email" id="cadEmail" placeholder="seu-email@gmail.com" autocomplete="off" style="width: 100%; box-sizing: border-box;">
-            </div>
-            <div>
-                <label style="font-size: 0.72em; color: var(--text-dim); text-transform: uppercase; letter-spacing:.5px; font-weight: 600; font-family: var(--font-display); display: block; margin-bottom: 6px;">Crie uma senha</label>
-                <input type="password" id="cadSenha" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="width: 100%; box-sizing: border-box;">
-            </div>
-            <div>
-                <label style="font-size: 0.72em; color: var(--text-dim); text-transform: uppercase; letter-spacing:.5px; font-weight: 600; font-family: var(--font-display); display: block; margin-bottom: 6px;">WhatsApp (opcional)</label>
-                <input type="tel" id="cadTelefone" placeholder="(51) 99999-9999" autocomplete="off" style="width: 100%; box-sizing: border-box;">
-            </div>
-            <button id="btnConfirmarCadastro" style="background: var(--brand); color:#04120e; width: 100%; padding:14px; font-size:.95em;">Criar conta e começar teste grátis</button>
-            <div style="text-align:center;margin-top:14px;font-size:0.82em;">
-                <span style="color:var(--text-dim);">Já tem conta?</span>
-                <a href="#" id="linkIrParaLogin" style="color:var(--accent);font-weight:bold;text-decoration:none;"> Fazer login</a>
-            </div>
-        </div>
-
-        <div id="authErro" style="display:none;color:var(--danger);font-size:.8em;text-align:center;margin-top:10px;"></div>
+        <button class="btn-entendi" onclick="fecharGaleriaAbrirHorarios()">Ver Cardápio e Preços</button>
     </div>
 </div>
 
-<div id="avisoSuspenso" style="display:none; position:fixed; inset:0; z-index:10001; background:var(--bg-main); flex-direction:column; align-items:center; justify-content:center; padding:32px 24px; text-align:center;">
-    <div style="width:88px; height:88px; border-radius:22px; background:linear-gradient(145deg,var(--danger),#a91c3e); display:flex; align-items:center; justify-content:center; font-size:2.4em; box-shadow:0 10px 28px rgba(255,77,109,0.3); margin-bottom:22px;">📡</div>
-    <div style="font-family:var(--font-display); font-size:1.05em; font-weight:700; color:var(--text); letter-spacing:0.8px; margin-bottom:26px;">EVERTON GPS</div>
-    <div style="border:1px solid rgba(255,77,109,.35); background:rgba(255,77,109,0.08); border-radius:16px; padding:24px 20px; max-width:340px;">
-        <div style="font-size:1.8em; margin-bottom:10px;">🚫</div>
-        <div style="color:var(--danger); font-weight:700; font-size:1.05em; line-height:1.5; font-family:var(--font-display);">Acesso suspenso</div>
-        <div style="color:var(--text-dim); font-size:0.88em; margin-top:8px; line-height:1.5;">Entre em contato com o suporte para regularizar o pagamento.</div>
+<div id="modalAviso" class="modal-aviso">
+    <div class="modal-conteudo">
+        <h2>⚠️ Horários de Funcionamento</h2>
+        <p>Confira nossos horários para pedidos e agendamentos:</p>
+        <ul style="text-align: left; font-size: 14px; color: #555;">
+            <li>🗓️ <b>Segunda a Sexta:</b><br>Pedidos para entrega/retirada das 08h às 17h.</li>
+            <li>🚀 <b>Sáb, Dom e Feriados:</b><br>Pedidos para entrega/retirada das 08h às 17h.</li>
+            <li>⏰ <b>Atenção:</b> Agendamentos fora desses horários serão validados em horário comercial .</li>
+        </ul>
+        <a href="https://wa.me/5551985803243?text=Olá Josi! Tenho uma dúvida sobre agendamentos." target="_blank" class="btn-duvida">💬 Dúvidas no WhatsApp</a>
+        <button class="btn-entendi" onclick="fecharModalAviso()">Fazer meu Pedido ➔</button>
     </div>
 </div>
 
-<div id="map"></div>
+<div id="modalSabores" class="modal-aviso">
+    <div class="modal-conteudo modal-sabores-conteudo">
+        <h2 id="saboresTitulo">🍰 Escolha o(s) Sabor(es)</h2>
+        <p class="sabores-instrucao">Toque em um ou mais sabores para selecionar:</p>
+        <div id="saboresLista" class="sabores-lista"></div>
+        <div id="saboresPrecoResumo" class="sabores-preco-resumo"></div>
+        <button class="btn-entendi" id="btnConfirmarSabores" onclick="confirmarSabores()" disabled>✅ Adicionar ao Carrinho</button>
+        <button class="btn-promo-close" onclick="fecharModalSabores()">Cancelar</button>
+    </div>
+</div>
+
+<header>
+    <div class="logo-container">
+        <img src="https://i.postimg.cc/9Q4WLFgY/1783348278210.png" class="logo-img" alt="Logo Josi Doces">
+    </div>
+    <h1>🍬 Josi Doces Gourmet</h1>
+    <a href="https://www.instagram.com/josigourmet" target="_blank" class="insta-header">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" width="18" alt="Instagram Logo"> Siga @josigourmet
+    </a>
+</header>
 
 <div class="container">
-    <div id="avisoGps" class="gps-warning"></div>
-    <div id="avisoTeste" style="display:none; background: rgba(45,212,255,.12); border: 1px solid var(--accent); color: var(--accent); padding: 10px 12px; border-radius: 6px; font-size: .85em; text-align: center; font-weight: bold;"></div>
-
-    <div class="input-box">
-        <label>🏢 Empresa deste aparelho</label>
-        <div class="row">
-            <input type="text" id="empresaIdInput" placeholder="ID da empresa">
-            <button id="btnSalvarEmpresa">Salvar</button>
-        </div>
-        <div id="empresaSalvaInfo" style="font-size:0.75em;color:var(--text-dim);margin-top:6px;"></div>
+    <div class="card-evento">
+        <h3>✨ Encomendas para Eventos</h3>
+        <p>Temos condições especiais para grandes quantidades!</p>
+        <a href="https://wa.me/5551985803243?text=Olá Josi! Gostaria de um orçamento para evento." target="_blank" class="btn-evento">Solicitar Orçamento</a>
     </div>
 
-    <div class="input-box">
-        <label>Cadastrar Novo Veículo na Lista</label>
-        <div id="userLogadoInfo" class="user-logado-info">Sessão Administrador Ativa</div>
-        <div class="row" style="margin-top: 4px;">
-            <input type="text" id="veiculoInput" placeholder="Ex: NISSAN ISA, FIAT UNO">
-            <button id="btnAdicionar">Adicionar</button>
+    <div class="card">
+        <h3>Torta de bolacha no pote</h3>
+        <p class="price">R$ 10,00</p>
+        <div class="sabores-tags"><span class="sabores-tags-label">🍫 Sabores disponíveis</span><span class="sabores-tags-lista">Nata Ninho, Doce de leite com chocolate amargo e Bombom</span></div>
+        <div class="controles-quantidade">
+            <button class="btn-menor" onclick="removerPorNomeBasico('Torta de bolacha no pote')">-</button>
+            <span class="adicionar-texto">Adicionar</span> <span class="qtd-display" id="qtd-Torta de bolacha no pote">0</span>
+            <button class="btn-maior" onclick="addComSabor('Torta de bolacha no pote', 10, ['Nata e Ninho', 'Doce de leite com chocolate amargo', 'Bombom'])">+</button>
         </div>
     </div>
 
-    <div class="frota-container">
-        <div style="font-size: 0.75em; color: var(--text-dim); text-transform: uppercase; font-weight: bold;">Veículos Monitorados Neste Aparelho</div>
-        <div class="frota-lista" id="listaFrotaLocal"></div>
-    </div>
-
-    <div class="chat-card">
-        <div class="chat-card-titulo">💬 Chat com a empresa</div>
-        <div class="chat-remetente-row" id="chatRemetenteRow" style="display:none;">
-            <select id="chatVeiculoRemetente"></select>
-        </div>
-        <div class="chat-tabs">
-            <button id="chatTabMural" class="chat-tab-btn ativa">📢 Mural (todos)</button>
-            <button id="chatTabDireta" class="chat-tab-btn">💬 Direto com a empresa</button>
-        </div>
-        <div id="chatAvisoSemVeiculo" class="chat-aviso-vazio">Configure a empresa e adicione um veículo acima para conversar.</div>
-        <div id="chatLista" class="chat-lista"></div>
-        <div class="chat-input-row">
-            <input type="text" id="chatInput" placeholder="Mensagem para a empresa...">
-            <button id="chatBtnEnviar">Enviar</button>
+    <div class="card">
+        <h3>Torta de Bolacha Grande 1 kg</h3>
+        <p class="price"> R$ 55,00</p>
+        <div class="controles-quantidade">
+            <button class="btn-menor" onclick="removerPorNome('Torta de Bolacha Grande 1 kg')">-</button>
+            <span class="adicionar-texto">Adicionar</span> <span class="qtd-display" id="qtd-Torta de Bolacha Grande 1 kg">0</span>
+            <button class="btn-maior" onclick="add('Torta de Bolacha Grande 1 kg', 55)">+</button>
         </div>
     </div>
 
-    <div id="statusConexao" class="status-bar status-offline">MODO OFFLINE</div>
-    <div id="statusBackground" class="status-bar status-bg" style="display:none;"></div>
-    <div class="fila-info" id="filaInfo"></div>
-
-    <div class="btn-row">
-        <button id="btnForcar" class="btn-force">📡 Forçar Sincronização</button>
-        <button id="btnExportar" class="btn-export">⬇️ Exportar Rota (CSV)</button>
+    <div class="card">
+        <h3>Bolo grande</h3>
+        <p class="price">R$ 35,00</p>
+        <div class="sabores-tags"><span class="sabores-tags-label">🍰 Sabores disponíveis</span><span class="sabores-tags-lista">Chocolate, Beijinhos e Brigadeiro, Cenoura com brigadeiro, Chocolate amargo e Doce de leite</span></div>
+        <div class="controles-quantidade">
+            <button class="btn-menor" onclick="removerPorNomeBasico('Bolo grande')">-</button>
+            <span class="adicionar-texto">Adicionar</span> <span class="qtd-display" id="qtd-Bolo grande">0</span>
+            <button class="btn-maior" onclick="addComSabor('Bolo grande', 35, ['Chocolate', 'Beijinhos e Brigadeiro', 'Cenoura com brigadeiro', 'Chocolate amargo', 'Doce de leite'])">+</button>
+        </div>
     </div>
-    <button id="btnDiagnostico" class="btn-export" style="width:100%;">🔍 Testar Conexão com Serviço de Endereço</button>
-    <div id="diagnosticoResultado" class="fila-info" style="text-align:left; white-space:pre-wrap; word-break:break-word;"></div>
 
-    <div class="telemetry-card">
-        <div style="font-size: 0.75em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; font-weight: bold;">Última Telemetria Gerada</div>
-        <div class="telemetry-row"><span>Situação</span><span id="badStatus" class="badge badge-parado">PARADO</span></div>
-        <div class="telemetry-row"><span>Limite da Via</span><b id="txtLimiteVia">—</b></div>
-        <div class="telemetry-row"><span>Velocidade</span><b id="txtVelocidade">0 km/h</b></div>
-        <div class="telemetry-row"><span>Precisão GPS</span><b id="txtPrecisao">—</b></div>
-        <div class="telemetry-row"><span>Tempo de Parada</span><b id="txtTempoParado">00:00:00</b></div>
-        <div class="telemetry-row"><span>Coordenadas</span><b id="txtCoords">—</b></div>
-        <div class="telemetry-row"><span>Rua / Rodovia</span><b id="txtRua">—</b></div>
-        <div class="telemetry-row"><span>Bairro</span><b id="txtBairro">—</b></div>
-        <div class="telemetry-row"><span>Cidade</span><b id="txtCidade">—</b></div>
-        <div class="telemetry-row"><span>Estado (UF)</span><b id="txtEstado">—</b></div>
-        <div class="telemetry-row"><span>Data</span><b id="txtData">—</b></div>
-        <div class="telemetry-row"><span>Horário do último ponto</span><span id="txtHora" style="color:var(--accent)">—</span></div>
-        <div class="telemetry-row"><span>🌡️ Temperatura no local</span><b id="txtTemperatura">—</b></div>
+    <div class="card">
+        <h3>Bolo no pote</h3>
+        <p class="price">R$ 10,00</p>
+        <div class="sabores-tags"><span class="sabores-tags-label">🧁 Sabores disponíveis</span><span class="sabores-tags-lista">Beijinho, Coco, Doce de leite, Brigadeiro e Cenoura com brigadeiro</span></div>
+        <div class="controles-quantidade">
+            <button class="btn-menor" onclick="removerPorNomeBasico('Bolo no pote')">-</button>
+            <span class="adicionar-texto">Adicionar</span> <span class="qtd-display" id="qtd-Bolo no pote">0</span>
+            <button class="btn-maior" onclick="addComSabor('Bolo no pote', 10, ['Beijinho', 'Coco', 'Doce de leite', 'Brigadeiro', 'Cenoura com brigadeiro'])">+</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Torta grande (A partir de 1 kg)</h3>
+        <p class="price">A partir de R$ 60,00</p>
+        <div class="controles-quantidade">
+            <button class="btn-menor" onclick="removerPorNome('Torta grande (A partir de 1 kg)')">-</button>
+            <span class="adicionar-texto">Adicionar</span> <span class="qtd-display" id="qtd-Torta grande (A partir de 1 kg)">0</span>
+            <button class="btn-maior" onclick="add('Torta grande (A partir de 1 kg)', 60)">+</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Bolo no Pote com Pudim</h3>
+        <p class="price">R$ 14,00</p>
+        <div class="controles-quantidade">
+            <button class="btn-menor" onclick="removerPorNome('Bolo no Pote com Pudim')">-</button>
+            <span class="adicionar-texto">Adicionar</span> <span class="qtd-display" id="qtd-Bolo no Pote com Pudim">0</span>
+            <button class="btn-maior" onclick="add('Bolo no Pote com Pudim', 14)">+</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Bolo de Stikadinho no Pote</h3>
+        <p class="price">R$ 12,00</p>
+        <div class="controles-quantidade">
+            <button class="btn-menor" onclick="removerPorNome('Bolo de Stikadinho no Pote')">-</button>
+            <span class="adicionar-texto">Adicionar</span> <span class="qtd-display" id="qtd-Bolo de Stikadinho no Pote">0</span>
+            <button class="btn-maior" onclick="add('Bolo de Stikadinho no Pote', 12)">+</button>
+        </div>
+    </div>
+
+    <div id="secaoDadosPedido">
+        <label>👤 Seus Dados</label>
+        <input type="text" id="nome" placeholder="Seu Nome Completo" maxlength="80" oninput="salvarDados(); verificarPgto();">
+        <input type="tel" id="telefone" placeholder="(51) 99999-9999" maxlength="15" oninput="mascaraTelefone(this); salvarDados(); verificarPgto();">
+        <div id="erroTelefone" class="erro-tel">O número deve começar com o dígito 9.</div>
+        
+        <label>🚚 Entrega e Região</label>
+        <select id="bairro" onchange="alternarEndereco(); salvarDados(); verificarPgto();">
+            <option value="retirada">Vou retirar no local (R$ 0,00)</option>
+            <option value="5">Centro (R$ 5,00)</option>
+            <option value="7">Acesso Dona Leopoldina / Parque (R$ 7,00)</option>
+            <option value="7">Cidade Nova (R$ 7,00)</option>
+            <option value="0">Cruzeiro (R$ 0,00)</option>
+            <option value="8">Gressler (R$ 8,00)</option>
+            <option value="30">Interior / Outros (R$ 30,00)</option>
+            <option value="0">Coronel Brito (R$ 0,00)</option>
+            <option value="8">Santa Tecla (R$ 8,00)</option>
+        </select>
+
+        <div id="blocoEndereco">
+            <label>📍 Endereço de Entrega</label>
+            <textarea id="endereco" placeholder="Rua, número e referência" maxlength="300" oninput="salvarDados(); verificarPgto();"></textarea>
+        </div>
+
+        <label>⏰ Data e Horário de Recebimento</label>
+        <div style="display:flex; gap:8px;">
+            <input type="date" id="dataAgendamento" onchange="validarDataHora(); resetPagamentoFluxo(); salvarDados(); verificarPgto();">
+            <input type="time" id="horaAgendamento" onclick="avisoHorario()" onchange="validarDataHora(); resetPagamentoFluxo(); salvarDados(); verificarPgto();">
+        </div>
+
+        <label>💳 Forma de Pagamento</label>
+        <select id="pagamento" onchange="resetPagamentoFluxo(); salvarDados(); verificarPgto();">
+            <option value="Pix">Pix</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+        </select>
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" crossorigin="anonymous"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" crossorigin="anonymous"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" crossorigin="anonymous"></script>
-<script src="capacitor.js"></script>
+<div id="btnToggle" class="toggle-carrinho" onclick="toggleVisibilidadeCarrinho()">
+    🛒 <span id="cartBadge" class="cart-badge">0</span>
+</div>
+
+<div id="carrinhoBox">
+    <div style="text-align: right;">
+        <span onclick="toggleVisibilidadeCarrinho()" class="fechar-carrinho-btn">FECHAR [X]</span>
+    </div>
+    <h3>🛒 Seu Pedido</h3>
+    
+    <div id="alertaCupomDinamico"></div>
+    <div id="itensCarrinhoLista"></div>
+    <button class="btn-limpar" onclick="limparCarrinhoCompleto()">🗑️ Esvaziar Carrinho</button>
+    <div id="resumo"><b>Total: R$ 0,00</b></div>
+    <div style="margin-top:15px;">
+        <button id="btnPagarMP" onclick="abrirMercadoPago()" class="btn-mp" style="display:none;">💳 Pagar no Cartão (Link)</button>
+        <button id="btnGerarPix" onclick="gerarPixReal()" class="btn-pix" style="display:none;">💎 Gerar PIX</button>
+        <div id="pixDisplay">
+            <div id="qrcode" style="display: flex; justify-content: center; margin-bottom:10px;"></div>
+            <textarea id="brcode" readonly style="font-size: 10px; height: 50px; width: 100%; border-radius: 8px; border: 1px solid var(--creme-escuro); padding: 8px;"></textarea>
+            <button onclick="copyPix()" style="background: linear-gradient(135deg, #444, #222); padding: 9px; font-size: 12px; width:100%; margin-top:8px; border-radius: 10px;">Copiar Código Pix</button>
+        </div>
+        <button id="btnWhatsapp" onclick="finalizarZap()" class="btn-finalizar" disabled>⚠️ Preencha os dados no formulário</button>
+    </div>
+</div>
+
+<!-- Interface Visual do Chatbot Flutuante IA -->
+<div class="chatbot-flutuante">
+    <div class="chatbot-janela" id="chatJanela">
+        <div class="chatbot-header">
+            <h4>🍰 Josi Doces Assistente</h4>
+            <span onclick="toggleChat()"><i class="fas fa-times"></i></span>
+        </div>
+        <div class="chatbot-mensagens" id="chatMensagens">
+            <div class="msg ia">Olá! Sou a assistente virtual da Josi Doces. Gostaria de tirar alguma dúvida sobre nossos bolos, tortas, entregas ou prazos? 🤎✨</div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" id="chatInput" placeholder="Digite sua dúvida..." onkeypress="if(event.key === 'Enter') enviarMensagemIa()">
+            <button id="btnEnviarChat" onclick="enviarMensagemIa()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <div class="chatbot-botao" id="chatBotaoFlutuante" onclick="toggleChat()">
+        <i class="fas fa-comments"></i>
+        <span class="chat-notif-dot" id="chatNotifDot" style="display:none;"></span>
+    </div>
+</div>
 
 <script>
-window.onerror = function(mensagem, origem, linha, coluna, erro) {
-    try {
-        var caixa = document.getElementById('avisoGps');
-        if (caixa) {
-            caixa.style.display = "block";
-            var arquivo = origem ? origem.split('/').pop() : "?";
-            var pilha = (erro && erro.stack) ? (" | " + erro.stack.split("\n").slice(0, 3).join(" › ")) : "";
-            caixa.textContent = "⚠️ ERRO NO APP: " + mensagem + " [arquivo: " + arquivo + ", linha " + linha + ":" + coluna + "]" + pilha;
+const _RL = (function(){
+    const JANELA = 60000;
+    const LIMITE = 5;
+    const historico = [];
+    return {
+        ok: function(){
+            const agora = Date.now();
+            while(historico.length && agora - historico[0] > JANELA) historico.shift();
+            if(historico.length >= LIMITE) return false;
+            historico.push(agora);
+            return true;
         }
-    } catch (e) {}
-    return false;
-};
-window.addEventListener('unhandledrejection', function(evento) {
-    try {
-        var caixa = document.getElementById('avisoGps');
-        if (caixa) {
-            caixa.style.display = "block";
-            caixa.textContent = "⚠️ ERRO (promise): " + (evento.reason && evento.reason.message ? evento.reason.message : evento.reason);
-        }
-    } catch (e) {}
-});
+    };
+})();
 
-var listaVeiculos = JSON.parse(localStorage.getItem('frota_veiculos') || "[]");
-var filaPendentes = JSON.parse(localStorage.getItem('fila_rastreio') || "[]");
-var filaGeocodificarDepois = JSON.parse(localStorage.getItem('fila_geocodificar') || "[]");
-var historicoCoordenadasLocais = JSON.parse(localStorage.getItem('historico_coords') || "[]");
-var registroCompleto = JSON.parse(localStorage.getItem('registro_completo') || "[]");
-var ultimoIdPontoParadaGravado = localStorage.getItem('ultimo_id_ponto_parada_gravado') || null;
-
-var appSuspenso = false;
-
-var firebaseConfig = {
-    apiKey: "AIzaSyDwKIS8wL3D7OuaysVFV_xyAsFsKo2eXzY",
-    authDomain: "everton-gps.firebaseapp.com",
-    databaseURL: "https://everton-gps-default-rtdb.firebaseio.com",
-    projectId: "everton-gps",
-    storageBucket: "everton-gps.firebasestorage.app",
-    messagingSenderId: "688936933095",
-    appId: "1:688936933095:web:790b2407334e8b148e3442"
-};
-firebase.initializeApp(firebaseConfig);
-var db = firebase.database();
-var auth = firebase.auth();
-
-// ===================== ENVIO VIA REST (nativo, via CapacitorHttp) =====================
-// O SDK do Firebase (db.ref().update(...)) manda os dados pela rede da WebView, que o
-// Android pode suspender/represar quando o app fica muito tempo em segundo plano ou a tela
-// apaga — mesmo com a conexão do Firebase forçada a reconectar. Esta função manda os
-// mesmos dados via fetch, com o CapacitorHttp habilitado (ver capacitor.config.json), que
-// faz a requisição pela camada NATIVA do Android em vez da WebView, contornando essa
-// limitação. (Já tentamos isso antes e revertemos achando que tinha piorado — mas na época
-// ainda existia o bug do empresaId errado causando PERMISSION_DENIED, que mascarava o
-// teste. Agora que esse bug já foi corrigido, vale testar de novo.)
-function atualizarViaRestApi(updates) {
-    if (!auth.currentUser) return Promise.reject(new Error("sem usuário logado"));
-    return auth.currentUser.getIdToken().then(function(token) {
-        var url = firebaseConfig.databaseURL + "/.json?auth=" + encodeURIComponent(token);
-        return fetchComTimeout(url, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updates)
-        }, 18000).then(function(res) {
-            if (!res.ok) return res.text().then(function(t){ throw new Error("HTTP " + res.status + ": " + t); });
-            return res.json();
-        });
-    });
+function _sanitize(str) {
+    if (typeof str !== 'string') return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/`/g, '&#x60;')
+        .replace(/javascript:/gi, '')
+        .replace(/on\w+\s*=/gi, '')
+        .trim();
 }
 
-var firebaseOnlineConfirmado = false;
+function _validarNome(nome) {
+    const re = /^[a-zA-ZÀ-ÿ\s]{2,80}$/;
+    return re.test(nome.trim());
+}
 
-db.ref(".info/connected").on("value", function(snap) {
-    var estavaOffline = !firebaseOnlineConfirmado;
-    if (snap.val() === true) {
-        firebaseOnlineConfirmado = true;
-        if (estavaOffline) {
-            geocodificando = false; enviando = false;
-            processarFilaGeocodificacao();
-            enviarDadosFila();
-            sincronizarTempoRealImediato();
-        }
-    } else {
-        firebaseOnlineConfirmado = false;
+function _validarTelefone(tel) {
+    const digits = tel.replace(/\D/g, '');
+    return (digits.length === 11 && digits[2] === '9') ||
+           (digits.length === 9  && digits[0] === '9');
+}
+
+function _validarEndereco(end) {
+    return end.trim().length >= 5 && end.trim().length <= 300;
+}
+
+function _validarDataFutura(dataStr, horaStr) {
+    if (!dataStr || !horaStr) return false;
+    const dt = new Date(`${dataStr}T${horaStr}`);
+    return dt > new Date();
+}
+
+function _lsGet(chave) {
+    try {
+        const raw = localStorage.getItem(chave);
+        if (!raw) return null;
+        if (raw.length > 51200) { localStorage.removeItem(chave); return null; }
+        return JSON.parse(raw);
+    } catch(e) {
+        localStorage.removeItem(chave);
+        return null;
     }
-    atualizarInterfaceEstado();
-});
-
-var LIMITE_VELOCIDADE = 80;
-// Ajustado pra um meio-termo: 30m era exigente demais pro GPS de celular em uso normal
-// (em área urbana comum, ±20-40m de precisão é frequente mesmo em boas condições), o que
-// fazia o endereço quase nunca atualizar. 45m ainda é bem mais rígido que os 60m originais
-// (reduz o risco de mostrar a rua paralela errada), sem travar tanto as atualizações.
-var PRECISAO_MAXIMA_ACEITAVEL_M = 45;
-var EMPRESA_ID = localStorage.getItem('empresa_id') || "";
-document.getElementById('empresaIdInput').value = EMPRESA_ID;
-atualizarInfoEmpresaSalva();
-
-function atualizarInfoEmpresaSalva() {
-    document.getElementById('empresaSalvaInfo').textContent = EMPRESA_ID
-        ? "Enviando dados para: " + EMPRESA_ID
-        : "⚠️ Nenhuma empresa configurada — preencha o ID acima e toque em Salvar.";
 }
 
-var refStatusEmpresa = null;
-var refTrialEmpresa = null;
-var refAssinaturaEmpresa = null;
-var estadoEmpresaAtual = { status: null, trialExpiraEm: null, assinaturaExpiraEm: null };
-
-// Converte um total de milissegundos restantes em um texto "X dias, Y horas e Z minutos"
-// (omitindo unidades zeradas à esquerda, mas sempre mostrando os minutos, mesmo que sejam
-// 0) — assim o motorista/empresa vê a contagem regressiva com a mesma precisão que o admin
-// tem no banco, em vez de só "faltam X dias" (que escondia até quase 24h de imprecisão).
-function formatarTempoRestante(msRestante) {
-    var totalMinutos = Math.max(0, Math.floor(msRestante / 60000));
-    var dias = Math.floor(totalMinutos / 1440);
-    var horas = Math.floor((totalMinutos % 1440) / 60);
-    var minutos = totalMinutos % 60;
-    var partes = [];
-    if (dias > 0) partes.push(dias + (dias === 1 ? " dia" : " dias"));
-    if (dias > 0 || horas > 0) partes.push(horas + (horas === 1 ? " hora" : " horas"));
-    partes.push(minutos + (minutos === 1 ? " minuto" : " minutos"));
-    return partes.join(", ");
-}
-
-// Depois que o cliente paga, o admin muda o status da empresa no Firebase de 'trial' pra
-// 'ativo' e grava 'assinaturaExpiraEm' com a data 30 dias à frente (mesmo formato ISO já
-// usado em 'trialExpiraEm'). A partir daí o app conta os dias da assinatura em vez do
-// período de teste, e avisa quando ela vence — do mesmo jeito que avisa quando uma conta
-// nova é criada.
-function avaliarEstadoEmpresa() {
-    var testeVencido = estadoEmpresaAtual.status === 'trial' && estadoEmpresaAtual.trialExpiraEm && new Date(estadoEmpresaAtual.trialExpiraEm).getTime() < Date.now();
-    var assinaturaVencida = estadoEmpresaAtual.status === 'ativo' && estadoEmpresaAtual.assinaturaExpiraEm && new Date(estadoEmpresaAtual.assinaturaExpiraEm).getTime() < Date.now();
-    var suspenso = estadoEmpresaAtual.status === 'suspenso' || testeVencido || assinaturaVencida;
-    appSuspenso = suspenso;
-    document.getElementById('avisoSuspenso').style.display = suspenso ? 'flex' : 'none';
-
-    var faixaTeste = document.getElementById('avisoTeste');
-    if (!suspenso && estadoEmpresaAtual.status === 'trial' && estadoEmpresaAtual.trialExpiraEm) {
-        var restanteTeste = new Date(estadoEmpresaAtual.trialExpiraEm).getTime() - Date.now();
-        faixaTeste.style.display = 'block';
-        faixaTeste.style.background = "rgba(45,212,255,.12)"; faixaTeste.style.borderColor = "var(--accent)"; faixaTeste.style.color = "var(--accent)";
-        faixaTeste.textContent = "🎁 Período de teste grátis — " + formatarTempoRestante(restanteTeste) + " restantes";
-    } else if (!suspenso && estadoEmpresaAtual.status === 'ativo' && estadoEmpresaAtual.assinaturaExpiraEm) {
-        var restanteAssinatura = new Date(estadoEmpresaAtual.assinaturaExpiraEm).getTime() - Date.now();
-        faixaTeste.style.display = 'block';
-        faixaTeste.style.background = "rgba(0,224,168,.12)"; faixaTeste.style.borderColor = "var(--brand)"; faixaTeste.style.color = "var(--brand)";
-        faixaTeste.textContent = "✅ Você tem " + formatarTempoRestante(restanteAssinatura) + " de assinatura";
-    } else {
-        faixaTeste.style.display = 'none';
-    }
-
-    if (assinaturaVencida) { notificarAssinaturaVencidaSeNecessario(); }
-
-    atualizarInterfaceEstado();
-}
-
-// Manda o aviso de assinatura vencida só uma vez por vencimento (evita reenviar toda vez
-// que o app reabre ou o timer de 60s roda de novo). Se o admin renovar a assinatura com
-// uma data nova, essa checagem libera um novo aviso automaticamente pro próximo vencimento.
-function notificarAssinaturaVencidaSeNecessario() {
-    var chaveJaAvisado = 'assinatura_vencida_avisada_' + EMPRESA_ID + '_' + estadoEmpresaAtual.assinaturaExpiraEm;
-    if (localStorage.getItem(chaveJaAvisado)) return;
-    localStorage.setItem(chaveJaAvisado, 'true');
-    db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID) + '/nome').once('value').then(function(snap) {
-        var nomeEmpresa = snap.val() || EMPRESA_ID;
-        var texto = "🔴 Assinatura vencida - Everton GPS\n\n🏢 " + nomeEmpresa + "\n🆔 " + EMPRESA_ID +
-            "\n📅 Venceu em: " + new Date(estadoEmpresaAtual.assinaturaExpiraEm).toLocaleDateString('pt-BR');
-        var url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage?chat_id=" + TELEGRAM_CHAT_ID + "&text=" + encodeURIComponent(texto);
-        fetch(url).catch(function(e) { console.warn("Falha ao notificar Telegram (assinatura vencida):", e); });
-    }).catch(function(e) { console.warn(e); });
-}
-
-setInterval(function() {
-    if (auth.currentUser) { avaliarEstadoEmpresa(); }
-}, 60000);
-
-function observarStatusEmpresa() {
-    if (refStatusEmpresa) { refStatusEmpresa.off(); }
-    if (refTrialEmpresa) { refTrialEmpresa.off(); }
-    if (refAssinaturaEmpresa) { refAssinaturaEmpresa.off(); }
-    if (!auth.currentUser) { return; }
-    refStatusEmpresa = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID) + '/status');
-    refTrialEmpresa = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID) + '/trialExpiraEm');
-    refAssinaturaEmpresa = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID) + '/assinaturaExpiraEm');
-    refStatusEmpresa.on('value', function(snap) {
-        estadoEmpresaAtual.status = snap.val();
-        avaliarEstadoEmpresa();
-    }, function(erro) {
-        console.warn(erro);
-    });
-    refTrialEmpresa.on('value', function(snap) {
-        estadoEmpresaAtual.trialExpiraEm = snap.val();
-        avaliarEstadoEmpresa();
-    }, function(erro) {
-        console.warn(erro);
-    });
-    refAssinaturaEmpresa.on('value', function(snap) {
-        estadoEmpresaAtual.assinaturaExpiraEm = snap.val();
-        avaliarEstadoEmpresa();
-    }, function(erro) {
-        console.warn(erro);
-    });
-}
-
-document.getElementById('btnSalvarEmpresa').addEventListener('click', function() {
-    var novo = document.getElementById('empresaIdInput').value.trim();
-    if (!novo) return alert("Digite um ID válido.");
-    localStorage.setItem('empresa_id', novo);
-    EMPRESA_ID = novo;
-    // CORREÇÃO: pontos que já estavam na fila de envio (filaPendentes) guardam o ID da
-    // empresa de quando foram criados. Se o campo acima estava errado e a gente corrige
-    // depois, esses pontos antigos ficavam presos pra sempre tentando enviar pro ID
-    // errado — mesmo com o campo já corrigido na tela. Agora, ao salvar um novo ID,
-    // qualquer ponto ainda pendente é realinhado pro ID atual.
-    var algumRealinhado = false;
-    filaPendentes.forEach(function(item) {
-        if (item.empresaId !== novo) { item.empresaId = novo; algumRealinhado = true; }
-    });
-    if (algumRealinhado) salvarTudo();
-    atualizarInfoEmpresaSalva();
-    observarStatusEmpresa();
-    reiniciarChatApp();
-    alert("Empresa salva com sucesso!");
-});
-
-var URL_PROXY_GEOCODIFICACAO = "https://nominatim.openstreetmap.org/reverse";
-var INTERVALO_GEOCODIFICACAO_MS = 1100;
-var MAX_TENTATIVAS_GEOCODIFICACAO = 3;
-var TIMEOUT_FETCH_MS = 8000;
-
-function montarUrlGeocodificacao(lat, lon) {
-    // extratags=1 é o que traz o maxspeed (limite oficial da via) quando o mapa tem essa
-    // informação marcada.
-    return `${URL_PROXY_GEOCODIFICACAO}?format=jsonv2&addressdetails=1&extratags=1&lat=${lat}&lon=${lon}&zoom=18`;
-}
-
-// Lê o limite de velocidade oficial da via (tag "maxspeed" do OpenStreetMap) quando
-// disponível. Vem em formatos variados ("40", "40 km/h", "RS:urban" etc.) — aqui só
-// extraímos o primeiro número razoável. Se não vier nenhum limite marcado no mapa,
-// retorna null e quem chamar decide o padrão (30 km/h pras ruas sem essa marcação).
-function extrairLimiteVelocidadeTag(extratags) {
-    if (!extratags || !extratags.maxspeed) return null;
-    var m = String(extratags.maxspeed).match(/(\d+)/);
-    if (!m) return null;
-    var valor = parseInt(m[1], 10);
-    if (isNaN(valor) || valor <= 0 || valor > 150) return null;
-    return valor;
-}
-
-function fetchComTimeout(url, opcoes, timeoutMs) {
-    var controller = new AbortController();
-    var id = setTimeout(() => controller.abort(), timeoutMs);
-    return fetch(url, Object.assign({}, opcoes, { signal: controller.signal })).finally(() => clearTimeout(id));
-}
-
-function comLimiteDeTempo(promessa, timeoutMs) {
-    return Promise.race([
-        promessa,
-        new Promise(function(_, reject) {
-            setTimeout(function() { reject(new Error("tempo esgotado")); }, timeoutMs);
-        })
-    ]);
-}
-
-// Quando um envio estoura o tempo, na maioria das vezes não é o Android bloqueando rede —
-// é a conexão (WebSocket) do próprio Firebase ficando "travada": parece conectada mas para
-// de responder, e o SDK só percebe isso sozinho depois de um tempo que pode passar bem dos
-// 10s que o app espera. Em vez de só esperar o Firebase se recuperar por conta própria,
-// aqui a gente derruba a conexão e força reconectar na hora — assim o próximo envio já
-// tenta numa conexão nova, sem depender de o SDK notar sozinho que a antiga travou.
-var ultimaReconexaoForcadaTs = 0;
-function forcarReconexaoFirebaseSeTravado() {
-    var agora = Date.now();
-    if (agora - ultimaReconexaoForcadaTs < 15000) return; // não força de novo se acabou de forçar
-    ultimaReconexaoForcadaTs = agora;
+function _lsSet(chave, valor) {
     try {
-        db.goOffline();
-        setTimeout(function() { db.goOnline(); }, 400);
-    } catch (e) { console.warn("Falha ao forçar reconexão do Firebase:", e); }
+        const str = JSON.stringify(valor);
+        if (str.length > 51200) return;
+        localStorage.setItem(chave, str);
+    } catch(e) { }
 }
 
-function gerarIdPonto(ts) {
-    return ts + "_" + Math.random().toString(36).slice(2, 8);
-}
+const PRECOS_OFICIAIS = {
+    'Torta grande (A partir de 1 kg)': 60,
+    'Torta de Bolacha Grande 1 kg': 55,
+    'Bolo no Pote com Pudim': 14,
+    'Bolo de Stikadinho no Pote': 12,
+    'FRETE GRÁTIS (Ativado)': 0,
+};
 
-function sanitizarChavePath(valor) {
-    return String(valor).replace(/[.#$\[\]\/]/g, "_");
-}
-
-var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-var bgWatcherId = null;
-
-function atualizarBarraBackground(msg, mostrar) {
-    var el = document.getElementById('statusBackground');
-    if (!mostrar) { el.style.display = "none"; return; }
-    el.style.display = "block"; el.textContent = msg;
-}
-
-function checarContextoSeguro() {
-    if (isNative) return true;
-    var seguro = window.isSecureContext || location.hostname === "localhost" || location.hostname === "127.0.0.1";
-    if (!seguro) {
-        mostrarAvisoGps("⚠️ Esta página precisa estar em HTTPS para acessar o GPS.");
+function _validarCarrinho(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(item => {
+        if (!item || typeof item.nome !== 'string') return false;
+        if (typeof item.qtd !== 'number' || item.qtd < 1 || item.qtd > 999) return false;
+        
+        const baseConhecida = Object.keys(PRECOS_OFICIAIS).some(base => item.nome.startsWith(base)) || 
+                             item.nome.includes('Torta de bolacha no pote') || 
+                             item.nome.includes('Bolo grande') || 
+                             item.nome.includes('Bolo no pote');
+                             
+        if (baseConhecida && typeof item.preco === 'number' && item.preco >= 0 && item.preco < 10000) {
+            return true;
+        }
         return false;
-    }
-    return true;
-}
-function mostrarAvisoGps(msg) {
-    var box = document.getElementById('avisoGps');
-    box.textContent = msg; box.style.display = "block";
-}
-function esconderAvisoGps() { document.getElementById('avisoGps').style.display = "none"; }
-
-// Caixa separada só pra erros de sincronização com o Firebase. Diferente do aviso de GPS
-// (que some sozinho assim que chega uma posição nova, e por isso passa rápido demais pra
-// ler), esta fica na tela até você tocar nela pra fechar — assim dá tempo de ler e me
-// mandar o texto certinho.
-function mostrarErroSyncPersistente(msg) {
-    // O alerta vermelho de "Firebase recusou..." foi tirado da tela do motorista — o erro
-    // continua registrado no console pra dar suporte técnico quando precisar investigar.
-    console.warn("Erro de sincronização (Firebase):", msg);
-}
-// ===================== MAPA (fixo — não gira mais) =====================
-var map = L.map('map', { zoomControl: false }).setView([-29.6133, -52.1919], 13);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-// ===================== ÍCONE DO VEÍCULO (giratório — aponta pra direção que ele anda) =====================
-// Em vez de girar o mapa inteiro (que deixava rua/bairro de cabeça pra baixo e confundia
-// motoristas), agora só a seta do veículo gira. O mapa sempre fica com o norte pra cima; a
-// seta é que aponta pra direção real do deslocamento — igual à maioria dos apps de
-// rastreamento comerciais.
-function criarIconeVeiculo(anguloGraus, cor) {
-    var corFinal = cor || '#00e0a8';
-    return L.divIcon({
-        className: 'icone-veiculo-rastreador',
-        html: '<div style="width:30px;height:30px;transform:rotate(' + anguloGraus + 'deg);transform-origin:50% 50%;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5));">' +
-              '<svg viewBox="0 0 24 24" width="30" height="30">' +
-              '<path d="M12 1.5 L21 21 L12 16.5 L3 21 Z" fill="' + corFinal + '" stroke="#04120e" stroke-width="1.2" stroke-linejoin="round"/>' +
-              '</svg></div>',
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
     });
 }
 
-var anguloAtualVeiculo = 0;
-// Se a seta parecer apontar pro lado errado em algum aparelho, troque para true.
-var INVERTER_ANGULO_VEICULO = false;
-var ultimaPosicaoParaRumo = null;
-
-function calcularRumoGraus(lat1, lon1, lat2, lon2) {
-    var toRad = function(g) { return g * Math.PI / 180; };
-    var toDeg = function(r) { return r * 180 / Math.PI; };
-    var dLon = toRad(lon2 - lon1);
-    var y = Math.sin(dLon) * Math.cos(toRad(lat2));
-    var x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
-    var rumo = toDeg(Math.atan2(y, x));
-    return (rumo + 360) % 360;
-}
-
-// Calcula (e memoriza) o ângulo da seta a partir do deslocamento entre a última posição
-// conhecida e a nova — só quando o veículo está de fato se movendo. Parado (ex: num
-// semáforo), a seta mantém a última direção conhecida em vez de "tremer" a cada leitura
-// de GPS ruidosa.
-function calcularAnguloVeiculo(lat, lon, velocidadeAtual) {
-    var VELOCIDADE_MINIMA_PARA_GIRAR_KMH = 5;
-    if (ultimaPosicaoParaRumo && (velocidadeAtual == null || velocidadeAtual >= VELOCIDADE_MINIMA_PARA_GIRAR_KMH)) {
-        var rumo = calcularRumoGraus(ultimaPosicaoParaRumo[0], ultimaPosicaoParaRumo[1], lat, lon);
-        if (INVERTER_ANGULO_VEICULO) rumo = (360 - rumo) % 360;
-        anguloAtualVeiculo = rumo;
+function _recalcularTotalSeguro(carrinhoLocal, frete) {
+    let subtotal = 0;
+    for (const item of carrinhoLocal) {
+        subtotal += item.preco * item.qtd;
     }
-    ultimaPosicaoParaRumo = [lat, lon];
-    return anguloAtualVeiculo;
+    const desconto = subtotal >= 50 ? subtotal * 0.05 : 0;
+    return { subtotal, desconto, total: subtotal - desconto + frete };
 }
 
-var marcador = L.marker([-29.6133, -52.1919], { icon: criarIconeVeiculo(0) }).addTo(map);
-var circuloPrecisao = L.circle([-29.6133, -52.1919], { radius: 0, color: '#2dd4ff', fillOpacity: 0.1, weight: 1 }).addTo(map);
-var polilinhaRota = L.polyline([], {color: '#00ffa6', weight: 5}).addTo(map);
+const ENDERECO_RETIRADA = "Rua Marechal Floriano, 3197,  Coronel Brito ";
 
-var coordenadaParadaFixa = (function() {
-    var raw = localStorage.getItem('coordenada_parada_fixa');
-    try { return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
-})();
-
-var viaState = (function() {
-    var raw = localStorage.getItem('via_state');
-    var padrao = { tipo: null, nome: null, kmBase: 0, odometroM: 0, kmSincronizado: null, limiteVelocidade: 30 };
-    try {
-        return raw ? Object.assign(padrao, JSON.parse(raw)) : padrao;
-    } catch (e) {
-        return padrao;
-    }
-})();
-function salvarViaState() { localStorage.setItem('via_state', JSON.stringify(viaState)); }
-var atualizandoKmRodovia = false;
-var ultimoRegistroViaTs = null;
-var viaAnterior = null;
-
-var REGEX_RODOVIA = /\b(br|rs|ers|rsc|sc|prc|pr|sp|mg|contorno)[\s-]?\d{2,4}\b/i;
-var TIPOS_OSM_RODOVIA = ["motorway", "trunk", "primary", "motorway_link", "trunk_link", "primary_link"];
-
-function classificarVia(rua, dadosResposta) {
-    var classe = (dadosResposta && (dadosResposta.class || dadosResposta.category)) || null;
-    var tipo = (dadosResposta && dadosResposta.type) || null;
-    if (classe === "highway" && TIPOS_OSM_RODOVIA.indexOf(tipo) !== -1) return "rodovia";
-    if (rua && REGEX_RODOVIA.test(rua)) return "rodovia";
-    return "rua";
+function avisoHorario() {
+    alert("⏰ Atenção!\n\nPor favor, escolha um horário com pelo menos 1 hora de antecedência.\n\nEsse é o tempo médio para preparo, entrega ou retirada do pedido. 🤎🍰");
 }
 
-var SERVIDORES_OVERPASS = [
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter"
-];
-var ultimaBuscaKmOficialTs = 0;
-var RAIO_BUSCA_MARCO_M = 1500;
-
-function extrairNumeroKm(tags) {
-    var candidatos = [tags.distance, tags.ref, tags.name, tags.note, tags["addr:housenumber"]];
-    for (var i = 0; i < candidatos.length; i++) {
-        var v = candidatos[i];
-        if (!v) continue;
-        var m = String(v).match(/(\d+(?:[.,]\d+)?)/);
-        if (m) return parseFloat(m[1].replace(',', '.'));
-    }
-    return null;
-}
-
-function consultarOverpass(servidorIndex, query) {
-    if (servidorIndex >= SERVIDORES_OVERPASS.length) return Promise.resolve(null);
-    var url = SERVIDORES_OVERPASS[servidorIndex] + "?data=" + encodeURIComponent(query);
-    return fetchComTimeout(url, {}, 9000)
-        .then(res => res.json())
-        .catch(() => consultarOverpass(servidorIndex + 1, query));
-}
-
-function buscarKmOficial(lat, lon) {
-    return new Promise(function(resolve) {
-        var agora = Date.now();
-        if (agora - ultimaBuscaKmOficialTs < 4000) { resolve(null); return; }
-        ultimaBuscaKmOficialTs = agora;
-        var query = `[out:json][timeout:8];node(around:${RAIO_BUSCA_MARCO_M},${lat},${lon})["highway"="milestone"];out body;`;
-        consultarOverpass(0, query).then(function(data) {
-            if (!data || !data.elements || data.elements.length === 0) { resolve(null); return; }
-            var melhorKm = null; var menorDist = Infinity;
-            data.elements.forEach(el => {
-                var km = extrairNumeroKm(el.tags || {});
-                if (km === null) return;
-                var d = calcularDistanciaMetros(lat, lon, el.lat, el.lon);
-                if (d < menorDist) { menorDist = d; melhorKm = km; }
-            });
-            resolve(melhorKm);
-        }).catch(function() { resolve(null); });
-    });
-}
-
-if (historicoCoordenadasLocais.length > 0) {
-    polilinhaRota.setLatLngs(historicoCoordenadasLocais);
-    var ultimo = historicoCoordenadasLocais[historicoCoordenadasLocais.length - 1];
-    map.setView(ultimo, 16); marcador.setLatLng(ultimo);
-}
-
-function salvarTudo() {
-    localStorage.setItem('frota_veiculos', JSON.stringify(listaVeiculos));
-    localStorage.setItem('fila_rastreio', JSON.stringify(filaPendentes));
-    localStorage.setItem('fila_geocodificar', JSON.stringify(filaGeocodificarDepois));
-    localStorage.setItem('historico_coords', JSON.stringify(historicoCoordenadasLocais));
-    if (registroCompleto.length > 5000) registroCompleto = registroCompleto.slice(-5000);
-    localStorage.setItem('registro_completo', JSON.stringify(registroCompleto));
-    if(ultimoIdPontoParadaGravado) localStorage.setItem('ultimo_id_ponto_parada_gravado', ultimoIdPontoParadaGravado);
-    if(coordenadaParadaFixa) localStorage.setItem('coordenada_parada_fixa', JSON.stringify(coordenadaParadaFixa));
-    salvarViaState();
-}
-
-var acaoPendente = null;
-function abrirModalLogin(callbackAcao) {
-    if (auth.currentUser) { callbackAcao(); return; }
-    acaoPendente = callbackAcao;
-    mostrarPainelLogin();
-    document.getElementById('authModal').style.display = "flex";
-}
-
-function mostrarPainelLogin() {
-    document.getElementById('painelLogin').style.display = 'block';
-    document.getElementById('painelCadastro').style.display = 'none';
-    document.getElementById('authTitulo').textContent = 'Login da Empresa';
-    document.getElementById('authSubtitulo').textContent = 'Faça login com o e-mail/senha da sua empresa para liberar o aplicativo. É só uma vez — o aparelho fica logado.';
-    document.getElementById('authErro').style.display = 'none';
-}
-function mostrarPainelCadastro() {
-    document.getElementById('painelLogin').style.display = 'none';
-    document.getElementById('painelCadastro').style.display = 'block';
-    document.getElementById('authTitulo').textContent = 'Criar conta';
-    document.getElementById('authSubtitulo').textContent = 'Cadastre sua empresa e comece a rastrear sua frota agora mesmo.';
-    document.getElementById('authErro').style.display = 'none';
-}
-document.getElementById('linkIrParaCadastro').addEventListener('click', function(e) { e.preventDefault(); mostrarPainelCadastro(); });
-document.getElementById('linkIrParaLogin').addEventListener('click', function(e) { e.preventDefault(); mostrarPainelLogin(); });
-
-function mostrarErroAuth(msg) {
-    var el = document.getElementById('authErro');
-    el.textContent = "⚠️ " + msg;
-    el.style.display = 'block';
-}
-
-document.getElementById('btnConfirmarLogin').addEventListener('click', function() {
-    var email = document.getElementById('authEmail').value.trim();
-    var senha = document.getElementById('authSenha').value;
-    if (!email || !senha) return mostrarErroAuth("Preencha tudo!");
-    document.getElementById('btnConfirmarLogin').disabled = true;
-    auth.signInWithEmailAndPassword(email, senha).then(() => {
-        document.getElementById('authModal').style.display = "none";
-        if (acaoPendente) { acaoPendente(); acaoPendente = null; }
-    }).catch(err => mostrarErroAuth(err.message)).finally(() => { document.getElementById('btnConfirmarLogin').disabled = false; });
-});
-
-var DIAS_TESTE_GRATIS = 7;
-
-var TELEGRAM_BOT_TOKEN = "8300711164:AAEB-bggEtUiI3gP1GOEsWSacGPzV1cLqhc";
-var TELEGRAM_CHAT_ID = "7337583011";
-
-function notificarNovoCadastroTelegram(nome, email, telefone, idEmpresa) {
-    if (!TELEGRAM_CHAT_ID) return;
-    var texto = "🆕 Novo cadastro (app) - Everton GPS\n\n🏢 " + nome + "\n📧 " + email +
-        (telefone ? "\n📱 " + telefone : "") + "\n🆔 " + idEmpresa + "\n⏳ Teste grátis: " + DIAS_TESTE_GRATIS + " dias";
-    var url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage?chat_id=" + TELEGRAM_CHAT_ID + "&text=" + encodeURIComponent(texto);
-    fetch(url).catch(function(e) { console.warn("Falha ao notificar Telegram:", e); });
-}
-
-document.getElementById('btnConfirmarCadastro').addEventListener('click', function() {
-    var nome = document.getElementById('cadNomeEmpresa').value.trim();
-    var email = document.getElementById('cadEmail').value.trim();
-    var senha = document.getElementById('cadSenha').value;
-    var telefone = document.getElementById('cadTelefone').value.trim();
-
-    if (!nome || !email || !senha) return mostrarErroAuth("Preencha nome da empresa, e-mail e senha.");
-    if (senha.length < 6) return mostrarErroAuth("A senha precisa ter pelo menos 6 caracteres.");
-
-    var idEmpresa = sanitizarChavePath(nome.toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''));
-    if (!idEmpresa) return mostrarErroAuth("Digite um nome de empresa válido.");
-
-    document.getElementById('btnConfirmarCadastro').disabled = true;
-    document.getElementById('btnConfirmarCadastro').textContent = "Criando conta...";
-
-    var uidCriado = null;
-    auth.createUserWithEmailAndPassword(email, senha).then(function(cred) {
-        uidCriado = cred.user.uid;
-        return tentarGravarEmpresa(idEmpresa);
-    }).catch(function(erroGravacao) {
-        if (uidCriado && erroGravacao && erroGravacao.code === 'PERMISSION_DENIED') {
-            idEmpresa = idEmpresa + '_' + Math.random().toString(36).slice(2, 6);
-            return tentarGravarEmpresa(idEmpresa);
-        }
-        throw erroGravacao;
-    }).then(function(idFinal) {
-        notificarNovoCadastroTelegram(nome, email, telefone, idFinal);
-        localStorage.setItem('empresa_id', idFinal);
-        EMPRESA_ID = idFinal;
-        document.getElementById('empresaIdInput').value = EMPRESA_ID;
-        atualizarInfoEmpresaSalva();
-        observarStatusEmpresa();
-        document.getElementById('authModal').style.display = "none";
-        if (acaoPendente) { acaoPendente(); acaoPendente = null; }
-    }).catch(function(e) {
-        var msg = e.message || String(e);
-        if (e.code === 'auth/email-already-in-use') msg = "Este e-mail já está cadastrado. Use a aba de login.";
-        if (e.code === 'auth/weak-password') msg = "Senha muito fraca — use pelo menos 6 caracteres.";
-        if (e.code === 'PERMISSION_DENIED') msg = "Não foi possível salvar os dados da empresa. Tente novamente em instantes.";
-        mostrarErroAuth(msg);
-    }).finally(function() {
-        document.getElementById('btnConfirmarCadastro').disabled = false;
-        document.getElementById('btnConfirmarCadastro').textContent = "Criar conta e começar teste grátis";
-    });
-
-    function tentarGravarEmpresa(idParaTentar) {
-        var agora = new Date();
-        var trialExpira = new Date(agora.getTime() + DIAS_TESTE_GRATIS * 86400000);
-        var dadosEmpresa = {};
-        dadosEmpresa['empresas/' + idParaTentar + '/nome'] = nome;
-        dadosEmpresa['empresas/' + idParaTentar + '/status'] = 'trial';
-        dadosEmpresa['empresas/' + idParaTentar + '/criadoEm'] = agora.toISOString();
-        dadosEmpresa['empresas/' + idParaTentar + '/trialExpiraEm'] = trialExpira.toISOString();
-        if (telefone) dadosEmpresa['empresas/' + idParaTentar + '/telefone'] = telefone;
-
-        return db.ref().update(dadosEmpresa).then(function() {
-            return db.ref('mapaUsuarioEmpresa/' + uidCriado).set(idParaTentar);
-        }).then(function() { return idParaTentar; });
-    }
-});
-
-auth.onAuthStateChanged(user => {
-    document.getElementById('userLogadoInfo').style.display = user ? "block" : "none";
-    if (!user) {
-        appSuspenso = false;
-        document.getElementById('avisoSuspenso').style.display = 'none';
-        abrirModalLogin(function() {});
-    } else {
-        observarStatusEmpresa();
-    }
-});
-
-function renderizarFrotaLocal() {
-    var container = document.getElementById('listaFrotaLocal'); container.innerHTML = "";
-    if (listaVeiculos.length === 0) { container.innerHTML = "<span>Nenhum veículo adicionado.</span>"; return; }
-    listaVeiculos.forEach((nome, index) => {
-        var tag = document.createElement('div'); tag.className = "tag-veiculo";
-        tag.innerHTML = `🚗 <b>${nome}</b> <button class="btn-remover" onclick="removerVeiculoExigindoSenha(${index})">×</button>`;
-        container.appendChild(tag);
-    });
-    atualizarSelectChatVeiculo();
-}
-document.getElementById('btnAdicionar').addEventListener('click', function() {
-    var nome = document.getElementById('veiculoInput').value.trim().toUpperCase();
-    if (!nome) return alert('Digite um nome!');
-    if (listaVeiculos.includes(nome)) return alert('Já cadastrado!');
-    abrirModalLogin(function() {
-        listaVeiculos.push(nome); salvarTudo();
-        document.getElementById('veiculoInput').value = ""; renderizarFrotaLocal();
-        atualizarInterfaceEstado();
-    });
-});
-window.removerVeiculoExigindoSenha = function(index) {
-    abrirModalLogin(function() {
-        if (confirm(`Remover veículo?`)) { listaVeiculos.splice(index, 1); salvarTudo(); renderizarFrotaLocal(); atualizarInterfaceEstado(); }
-    });
+const CONFIG_PROMO = {
+    ativa: false,
+    imagemUrl: "https://i.postimg.cc/T3BNcdCq/1777779837866.png",
+    nomeProduto: "COMBO: Bolo Pudim + Torta Bolacha Doce de Leite",
+    preco: 22.90,
+    textoBotao: "🚀 APROVEITAR COMBO: BOLO COM PUDIM + TORTA DE BOLACHA COM DOCE DE LEITE + FRETE GRÁTIS POR (R$ 22,90)",
+    textoBotaoFlutuante: "🔥 PROMOÇÃO"
 };
 
-// ===================== CHAT (o veículo fala com a empresa/admin) =====================
-// Espelha o mesmo caminho do Firebase que o painel admin já usa
-// (empresas/{empresaId}/mensagens), só que aqui quem manda é o próprio veículo — por isso
-// precisa saber COMO QUAL veículo a mensagem está sendo enviada quando o aparelho tem mais
-// de um cadastrado. Com um só veículo, isso já vem selecionado sozinho, sem exigir nada
-// extra do motorista.
-var refMensagensChatApp = null;
-var chatAbaApp = 'mural';
-var veiculoChatSelecionado = localStorage.getItem('chat_veiculo_selecionado') || "";
+function mostrarSplashBoasVindas() {
+    const splash = document.getElementById('splashBoasVindas');
+    if (!splash) return;
+    const agora = new Date();
+    const hora = agora.getHours();
+    let saudacao = (hora >= 4 && hora < 12) ? "☀️ Bom dia" : (hora >= 12 && hora < 18) ? "🍰 Boa tarde" : "🌙 Boa noite";
+    const elSaudacao = document.getElementById('splashSaudacao');
+    if (elSaudacao) elSaudacao.textContent = saudacao;
+    setTimeout(function() { if (splash) splash.remove(); }, 4000);
+}
 
-function atualizarSelectChatVeiculo() {
-    var linha = document.getElementById('chatRemetenteRow');
-    var select = document.getElementById('chatVeiculoRemetente');
-    if (!linha || !select) return;
+function carregarBannerDinamico() {
+    const container = document.getElementById("conteudoBanner");
+    const btnFlutuante = document.getElementById("btnReabrirPromo");
+    if (!CONFIG_PROMO.ativa) { btnFlutuante.style.display = "none"; return; }
+    btnFlutuante.innerText = CONFIG_PROMO.textoBotaoFlutuante;
+    const img = document.createElement('img');
+    img.alt = 'Promoção';
+    if (/^https:\/\//.test(CONFIG_PROMO.imagemUrl)) img.src = CONFIG_PROMO.imagemUrl;
+    const btnAdd = document.createElement('button');
+    btnAdd.className = 'btn-promo-add';
+    btnAdd.textContent = CONFIG_PROMO.textoBotao;
+    btnAdd.onclick = function(){ addPromoCombo(); fecharBannerPromo(); };
+    const btnClose = document.createElement('button');
+    btnClose.className = 'btn-promo-close';
+    btnClose.textContent = 'Ver outros produtos';
+    btnClose.onclick = fecharBannerPromo;
+    container.innerHTML = ''; container.appendChild(img); container.appendChild(btnAdd); container.appendChild(btnClose);
+}
 
-    if (!veiculoChatSelecionado || !listaVeiculos.includes(veiculoChatSelecionado)) {
-        veiculoChatSelecionado = listaVeiculos.length > 0 ? listaVeiculos[0] : "";
-        localStorage.setItem('chat_veiculo_selecionado', veiculoChatSelecionado);
+function fecharGaleriaAbrirHorarios() { document.getElementById("modalFotosIniciais").style.display = "none"; document.getElementById("modalAviso").style.display = "block"; }
+function fecharModalAviso() { document.getElementById("modalAviso").style.display = "none"; abrirBannerPromo(); }
+function abrirBannerPromo() { if(CONFIG_PROMO.ativa) document.getElementById("modalPromo").style.display = "block"; }
+function fecharBannerPromo() { document.getElementById("modalPromo").style.display = "none"; }
+
+let promoAtiva = false;
+let carrinho = [];
+let pixGerado = false;
+const CHAVE_PIX = "00431179026"; 
+const NOME_RECEBEDOR = "JOSI DOCES";
+const CIDADE_RECEBEDOR = "VENANCIO AIRES";
+
+function configuringLimitesData() {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    document.getElementById('dataAgendamento').setAttribute('min', `${ano}-${mes}-${dia}`);
+}
+
+function validarDataHora() {
+    const dataInput = document.getElementById('dataAgendamento');
+    const horaInput = document.getElementById('horaAgendamento');
+    if (!dataInput.value) return;
+    const agora = new Date();
+    const dataSelecionada = new Date(dataInput.value + 'T00:00:00');
+    const hojeApenasData = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+    if (dataSelecionada < hojeApenasData) {
+        alert("Ops! Você não pode selecionar uma data que já passou.");
+        dataInput.value = ""; horaInput.value = ""; return;
     }
+    if (dataSelecionada.getTime() === hojeApenasData.getTime() && horaInput.value) {
+        const [horaSel, minSel] = horaInput.value.split(':');
+        const dataHoraSelecionada = new Date();
+        dataHoraSelecionada.setHours(horaSel, minSel, 0, 0);
+        if (dataHoraSelecionada < agora) {
+            alert("Este horário já passou! Por favor, escolha um horário futuro.");
+            horaInput.value = "";
+        }
+    }
+}
 
-    if (listaVeiculos.length > 1) {
-        linha.style.display = 'block';
-        select.innerHTML = '';
-        listaVeiculos.forEach(function(nome) {
-            var opt = document.createElement('option');
-            opt.value = nome; opt.textContent = "Enviando como: " + nome;
-            select.appendChild(opt);
-        });
-        select.value = veiculoChatSelecionado;
+function verificarHorarioValidoParaAgendamento(dataStr, horaStr) {
+    if (!dataStr || !horaStr) return false;
+    
+    const dataAgendada = new Date(dataStr + 'T' + horaStr);
+    const diaSemana = dataAgendada.getDay(); 
+    const horaAtual = dataAgendada.getHours();
+    
+    const feriados = ["01/01", "17/02", "03/04", "21/04", "01/05", "04/06", "07/09", "12/10", "02/11", "15/11", "25/12"];
+    const dataFormatada = dataAgendada.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const ehFeriado = feriados.includes(dataFormatada);
+    
+    if (diaSemana >= 1 && diaSemana <= 5 && !ehFeriado) {
+        return (horaAtual >= 08 && horaAtual < 17);
     } else {
-        linha.style.display = 'none';
+        return (horaAtual >= 08 && horaAtual < 17);
     }
-    atualizarEstadoChatApp();
-}
-document.getElementById('chatVeiculoRemetente').addEventListener('change', function(e) {
-    veiculoChatSelecionado = e.target.value;
-    localStorage.setItem('chat_veiculo_selecionado', veiculoChatSelecionado);
-    atualizarEstadoChatApp();
-});
-
-function iniciarChatAppSeNecessario() {
-    if (refMensagensChatApp || !EMPRESA_ID) return;
-    refMensagensChatApp = db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID) + '/mensagens').limitToLast(200);
-    refMensagensChatApp.on('value', function(snapshot) {
-        var todas = [];
-        snapshot.forEach(function(child) { todas.push(Object.assign({ id: child.key }, child.val())); });
-        renderizarChatApp(todas);
-    }, function(erro) { console.warn("Erro ao ler mensagens do chat:", erro); });
 }
 
-// Chamado quando a empresa configurada no aparelho muda — sem isso, o chat continuaria
-// escutando mensagens da empresa antiga.
-function reiniciarChatApp() {
-    if (refMensagensChatApp) { refMensagensChatApp.off(); refMensagensChatApp = null; }
-    document.getElementById('chatLista').innerHTML = '';
-    iniciarChatAppSeNecessario();
-    atualizarEstadoChatApp();
+function toggleVisibilidadeCarrinho() {
+    const box = document.getElementById("carrinhoBox");
+    box.style.display = (box.style.display === "none" || box.style.display === "") ? "block" : "none";
+    verificarPgto();
 }
 
-function renderizarChatApp(todasMensagens) {
-    var lista = document.getElementById('chatLista');
-    var relevantes = todasMensagens.filter(function(msg) {
-        if (chatAbaApp === 'mural') return msg.destinatario === 'todos';
-        if (!veiculoChatSelecionado) return false;
-        return (msg.remetente === veiculoChatSelecionado && msg.destinatario === 'Admin') ||
-               (msg.remetente === 'Admin' && msg.destinatario === veiculoChatSelecionado);
-    }).sort(function(a, b) { return (a.ts || 0) - (b.ts || 0); });
+function mascaraTelefone(i) {
+    let v = i.value.replace(/\D/g, "");
+    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+    v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+    i.value = v;
+}
 
+function salvarDados() {
+    _lsSet('pedidoJosiDoces', {
+        nome: document.getElementById("nome").value,
+        telefone: document.getElementById("telefone").value,
+        bairro: document.getElementById("bairro").value,
+        endereco: document.getElementById("endereco").value,
+        data: document.getElementById('dataAgendamento').value,
+        hora: document.getElementById('horaAgendamento').value,
+        pagamento: document.getElementById("pagamento").value,
+        carrinho: carrinho,
+        promoAtiva: promoAtiva
+    });
+}
+
+function carregarDados() {
+    configuringLimitesData();
+    const d = _lsGet('pedidoJosiDoces');
+    if (d) {
+        document.getElementById("nome").value = d.nome || "";
+        document.getElementById("telefone").value = d.telefone || "";
+        document.getElementById("bairro").value = d.bairro || "retirada";
+        document.getElementById("endereco").value = d.endereco || "";
+        document.getElementById("pagamento").value = d.pagamento || "Pix";
+        carrinho = _validarCarrinho(d.carrinho || []);
+        promoAtiva = d.promoAtiva || false;
+        document.getElementById('dataAgendamento').value = d.data || "";
+        document.getElementById('horaAgendamento').value = d.hora || "";
+        alternarEndereco(); validarDataHora(); verificarPgto();
+    }
+}
+
+let _saboresContexto = null;
+
+function addComSabor(nomeBase, preco, sabores) {
+    _saboresContexto = { nomeBase, preco, sabores, selecionados: new Set() };
+
+    const titulo = document.getElementById('saboresTitulo');
+    titulo.textContent = `🍰 ${nomeBase}`;
+
+    const lista = document.getElementById('saboresLista');
     lista.innerHTML = '';
-    if (relevantes.length === 0) {
-        lista.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-size:0.82em;padding:16px 0;">Nenhuma mensagem ainda.</div>';
+    sabores.forEach((sabor, idx) => {
+        const div = document.createElement('div');
+        div.className = 'sabor-opcao';
+        div.dataset.idx = idx;
+
+        const check = document.createElement('span');
+        check.className = 'sabor-check';
+        check.textContent = '✓';
+
+        const nomeSpan = document.createElement('span');
+        nomeSpan.className = 'sabor-nome';
+        nomeSpan.textContent = sabor;
+
+        div.appendChild(check);
+        div.appendChild(nomeSpan);
+        div.onclick = function () { toggleSabor(idx, div); };
+        lista.appendChild(div);
+    });
+
+    atualizarResumoSabores();
+    document.getElementById('modalSabores').style.display = 'block';
+}
+
+function toggleSabor(idx, el) {
+    if (!_saboresContexto) return;
+    if (_saboresContexto.selecionados.has(idx)) {
+        _saboresContexto.selecionados.delete(idx);
+        el.classList.remove('selecionado');
+    } else {
+        _saboresContexto.selecionados.add(idx);
+        el.classList.add('selecionado');
+    }
+    atualizarResumoSabores();
+}
+
+function atualizarResumoSabores() {
+    const ctx = _saboresContexto;
+    const btn = document.getElementById('btnConfirmarSabores');
+    const resumo = document.getElementById('saboresPrecoResumo');
+    if (!ctx) return;
+    const qtd = ctx.selecionados.size;
+
+    if (qtd === 0) {
+        resumo.innerHTML = '';
+        const aviso = document.createElement('span');
+        aviso.className = 'sabores-aviso-vazio';
+        aviso.textContent = '⚠️ Selecione ao menos 1 sabor para continuar';
+        resumo.appendChild(aviso);
+        btn.disabled = true;
         return;
     }
-    relevantes.forEach(function(msg) {
-        var ehMinha = msg.remetente === veiculoChatSelecionado;
-        var bolha = document.createElement('div');
-        bolha.className = 'msg-bolha' + (ehMinha ? ' minha' : '');
-        var nomeExibido = ehMinha ? 'Você (' + msg.remetente + ')' : msg.remetente;
-        bolha.innerHTML = '<div class="msg-remetente">' + nomeExibido + '</div>' +
-            '<div class="msg-texto"></div>' +
-            '<div class="msg-hora">' + (msg.hora || '') + '</div>';
-        bolha.querySelector('.msg-texto').textContent = msg.texto || '';
-        lista.appendChild(bolha);
+
+    const precoFinal = ctx.preco + (qtd - 1) * 3;
+    const nomesEscolhidos = Array.from(ctx.selecionados).sort((a, b) => a - b).map(i => ctx.sabores[i]);
+
+    resumo.innerHTML = '';
+    const tagsWrap = document.createElement('div');
+    tagsWrap.className = 'sabores-selecionados-tags';
+    nomesEscolhidos.forEach(nome => {
+        const tag = document.createElement('span');
+        tag.className = 'tag-sabor-escolhido';
+        tag.textContent = nome;
+        tagsWrap.appendChild(tag);
     });
-    lista.scrollTop = lista.scrollHeight;
-}
 
-// Mostra/esconde o aviso de "configure a empresa e um veículo" e reconsulta as mensagens
-// já carregadas pra re-filtrar quando o motorista troca de aba ou de veículo remetente.
-function atualizarEstadoChatApp() {
-    var aviso = document.getElementById('chatAvisoSemVeiculo');
-    var lista = document.getElementById('chatLista');
-    var input = document.getElementById('chatInput');
-    var btn = document.getElementById('chatBtnEnviar');
-    var pronto = !!(EMPRESA_ID && veiculoChatSelecionado);
-
-    if (aviso) aviso.style.display = pronto ? 'none' : 'block';
-    if (lista) lista.style.display = pronto ? 'flex' : 'none';
-    if (input) input.disabled = !pronto;
-    if (btn) btn.disabled = !pronto;
-
-    if (pronto && refMensagensChatApp) {
-        refMensagensChatApp.once('value', function(s) {
-            var todas = []; s.forEach(function(c) { todas.push(Object.assign({ id: c.key }, c.val())); });
-            renderizarChatApp(todas);
-        });
-    } else if (pronto) {
-        iniciarChatAppSeNecessario();
+    const precoLinha = document.createElement('div');
+    precoLinha.className = 'sabores-preco-final';
+    precoLinha.textContent = 'Total do item: ';
+    const bPreco = document.createElement('b');
+    bPreco.textContent = `R$ ${precoFinal.toFixed(2).replace('.', ',')}`;
+    precoLinha.appendChild(bPreco);
+    if (qtd > 1) {
+        const extra = document.createElement('span');
+        extra.className = 'sabores-extra';
+        extra.textContent = ' (+R$ 3,00 por sabor extra)';
+        precoLinha.appendChild(extra);
     }
+
+    resumo.appendChild(tagsWrap);
+    resumo.appendChild(precoLinha);
+    btn.disabled = false;
 }
 
-document.getElementById('chatTabMural').addEventListener('click', function() {
-    chatAbaApp = 'mural';
-    document.getElementById('chatTabMural').classList.add('ativa');
-    document.getElementById('chatTabDireta').classList.remove('ativa');
-    atualizarEstadoChatApp();
-});
-document.getElementById('chatTabDireta').addEventListener('click', function() {
-    chatAbaApp = 'direta';
-    document.getElementById('chatTabDireta').classList.add('ativa');
-    document.getElementById('chatTabMural').classList.remove('ativa');
-    atualizarEstadoChatApp();
-});
+function confirmarSabores() {
+    const ctx = _saboresContexto;
+    if (!ctx || ctx.selecionados.size === 0) return;
 
-function enviarMensagemChatApp() {
-    var input = document.getElementById('chatInput');
-    var texto = input.value.trim();
-    if (!texto) return;
-    if (!EMPRESA_ID) { alert("Configure a empresa deste aparelho primeiro."); return; }
-    if (!veiculoChatSelecionado) { alert("Adicione um veículo à frota deste aparelho primeiro."); return; }
-    var agora = new Date();
-    var novaMensagem = {
-        remetente: veiculoChatSelecionado,
-        destinatario: chatAbaApp === 'mural' ? 'todos' : 'Admin',
-        texto: texto,
-        ts: firebase.database.ServerValue.TIMESTAMP,
-        hora: agora.toLocaleTimeString('pt-BR'),
-        data: agora.toLocaleDateString('pt-BR')
-    };
-    db.ref('empresas/' + sanitizarChavePath(EMPRESA_ID) + '/mensagens').push(novaMensagem).then(function() {
-        input.value = '';
-    }).catch(function(e) { console.warn("Falha ao enviar mensagem:", e); alert("Não foi possível enviar a mensagem agora."); });
-}
-document.getElementById('chatBtnEnviar').addEventListener('click', enviarMensagemChatApp);
-document.getElementById('chatInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); enviarMensagemChatApp(); }
-});
+    const idxOrdenados = Array.from(ctx.selecionados).sort((a, b) => a - b);
+    const saboresEscolhidos = idxOrdenados.map(i => ctx.sabores[i]);
+    const precoFinal = ctx.preco + (saboresEscolhidos.length - 1) * 3;
+    const nomeCompleto = `${ctx.nomeBase} (${saboresEscolhidos.join(' + ')})`;
 
-// Se o aparelho já tinha empresa configurada ao carregar a página, inicia o chat direto.
-if (EMPRESA_ID) iniciarChatAppSeNecessario();
+    const item = carrinho.find(i => i.nome === nomeCompleto);
+    if (item) item.qtd++;
+    else carrinho.push({ nome: nomeCompleto, preco: precoFinal, qtd: 1, base: ctx.nomeBase });
 
-var inicioParadaTs = localStorage.getItem('inicio_parada_ts') ? parseInt(localStorage.getItem('inicio_parada_ts'), 10) : null;
-var tempoParadoSegundos = 0;
-var jaGravouPontoInicialParada = localStorage.getItem('ja_gravou_parada') === 'true';
-var jaRegistrouEsteExcesso = false;
-
-function formatarTempoParado(segundos) {
-    var hrs = Math.floor(segundos / 3600).toString().padStart(2, '0');
-    var mins = Math.floor((segundos % 3600) / 60).toString().padStart(2, '0');
-    var segs = (segundos % 60).toString().padStart(2, '0');
-    return `${hrs}:${mins}:${segs}`;
+    salvarDados(); resetPagamentoFluxo(); verificarPgto();
+    fecharModalSabores();
 }
 
-function atualizarTextoTempoParado() {
-    if (document.getElementById('badStatus').textContent.indexOf("PARADO") !== -1 && inicioParadaTs) {
-        tempoParadoSegundos = Math.max(0, Math.floor((Date.now() - inicioParadaTs) / 1000));
+function fecharModalSabores() {
+    document.getElementById('modalSabores').style.display = 'none';
+    _saboresContexto = null;
+}
+
+function add(nome, preco) {
+    if (!PRECOS_OFICIAIS.hasOwnProperty(nome)) return;
+    if (PRECOS_OFICIAIS[nome] !== preco) return;
+    const item = carrinho.find(i => i.nome === nome);
+    if (item) item.qtd++;
+    else carrinho.push({ nome, preco, qtd: 1 });
+    salvarDados(); resetPagamentoFluxo(); verificarPgto();
+}
+
+function addPromoCombo() {
+    carrinho = carrinho.filter(i => i.nome !== CONFIG_PROMO.nomeProduto && i.nome !== 'FRETE GRÁTIS (Ativado)');
+    carrinho.push({ nome: CONFIG_PROMO.nomeProduto, preco: CONFIG_PROMO.preco, qtd: 1, fixo: true });
+    carrinho.push({ nome: 'FRETE GRÁTIS (Ativado)', preco: 0, qtd: 1, fixo: true });
+    promoAtiva = true;
+    salvarDados(); resetPagamentoFluxo(); verificarPgto(); toggleVisibilidadeCarrinho();
+}
+
+function alternarEndereco() {
+    const bairro = document.getElementById("bairro").value;
+    document.getElementById("blocoEndereco").style.display = (bairro === "retirada") ? "none" : "block";
+}
+
+function atualizar() {
+    const valorBairro = document.getElementById("bairro").value;
+    let subtotal = carrinho.reduce((acc, item) => acc + (item.preco * (item.qtd || 1)), 0);
+    let frete = (subtotal >= 50 || promoAtiva || valorBairro === "retirada") ? 0 : parseFloat(valorBairro);
+    
+    let desconto = 0;
+    const divAlertaCupom = document.getElementById("alertaCupomDinamico");
+
+    if (subtotal >= 50) {
+        desconto = subtotal * 0.05;
+        if(divAlertaCupom) divAlertaCupom.innerHTML = `<div class="alerta-sucesso-cupom">🎉 Parabéns! Você atingiu R$ 50,00 e ganhou 5% de desconto + FRETE GRÁTIS!</div>`;
+    } else if (subtotal > 0 && subtotal < 50) {
+        let quantoFalta = (50 - subtotal).toFixed(2).replace('.', ',');
+        if(divAlertaCupom) divAlertaCupom.innerHTML = `<div class="alerta-progresso-cupom">🛒 Adicione mais <b>R$ ${quantoFalta}</b> para ganhar <b>5% de DESCONTO + FRETE GRÁTIS</b> no seu pedido!</div>`;
     } else {
-        tempoParadoSegundos = 0;
+        if(divAlertaCupom) divAlertaCupom.innerHTML = "";
     }
-    document.getElementById('txtTempoParado').textContent = formatarTempoParado(tempoParadoSegundos);
-}
+    
+    const total = subtotal - desconto + frete;
+    const qtdTotal = carrinho.reduce((acc, item) => acc + (item.nome !== 'FRETE GRÁTIS (Ativado)' ? item.qtd : 0), 0);
+    
+    document.getElementById("cartBadge").innerText = qtdTotal;
+    document.getElementById("btnToggle").style.background = (qtdTotal > 0) ? "linear-gradient(135deg, #25D366, #1da851)" : "linear-gradient(135deg, #007bff, #0055cc)";
 
-setInterval(function() {
-    atualizarTextoTempoParado();
-}, 1000);
-
-var ultimoPontoBruto = historicoCoordenadasLocais.length > 0 ? historicoCoordenadasLocais[historicoCoordenadasLocais.length - 1] : null;
-var ultimoTsPosicaoBruta = null;
-var ultimoPontoChecadoEndereco = null;
-var errosGpsConsecutivos = 0;
-var ultimaLeituraCompleta = null;
-var ultimaVelocidadeValida = 0;
-// NOVO: vigia de segundo plano. Guarda quando a última posição de GPS chegou de verdade
-// (independente de ser nativa ou web) e, a cada 30s, checa se faz tempo demais sem
-// nenhuma leitura nova — é o jeito mais direto de descobrir, testando com a tela apagada
-// ou o app em segundo plano, se o rastreio realmente continua funcionando ou morreu em
-// silêncio. Se o app estiver mesmo travado nesse estado, esse aviso só vai aparecer
-// quando a pessoa reabrir/olhar a tela — mas ainda assim é a evidência de que parou.
-var ultimaPosicaoRecebidaTs = null;
-setInterval(function() {
-    if (appSuspenso || listaVeiculos.length === 0) return;
-    if (!ultimaPosicaoRecebidaTs) return; // ainda esperando a primeira leitura, normal
-    var segundosSemPosicao = Math.floor((Date.now() - ultimaPosicaoRecebidaTs) / 1000);
-    if (segundosSemPosicao > 90) {
-        mostrarAvisoGps("⚠️ Sem nenhuma posição de GPS há " + segundosSemPosicao + "s — o rastreio pode ter parado (comum quando o app fica muito tempo em segundo plano sem a configuração nativa correta). Verifique se o app aparece na lista de exceções de otimização de bateria do Android.");
-    }
-}, 30000);
-// (variável de disjuntor de rejeições removida — a lógica de aceleração que a usava foi
-// simplificada, ver processarNovaPosicao)
-
-// Mantém o campo "Última posição de GPS há" do painel de diagnóstico sempre atualizado,
-// mesmo sem nenhuma leitura nova chegando — assim dá pra ver na tela, sem console, se o
-// GPS simplesmente parou de mandar atualizações (o que explicaria o status nunca mudar).
-setInterval(function() {
-    var elUltima = document.getElementById('diagUltimaPosicaoHa');
-    if (!elUltima) return;
-    elUltima.textContent = ultimaPosicaoRecebidaTs
-        ? Math.floor((Date.now() - ultimaPosicaoRecebidaTs) / 1000) + "s atrás"
-        : "nenhuma leitura ainda";
-}, 1000);
-var contadorConfirmacaoExcesso = 0;
-
-function calcularDistanciaMetros(lat1, lon1, lat2, lon2) {
-    var R = 6371000;
-    var dLat = (lat2 - lat1) * Math.PI / 180;
-    var dLon = (lon2 - lon1) * Math.PI / 180;
-    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function valorOuTraco(valor, textoAusente) {
-    if (!valor) return "—";
-    if (textoAusente && valor === textoAusente) return "—";
-    return valor;
-}
-
-function registrarESincronizarPonto(lat, lon, situacao, velKmh, precisao, agora, enderecoInfo, motivo) {
-    if (appSuspenso) return;
-    var idPonto = gerarIdPonto(agora.getTime());
-    if (situacao === "PARADO") { ultimoIdPontoParadaGravado = idPonto; }
-
-    var ehRodovia = enderecoInfo.tipoVia === "rodovia";
-    var kmTxt = (enderecoInfo.km != null ? enderecoInfo.km : viaState.kmSincronizado);
-    var sufixoFonteKm = (ehRodovia && enderecoInfo.fonteKm === 'estimado') ? " (aprox.)" : "";
-    var ruaExibida = ehRodovia
-        ? (enderecoInfo.rua || "Rodovia") + (kmTxt != null ? (" - Km " + kmTxt + sufixoFonteKm) : " - Km não identificado")
-        : (enderecoInfo.rua || "Rua não localizada");
-    var bairroExibido = valorOuTraco(enderecoInfo.bairro, "Bairro não localizado");
-    var cidadeExibida = enderecoInfo.cidade || document.getElementById('txtCidade').textContent || "—";
-    var estadoExibido = enderecoInfo.estado || document.getElementById('txtEstado').textContent || "—";
-
-    document.getElementById('txtRua').textContent = ruaExibida;
-    document.getElementById('txtBairro').textContent = bairroExibido;
-    if (enderecoInfo.cidade) document.getElementById('txtCidade').textContent = enderecoInfo.cidade;
-    if (enderecoInfo.estado) document.getElementById('txtEstado').textContent = enderecoInfo.estado;
-
-    var registro = {
-        id: idPonto, lat: lat, lon: lon, velocidade: (situacao === "PARADO" ? 0 : velKmh), status: situacao,
-        tempoParado: document.getElementById('txtTempoParado').textContent,
-        hora: agora.toLocaleTimeString('pt-BR'), data: agora.toLocaleDateString('pt-BR'),
-        precisao: precisao || null,
-        precisaoBaixa: !!(precisao && precisao > PRECISAO_MAXIMA_ACEITAVEL_M),
-        rua: ruaExibida, bairro: bairroExibido, cidade: cidadeExibida, estado: estadoExibido,
-        endereco: ruaExibida + (bairroExibido !== "—" ? ", " + bairroExibido : "") + (cidadeExibida !== "—" ? " - " + cidadeExibida + "/" + estadoExibido : ""),
-        tipoVia: enderecoInfo.tipoVia, motivo: motivo, fonteKm: enderecoInfo.fonteKm || null,
-        limiteVia: enderecoInfo.limiteVia != null ? enderecoInfo.limiteVia : null,
-        excessoKmh: enderecoInfo.limiteVia != null ? Math.max(0, (situacao === "PARADO" ? 0 : velKmh) - enderecoInfo.limiteVia) : null
-    };
-    registroCompleto.push(registro);
-    if (listaVeiculos.length > 0) {
-        listaVeiculos.forEach(vNome => { filaPendentes.push(Object.assign({ vID: vNome, empresaId: EMPRESA_ID }, registro)); });
-    }
-    salvarTudo(); atualizarInterfaceEstado(); enviarDadosFila(); sincronizarTempoRealImediato();
-}
-
-function corVeiculoPorSituacao(situacao) {
-    if (situacao === "VELOCIDADE ACIMA DO LIMITE") return '#ff4d6d';
-    if (situacao === "EM MOVIMENTO") return '#00e0a8';
-    return '#ffb020';
-}
-
-function processarNovaPosicao(lat, lon, precisaoRaw, velRaw) {
-    if (appSuspenso) return;
-    esconderAvisoGps(); errosGpsConsecutivos = 0;
-    ultimaPosicaoRecebidaTs = Date.now();
-    var precisao = precisaoRaw ? Math.round(precisaoRaw) : null;
-    var agora = new Date(); var agoraTs = agora.getTime();
-
-    var velCalculadaPorDistancia = 0;
-    var deltaSegundosBruto = null;
-    if (ultimoPontoBruto && ultimoTsPosicaoBruta) {
-        var distDesdeUltimoBruto = calcularDistanciaMetros(ultimoPontoBruto[0], ultimoPontoBruto[1], lat, lon);
-        deltaSegundosBruto = (agoraTs - ultimoTsPosicaoBruta) / 1000;
-        var limiarRuidoM = Math.max(3, precisao || 5);
-        if (deltaSegundosBruto > 0.5 && distDesdeUltimoBruto > limiarRuidoM) {
-            velCalculadaPorDistancia = (distDesdeUltimoBruto / deltaSegundosBruto) * 3.6;
+    const todosDisplays = document.querySelectorAll('.qtd-display');
+    todosDisplays.forEach(span => span.innerText = "0");
+    
+    carrinho.forEach(item => {
+        const idAlvo = item.base ? `qtd-${item.base}` : `qtd-${item.nome}`;
+        const span = document.getElementById(idAlvo);
+        if(span) {
+            let totalDaqueleCard = carrinho.filter(i => (i.base && i.base === item.base) || (i.nome === item.nome)).reduce((a, b) => a + b.qtd, 0);
+            span.innerText = totalDaqueleCard;
         }
-    }
+    });
 
-    var velPorRaw = (velRaw && velRaw > 0) ? Math.round(velRaw * 3.6) : null;
-    var velPorDistancia = Math.round(velCalculadaPorDistancia);
+    const listaDiv = document.getElementById("itensCarrinhoLista");
+    listaDiv.innerHTML = "";
+    carrinho.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'item-carrinho';
+        const spanNome = document.createElement('span');
+        spanNome.textContent = `${item.qtd}x ${item.nome}`;
+        const spanPreco = document.createElement('span');
+        spanPreco.textContent = `R$ ${(item.preco*item.qtd).toFixed(2).replace('.', ',')} `;
+        const spanRemover = document.createElement('span');
+        spanRemover.className = 'remover';
+        spanRemover.textContent = '×';
+        spanRemover.onclick = (function(i){ return function(){ remover(i); }; })(index);
+        spanPreco.appendChild(spanRemover); row.appendChild(spanNome); row.appendChild(spanPreco); listaDiv.appendChild(row);
+    });
 
-    // CORREÇÃO: a versão anterior comparava a "aceleração implícita" entre leituras
-    // consecutivas pra decidir se um salto de velocidade era plausível. Parecia uma boa
-    // ideia, mas na prática é frágil: com leituras chegando a cada 1-2s (comum com GPS de
-    // alta precisão), qualquer arrancada normal do veículo parado (0 → 20-30 km/h em 1-2s,
-    // totalmente banal no trânsito) já ultrapassa qualquer limite de aceleração razoável e
-    // acabava sendo descartada como "erro de GPS" — travando o status em PARADO mesmo com
-    // o veículo se movendo de verdade. Removida essa lógica inteira. Agora a única proteção
-    // é: (1) se o valor bruto do GPS (efeito Doppler) e o valor calculado por distância
-    // discordam muito — um alto, outro perto de zero — confia no mais conservador (isso já
-    // existia e é o que evita o bug documentado de "180 km/h com o carro parado", causado
-    // por reflexo de sinal perto de prédios/garagens); (2) um teto de sanidade simples, sem
-    // matemática de física envolvida.
-    var MAX_VELOCIDADE_PLAUSIVEL_KMH = 180;
-    var vel = (velPorRaw != null && velPorDistancia < 5 && velPorRaw > 30)
-        ? velPorDistancia
-        : ((velPorRaw != null) ? velPorRaw : velPorDistancia);
+    let descontoHtml = desconto > 0 ? `<div style="color: #2e7d32;">🏷️ <b>Desconto (5%):</b> -R$ ${desconto.toFixed(2).replace('.', ',')}</div>` : '';
+    let freteTexto = (frete === 0) ? '<span style="color:#2e7d32; font-weight:700;">GRÁTIS</span>' : `R$ ${frete.toFixed(2).replace('.', ',')}`;
 
-    var leituraDescartadaPorGlitch = false;
-    if (vel > MAX_VELOCIDADE_PLAUSIVEL_KMH) {
-        vel = ultimaVelocidadeValida;
-        leituraDescartadaPorGlitch = true;
-    }
-    ultimaVelocidadeValida = vel;
-    // A referência de posição/tempo avança sempre — assim a próxima leitura é sempre
-    // comparada contra uma posição recente, nunca contra uma posição de minutos atrás.
-    ultimoTsPosicaoBruta = agoraTs;
+    document.getElementById("resumo").innerHTML = `
+        <div style="font-size:14px; text-align:left; line-height:1.8;">
+            <div>🧁 <b>Itens:</b> ${qtdTotal}</div>
+            <div>💰 <b>Subtotal:</b> R$ ${subtotal.toFixed(2).replace('.', ',')}</div>
+            ${descontoHtml}
+            <div>🚚 <b>Frete:</b> ${freteTexto}</div>
+            <div>📍 <b>Forma:</b> ${valorBairro === "retirada" ? "Retirada no local" : "Entrega"}</div>
+            <hr style="margin:10px 0; border:none; border-top: 1.5px dashed var(--creme-escuro);">
+            <div style="font-size:20px; color: var(--marrom-escuro); font-family: 'Playfair Display', serif;">
+                <b>TOTAL: R$ ${total.toFixed(2).replace('.', ',')}</b>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById("secaoDadosPedido").style.display = (carrinho.length > 0) ? "block" : "none";
+    document.getElementById("btnToggle").style.display = "flex";
+    return total;
+}
 
-    map.setView([lat, lon], map.getZoom() < 14 ? 16 : map.getZoom());
-    marcador.setLatLng([lat, lon]);
-    var anguloVeiculo = calcularAnguloVeiculo(lat, lon, vel);
-    if (precisao) { circuloPrecisao.setLatLng([lat, lon]).setRadius(precisao); }
+function removerPorNome(nome) {
+    const index = carrinho.findIndex(i => i.nome === nome);
+    if (index !== -1) remover(index);
+}
 
-    document.getElementById('txtVelocidade').textContent = vel + " km/h";
-    document.getElementById('txtData').textContent = agora.toLocaleDateString('pt-BR');
-    document.getElementById('txtHora').textContent = agora.toLocaleTimeString('pt-BR');
-    document.getElementById('txtPrecisao').textContent = precisao ? `± ${precisao} m` : "—";
-    document.getElementById('txtCoords').textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+function removerPorNomeBasico(nomeBase) {
+    const index = carrinho.findIndex(i => i.base === nomeBase || i.nome === nomeBase);
+    if (index !== -1) remover(index);
+}
 
-    if (document.getElementById('txtTemperatura').textContent === "—") {
-        talvezBuscarTemperatura(lat, lon);
-    }
-
-    historicoCoordenadasLocais.push([lat, lon]);
-    if (historicoCoordenadasLocais.length > 2000) historicoCoordenadasLocais.shift();
-    polilinhaRota.setLatLngs(historicoCoordenadasLocais);
-
-    var distanciaDoCentroDaParada = coordenadaParadaFixa ? calcularDistanciaMetros(coordenadaParadaFixa[0], coordenadaParadaFixa[1], lat, lon) : 0;
-    var LIMITE_MOVIMENTO_KMH = 5;
-    var RAIO_FALSO_MOVIMENTO_METROS = 50;
-    var VELOCIDADE_MOVIMENTO_CONFIAVEL_KMH = 15;
-    var situacao = "PARADO";
-    var badgeStatus = document.getElementById('badStatus');
-    var iniciouParadaAgora = false;
-    var iniciouExcessoAgora = false;
-
-    var estaEmMovimento = vel >= VELOCIDADE_MOVIMENTO_CONFIAVEL_KMH
-        ? true
-        : (vel >= LIMITE_MOVIMENTO_KMH && (!coordenadaParadaFixa || distanciaDoCentroDaParada > RAIO_FALSO_MOVIMENTO_METROS));
-
-    // Limite de velocidade da via atual — calculado sempre (parado ou em movimento) pra
-    // poder exibir na telemetria e usar na checagem de excesso logo abaixo. Tanto rodovia
-    // quanto rua agora usam o limite oficial (placa) lido do mapa quando disponível; 80
-    // só entra como padrão de rodovia sem placa marcada, e 30 como padrão de rua sem placa.
-    var limiteVelocidadeAtual = viaState.limiteVelocidade || (viaState.tipo === 'rodovia' ? LIMITE_VELOCIDADE : 30);
-    var elLimiteVia = document.getElementById('txtLimiteVia');
-    if (elLimiteVia) elLimiteVia.textContent = limiteVelocidadeAtual + " km/h";
-
-    // Painel de diagnóstico na tela — só leitura, não influencia a decisão em nada.
-    try {
-        var elVelRaw = document.getElementById('diagVelRaw');
-        var elVelDist = document.getElementById('diagVelDistancia');
-        var elVelFinal = document.getElementById('diagVelFinal');
-        var elEstaMovimento = document.getElementById('diagEstaEmMovimento');
-        var elDistCentro = document.getElementById('diagDistCentroParada');
-        var elGlitch = document.getElementById('diagGlitch');
-        if (elVelRaw) elVelRaw.textContent = (velPorRaw != null ? velPorRaw + " km/h" : "sem dado (null)");
-        if (elVelDist) elVelDist.textContent = velPorDistancia + " km/h";
-        if (elVelFinal) elVelFinal.textContent = vel + " km/h";
-        if (elEstaMovimento) elEstaMovimento.textContent = estaEmMovimento ? "SIM" : "NÃO";
-        if (elDistCentro) elDistCentro.textContent = coordenadaParadaFixa ? Math.round(distanciaDoCentroDaParada) + " m" : "sem parada fixa ainda";
-        if (elGlitch) elGlitch.textContent = leituraDescartadaPorGlitch ? "SIM (descartou leitura!)" : "não";
-    } catch (erroDiag) { /* diagnóstico nunca deve quebrar o rastreio */ }
-
-    if (estaEmMovimento) {
-        // CORREÇÃO: reflexo de sinal de GPS perto de prédios/garagens pode gerar uma leitura
-        // de velocidade alta momentânea mesmo com o veículo parado no mesmo lugar — o teto de
-        // "implausível" (180 km/h) não pega isso porque o limite de excesso (80 km/h) é bem
-        // menor. Fisicamente, não dá pra estar de verdade acima do limite ainda "no mesmo
-        // lugar" de instantes atrás — então só classifica como excesso se o veículo também já
-        // tiver se afastado de verdade do centro da última parada. Não afeta em nada a
-        // detecção normal de EM MOVIMENTO, só evita o alarme falso de excesso.
-        var aindaPertoDoUltimoLocalParado = coordenadaParadaFixa && distanciaDoCentroDaParada <= RAIO_FALSO_MOVIMENTO_METROS;
-        var ehExcessoDeVerdade = vel > limiteVelocidadeAtual && !aindaPertoDoUltimoLocalParado;
-        situacao = ehExcessoDeVerdade ? "VELOCIDADE ACIMA DO LIMITE" : "EM MOVIMENTO";
-        badgeStatus.textContent = ehExcessoDeVerdade
-            ? situacao + " (" + vel + " km/h, via de " + limiteVelocidadeAtual + " km/h)"
-            : situacao;
-        badgeStatus.className = ehExcessoDeVerdade ? "badge badge-perigo" : "badge badge-movimento";
-
-        if (situacao === "VELOCIDADE ACIMA DO LIMITE") {
-            contadorConfirmacaoExcesso++;
-            if (!jaRegistrouEsteExcesso && contadorConfirmacaoExcesso >= 2) {
-                iniciouExcessoAgora = true; jaRegistrouEsteExcesso = true;
+function remover(index) {
+    if (carrinho[index].qtd > 1) {
+        carrinho[index].qtd -= 1;
+    } else {
+        const itemRemovido = carrinho[index].nome;
+        carrinho.splice(index, 1);
+        if (itemRemovido === CONFIG_PROMO.nomeProduto) {
+            if (!carrinho.some(i => i.nome === CONFIG_PROMO.nomeProduto)) {
+                carrinho = carrinho.filter(i => i.nome !== 'FRETE GRÁTIS (Ativado)');
+                promoAtiva = false;
             }
-        } else {
-            jaRegistrouEsteExcesso = false;
-            contadorConfirmacaoExcesso = 0;
         }
+    }
+    if (carrinho.length === 0) promoAtiva = false;
+    salvarDados(); resetPagamentoFluxo(); verificarPgto();
+}
 
-        // NOVO: quando o veículo sai de PARADO pra EM MOVIMENTO, se havia uma parada em
-        // andamento, grava o horário exato de término e a duração total precisa nesse mesmo
-        // ponto de início — antes disso, a única atualização de "tempoParado" vinha de um
-        // patch a cada 30s, que podia ficar até meio minuto desatualizado no momento exato
-        // em que o veículo saiu. Isso não muda mais nada do resto: continua sendo o MESMO
-        // ponto (não cria um ponto novo), só fica com a hora final e o total certinhos.
-        // Protegido com try/catch: qualquer falha aqui nunca deve impedir a detecção de
-        // movimento nem as próximas leituras de GPS de continuarem funcionando normalmente.
+function resetPagamentoFluxo() { pixGerado = false; document.getElementById("pixDisplay").style.display = "none"; verificarPgto(); }
+
+function verificarPgto() {
+    const pag = document.getElementById("pagamento").value;
+    const btnZap = document.getElementById("btnWhatsapp");
+    const btnPix = document.getElementById("btnGerarPix");
+    const btnMP = document.getElementById("btnPagarMP");
+    const nome = document.getElementById("nome").value.trim();
+    const telRaw = document.getElementById("telefone").value.replace(/\D/g, "");
+    const data = document.getElementById("dataAgendamento").value;
+    const hora = document.getElementById("horaAgendamento").value;
+    const bairro = document.getElementById("bairro").value;
+    const endereco = document.getElementById("endereco").value.trim();
+
+    const totalAtual = atualizar();
+    let telValido = (telRaw.length === 11 && telRaw[2] === "9") || (telRaw.length === 9 && telRaw[0] === "9");
+    document.getElementById("erroTelefone").style.display = (telRaw.length > 0 && !telValido) ? "block" : "none";
+
+    const tudoPronto = (nome !== "" && telValido && data !== "" && hora !== "" && (bairro === "retirada" || endereco !== "") && totalAtual > 0);
+
+    if (data !== "" && hora !== "") {
+        const horarioValido = verificarHorarioValidoParaAgendamento(data, hora);
+        if (!horarioValido) {
+            btnPix.style.display = "none"; btnMP.style.display = "none";
+            btnZap.disabled = true; btnZap.style.background = "linear-gradient(135deg, #e74c3c, #c0392b)"; 
+            btnZap.innerText = "🔴 HORÁRIO DE ATENDIMENTO INVÁLIDO";
+            return;
+        }
+    }
+
+    btnPix.style.display = (pag === "Pix" && !pixGerado) ? "block" : "none";
+    btnMP.style.display = (pag.includes("Cartão")) ? "block" : "none";
+    btnPix.disabled = !tudoPronto; btnMP.disabled = !tudoPronto;
+    
+    if (tudoPronto && (pag === "Pix" ? pixGerado : true)) {
+        btnZap.disabled = false; btnZap.innerText = "✅ Enviar no WhatsApp"; btnZap.style.background = "linear-gradient(135deg, #25D366, #1da851)";
+    } else {
+        btnZap.disabled = true; btnZap.style.background = "linear-gradient(135deg, #bbb, #ccc)";
+        btnZap.innerText = (pag === "Pix" && !pixGerado) ? "💎 Gere o PIX primeiro" : "⚠️ Preencha os dados";
+    }
+}
+
+function gerarPixReal() {
+    const totalCalculado = atualizar();
+    if (totalCalculado <= 0) {
+        alert("⚠️ O valor do pedido está zerado. Adicione itens ao carrinho antes de gerar o PIX.");
+        return;
+    }
+    const valor = totalCalculado.toFixed(2);
+    const chavePix = CHAVE_PIX.replace(/\D/g, "");
+    const nome = NOME_RECEBEDOR.substring(0, 25).toUpperCase();
+    const city = CIDADE_RECEBEDOR.substring(0, 15).toUpperCase();
+
+    function format(id, value) { return id + value.length.toString().padStart(2, '0') + value; }
+    function crc16(payload) {
+        let polinomio = 0x1021, resultado = 0xFFFF;
+        for (let i = 0; i < payload.length; i++) {
+            resultado ^= (payload.charCodeAt(i) << 8);
+            for (let j = 0; j < 8; j++) {
+                if ((resultado <<= 1) & 0x10000) resultado ^= polinomio;
+                resultado &= 0xFFFF;
+            }
+        }
+        return resultado.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    const payloadSemCRC = format("00", "01") + format("26", format("00", "BR.GOV.BCB.PIX") + format("01", chavePix)) + format("52", "0000") + format("53", "986") + format("54", valor) + format("58", "BR") + format("59", nome) + format("60", city) + format("62", format("05", "***")) + "6304";
+    const pixCopiaECola = payloadSemCRC + crc16(payloadSemCRC);
+    const qrcodeContainer = document.getElementById("qrcode"); qrcodeContainer.innerHTML = "";
+    new QRCode(qrcodeContainer, { text: pixCopiaECola, width: 180, height: 180 });
+    document.getElementById("brcode").value = pixCopiaECola;
+    document.getElementById("pixDisplay").style.display = "block";
+    pixGerado = true; verificarPgto();
+}
+
+function copyPix() { const brcode = document.getElementById("brcode"); brcode.select(); document.execCommand("copy"); alert("Código Pix copiado!"); }
+function abrirMercadoPago() { window.open("https://link.mercadopago.com.br/josidocesgoumert"); }
+
+/* ============================================================
+   FILA DE PEDIDOS PENDENTES
+   ============================================================ */
+const CHAVE_FILA_PENDENTES = 'pedidosPendentesJosi';
+
+function _guardarPedidoPendente(chave, pedido) {
+    const fila = _lsGet(CHAVE_FILA_PENDENTES) || [];
+    fila.push({ chave, pedido });
+    _lsSet(CHAVE_FILA_PENDENTES, fila);
+}
+
+function _removerDaFilaPendente(chave) {
+    const fila = (_lsGet(CHAVE_FILA_PENDENTES) || []).filter(item => item.chave !== chave);
+    _lsSet(CHAVE_FILA_PENDENTES, fila);
+}
+
+async function reenviarPedidosPendentes() {
+    if (typeof window.salvarPedidoDireto !== 'function') return;
+    const fila = _lsGet(CHAVE_FILA_PENDENTES) || [];
+    for (const item of fila) {
         try {
-            if (ultimoIdPontoParadaGravado && inicioParadaTs && EMPRESA_ID && listaVeiculos.length > 0) {
-                var duracaoFinalSegundos = Math.max(0, Math.floor((agoraTs - inicioParadaTs) / 1000));
-                var idParadaEncerrada = ultimoIdPontoParadaGravado;
-                var patchFinalParada = {};
-                listaVeiculos.forEach(function(vNome) {
-                    var pathParada = 'empresas/' + sanitizarChavePath(EMPRESA_ID) + '/veiculos/' + sanitizarChavePath(vNome) + '/historico/' + idParadaEncerrada + '/';
-                    patchFinalParada[pathParada + 'tempoParado'] = formatarTempoParado(duracaoFinalSegundos);
-                    patchFinalParada[pathParada + 'horaFinalParada'] = agora.toLocaleTimeString('pt-BR');
-                });
-                db.ref().update(patchFinalParada).catch(function(e) { console.warn(e); });
-            }
-        } catch (erroFechamentoParada) {
-            console.warn("Falha ao fechar registro de parada (não afeta o rastreio):", erroFechamentoParada);
+            await window.salvarPedidoDireto(item.chave, item.pedido);
+            _removerDaFilaPendente(item.chave);
+            console.log("Pedido pendente reenviado com sucesso:", item.chave);
+        } catch (erro) {
+            console.error("Ainda não foi possível reenviar o pedido pendente:", item.chave, erro);
         }
-
-        inicioParadaTs = null; jaGravouPontoInicialParada = false; ultimoIdPontoParadaGravado = null; coordenadaParadaFixa = null;
-        localStorage.removeItem('inicio_parada_ts');
-        localStorage.removeItem('ja_gravou_parada');
-        localStorage.removeItem('ultimo_id_ponto_parada_gravado');
-        localStorage.removeItem('coordenada_parada_fixa');
-    } else {
-        situacao = "PARADO"; badgeStatus.textContent = "PARADO"; badgeStatus.className = "badge badge-parado";
-        jaRegistrouEsteExcesso = false;
-        contadorConfirmacaoExcesso = 0;
-        if (!inicioParadaTs) { inicioParadaTs = agoraTs; localStorage.setItem('inicio_parada_ts', String(inicioParadaTs)); }
-        if (!coordenadaParadaFixa) { coordenadaParadaFixa = [lat, lon]; localStorage.setItem('coordenada_parada_fixa', JSON.stringify(coordenadaParadaFixa)); }
-        if (!jaGravouPontoInicialParada) { iniciouParadaAgora = true; jaGravouPontoInicialParada = true; localStorage.setItem('ja_gravou_parada', 'true'); }
     }
-    atualizarTextoTempoParado();
-    marcador.setIcon(criarIconeVeiculo(anguloVeiculo, corVeiculoPorSituacao(situacao)));
+}
 
-    ultimaLeituraCompleta = {
-        lat: lat, lon: lon, velocidade: (situacao === "PARADO" ? 0 : vel), status: situacao, precisao: precisao,
-        hora: agora.toLocaleTimeString('pt-BR'), data: agora.toLocaleDateString('pt-BR'),
-        tempoParado: document.getElementById('txtTempoParado').textContent
+document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') reenviarPedidosPendentes();
+});
+setInterval(reenviarPedidosPendentes, 15000);
+
+/* ============================================================
+   MONTAGEM DO TEXTO DO PEDIDO (usado pelo botão do WhatsApp)
+   ============================================================ */
+function montarTextoPedido(numeroPedido) {
+    const nome = document.getElementById("nome").value.trim();
+    const telefone = document.getElementById("telefone").value.trim();
+    const bairroSelect = document.getElementById("bairro");
+    const bairroValor = bairroSelect.value;
+    const bairroTexto = bairroSelect.options[bairroSelect.selectedIndex].text;
+    const endereco = document.getElementById("endereco").value.trim();
+    const data = document.getElementById("dataAgendamento").value;
+    const hora = document.getElementById("horaAgendamento").value;
+    const pagamento = document.getElementById("pagamento").value;
+
+    const subtotalBruto = carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
+    const frete = (subtotalBruto >= 50 || promoAtiva || bairroValor === "retirada") ? 0 : parseFloat(bairroValor);
+    const { subtotal, desconto, total } = _recalcularTotalSeguro(carrinho, frete);
+
+    const dataFormatada = data ? new Date(data + "T00:00:00").toLocaleDateString('pt-BR') : '';
+    const agora = new Date();
+    const dataHoraCriacao = `${agora.toLocaleDateString('pt-BR')}, ${agora.toLocaleTimeString('pt-BR')}`;
+    const qtdTotalItens = carrinho.reduce((acc, item) => acc + item.qtd, 0);
+    const SEPARADOR = '➖➖➖➖➖➖➖➖➖➖➖➖';
+
+    let texto = `🍰 *NOVO PEDIDO - JOSI DOCES GOURMET* 🍰\n\n`;
+    texto += `📝 *Pedido N°:* #${numeroPedido}\n`;
+    texto += `🕐 *Pedido realizado em:* ${dataHoraCriacao}\n\n`;
+    texto += `${SEPARADOR}\n\n`;
+
+    texto += `👤 *CLIENTE*\n`;
+    texto += `🙍 *Nome:* ${nome}\n`;
+    texto += `📱 *WhatsApp:* ${telefone}\n\n`;
+    texto += `${SEPARADOR}\n\n`;
+
+    texto += `🛒 *ITENS DO PEDIDO*\n`;
+    carrinho.forEach(item => {
+        texto += `🍰 ${item.qtd}x ${item.nome}\n💵 R$ ${(item.preco * item.qtd).toFixed(2).replace('.', ',')}\n`;
+    });
+    texto += `\n${SEPARADOR}\n\n`;
+
+    texto += `📦 *RESUMO DO PEDIDO*\n`;
+    texto += `🧁 *Itens:* ${qtdTotalItens}\n`;
+    texto += `💰 *Subtotal:* R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
+    if (desconto > 0) texto += `🏷️ *Desconto (5%):* -R$ ${desconto.toFixed(2).replace('.', ',')}\n`;
+    texto += `🚚 *Frete:* ${frete === 0 ? 'GRÁTIS' : 'R$ ' + frete.toFixed(2).replace('.', ',')}\n`;
+    texto += `💳 *Total:* R$ ${total.toFixed(2).replace('.', ',')}\n\n`;
+    texto += `${SEPARADOR}\n\n`;
+
+    texto += `📍 *ENTREGA*\n`;
+    texto += bairroValor === "retirada"
+        ? `🏠 Retirada no local (${ENDERECO_RETIRADA})\n`
+        : `🚚 ${bairroTexto}\n🏡 *Endereço:* ${endereco}\n`;
+    texto += `📅 *Data/Hora:* ${dataFormatada} às ${hora}\n`;
+    texto += `💳 *Pagamento:* ${pagamento}\n`;
+
+    return {
+        texto, nome, telefone, subtotal, desconto, frete, total,
+        bairroTexto, endereco, numeroPedido, data, hora, pagamento, bairroValor
+    };
+}
+
+function finalizarZap() {
+    const btnZap = document.getElementById("btnWhatsapp");
+    if (btnZap.disabled) return;
+    if (carrinho.length === 0) {
+        alert("⚠️ Seu carrinho está vazio! Adicione itens antes de enviar o pedido.");
+        return;
+    }
+    if (typeof window.criarPedidoComNumero !== 'function') {
+        alert("⚠️ O sistema de pedidos ainda está carregando. Aguarde 2 segundos e tente novamente.");
+        return;
+    }
+
+    const { chave, numero: numeroPedido } = window.criarPedidoComNumero();
+    const resumo = montarTextoPedido(numeroPedido);
+
+    const numeroWhatsLoja = "5551985803243";
+    const url = `https://wa.me/${numeroWhatsLoja}?text=${encodeURIComponent(resumo.texto)}`;
+
+    const dadosPedido = {
+        nome: resumo.nome,
+        telefone: resumo.telefone,
+        itens: carrinho,
+        subtotal: resumo.subtotal,
+        desconto: resumo.desconto,
+        frete: resumo.frete,
+        total: resumo.total,
+        enderecoTexto: resumo.bairroTexto,
+        endereco: resumo.endereco,
+        numeroPedido: resumo.numeroPedido,
+        data: resumo.data,
+        hora: resumo.hora,
+        pagamento: resumo.pagamento,
+        tipoEntrega: resumo.bairroValor === 'retirada' ? 'retirada' : 'entrega',
+        status: 'recebido',
+        statusAtualizadoEm: Date.now(),
+        criadoEm: new Date().toISOString()
     };
 
-    var kmMudou = false;
-    // O odômetro de rodovia só soma distância em leituras confiáveis (protege contra
-    // somar um "salto" de GPS como se fosse km rodado de verdade).
-    if (!leituraDescartadaPorGlitch && ultimoPontoBruto && viaState.tipo === 'rodovia' && !atualizandoKmRodovia) {
-        var delta = calcularDistanciaMetros(ultimoPontoBruto[0], ultimoPontoBruto[1], lat, lon);
-        if (delta > 2 && delta < 500) { viaState.odometroM += delta; }
-        var kmEstimadoAtual = viaState.kmBase + Math.floor(viaState.odometroM / 1000);
-        if (viaState.kmSincronizado === null || kmEstimadoAtual !== viaState.kmSincronizado) {
-            kmMudou = true;
-        }
-        salvarViaState();
-    }
-    // CORREÇÃO: esta referência agora avança SEMPRE (não só quando a leitura passa no
-    // filtro) — ver comentário na checagem de velocidade acima. Mantê-la sempre atual é o
-    // que evita a próxima leitura parecer "um salto" cada vez maior.
-    ultimoPontoBruto = [lat, lon];
-
-    if (iniciouParadaAgora) {
-        (function(latP, lonP, situacaoP, velP, precisaoP, agoraP, inicioParadaTsNoMomento) {
-            setTimeout(function() {
-                // CORREÇÃO: antes disso, o app esperava 4s e gravava a parada sem checar se
-                // ela ainda estava acontecendo — um soluço de GPS de um instante só (comum em
-                // curvas, viadutos, perto de prédios) já bastava pra criar uma "seta de
-                // parada" falsa no meio de um trajeto contínuo, mesmo o veículo nunca tendo
-                // parado de verdade. Agora, só grava se o veículo ainda estiver parado nesse
-                // momento (inicioParadaTs não pode ter mudado nem sido zerado nesse meio
-                // tempo por um movimento real detectado). O prazo também subiu de 4s pra 1
-                // minuto — combinado que só conta como "parada" de verdade (semáforo, fila de
-                // trânsito etc. não geram mais seta, só param contínuas de 1min+).
-                if (inicioParadaTs !== inicioParadaTsNoMomento) {
-                    return; // já voltou a se mover (ou começou outra parada) — não era de verdade
-                }
-                var latConsulta = latP, lonConsulta = lonP;
-                if (ultimaLeituraCompleta && ultimaLeituraCompleta.precisao != null &&
-                    (precisaoP == null || ultimaLeituraCompleta.precisao < precisaoP)) {
-                    latConsulta = ultimaLeituraCompleta.lat; lonConsulta = ultimaLeituraCompleta.lon;
-                }
-                buscarEnderecoImediato(latConsulta, lonConsulta).then(function(fresco) {
-                    // Confere de novo depois do fetch do endereço (que também leva um tempo) —
-                    // mesma lógica: se já voltou a se mover, cancela.
-                    if (inicioParadaTs !== inicioParadaTsNoMomento) { return; }
-                    var ruaBase = (fresco && fresco.rua) || viaState.nome || null;
-                    var ruaFinal = (fresco && fresco.numero && ruaBase && fresco.tipoVia !== 'rodovia') ? (ruaBase + ", " + fresco.numero) : ruaBase;
-                    registrarESincronizarPonto(latP, lonP, situacaoP, velP, precisaoP, agoraP, {
-                        rua: ruaFinal,
-                        bairro: (fresco && fresco.bairro) || document.getElementById('txtBairro').textContent,
-                        cidade: (fresco && fresco.cidade) || document.getElementById('txtCidade').textContent,
-                        estado: (fresco && fresco.estado) || document.getElementById('txtEstado').textContent,
-                        tipoVia: (fresco && fresco.tipoVia) || viaState.tipo || 'rua',
-                        km: viaState.kmSincronizado
-                    }, 'inicio_parada');
-                });
-            }, 60000);
-        })(lat, lon, situacao, vel, precisao, agora, inicioParadaTs);
-    } else if (iniciouExcessoAgora) {
-        (function(latE, lonE, situacaoE, velE, precisaoE, agoraE, limiteViaNoMomento) {
-            buscarEnderecoImediato(latE, lonE).then(function(fresco) {
-                var ruaBase = (fresco && fresco.rua) || viaState.nome || null;
-                var ruaFinal = (fresco && fresco.numero && ruaBase && fresco.tipoVia !== 'rodovia') ? (ruaBase + ", " + fresco.numero) : ruaBase;
-                registrarESincronizarPonto(latE, lonE, situacaoE, velE, precisaoE, agoraE, {
-                    rua: ruaFinal,
-                    bairro: (fresco && fresco.bairro) || document.getElementById('txtBairro').textContent,
-                    cidade: (fresco && fresco.cidade) || document.getElementById('txtCidade').textContent,
-                    estado: (fresco && fresco.estado) || document.getElementById('txtEstado').textContent,
-                    tipoVia: (fresco && fresco.tipoVia) || viaState.tipo || 'rua',
-                    km: viaState.kmSincronizado,
-                    limiteVia: limiteViaNoMomento
-                }, 'excesso_velocidade');
+    if (window.salvarPedidoDireto) {
+        window.salvarPedidoDireto(chave, dadosPedido)
+            .then(function() {
+                console.log("Pedido salvo com sucesso:", chave);
+            })
+            .catch(function(erroSalvar) {
+                console.error("Erro ao salvar pedido no Firebase — guardando na fila para reenviar:", erroSalvar);
+                _guardarPedidoPendente(chave, dadosPedido);
             });
-        })(lat, lon, situacao, vel, precisao, agora, limiteVelocidadeAtual);
-    } else if (kmMudou) {
-        atualizandoKmRodovia = true;
-        buscarKmOficial(lat, lon).then(function(kmOficial) {
-            var kmFinal, fonte;
-            if (kmOficial !== null) {
-                kmFinal = Math.round(kmOficial); fonte = 'oficial';
-            } else {
-                kmFinal = viaState.kmBase + Math.round(viaState.odometroM / 1000); fonte = 'estimado';
-            }
-            viaState.kmBase = kmFinal; viaState.odometroM = 0; viaState.kmSincronizado = kmFinal;
-            salvarViaState();
-            atualizandoKmRodovia = false;
-            registrarESincronizarPonto(lat, lon, situacao, vel, precisao, agora, {
-                rua: viaState.nome,
-                bairro: document.getElementById('txtBairro').textContent,
-                cidade: document.getElementById('txtCidade').textContent,
-                estado: document.getElementById('txtEstado').textContent,
-                tipoVia: 'rodovia', km: kmFinal, fonteKm: fonte
-            }, 'km_rodovia');
-        }).catch(function() { atualizandoKmRodovia = false; });
     } else {
-        sincronizarTempoRealImediato();
+        console.error("window.salvarPedidoDireto não está disponível — guardando na fila para reenviar.");
+        _guardarPedidoPendente(chave, dadosPedido);
     }
 
-    var limiarChecagemM = (viaState.tipo === 'rodovia') ? 300 : 60;
-    var distanciaChecagem = ultimoPontoChecadoEndereco ? calcularDistanciaMetros(ultimoPontoChecadoEndereco[0], ultimoPontoChecadoEndereco[1], lat, lon) : Infinity;
-    var precisaoAceitavel = !precisao || precisao <= PRECISAO_MAXIMA_ACEITAVEL_M;
-    if (distanciaChecagem >= limiarChecagemM && precisaoAceitavel) {
-        ultimoPontoChecadoEndereco = [lat, lon];
-        var idFixoPonto = gerarIdPonto(agoraTs);
-        var jaExisteFila = filaGeocodificarDepois.some(p => calcularDistanciaMetros(p.lat, p.lon, lat, lon) < 20);
-        if (!jaExisteFila) {
-            filaGeocodificarDepois.push({ id: idFixoPonto, lat: lat, lon: lon, ts: agoraTs, velocidadeNoMomento: vel, statusNoMomento: situacao, precisaoNoMomento: precisao });
-            salvarTudo();
-            processarFilaGeocodificacao();
-        }
-    }
+    window.open(url, '_blank');
 }
 
-function sincronizarTempoRealImediato() {
-    if (appSuspenso) return;
-    if (!EMPRESA_ID) return;
-    if (!ultimaLeituraCompleta || listaVeiculos.length === 0) return;
-    var updates = {};
-    listaVeiculos.forEach(vNome => {
-        var basePath = 'empresas/' + sanitizarChavePath(EMPRESA_ID) + '/veiculos/' + sanitizarChavePath(vNome) + '/atual/';
-        updates[basePath + 'lat'] = ultimaLeituraCompleta.lat;
-        updates[basePath + 'lon'] = ultimaLeituraCompleta.lon;
-        updates[basePath + 'velocidade'] = ultimaLeituraCompleta.velocidade;
-        updates[basePath + 'status'] = ultimaLeituraCompleta.status;
-        updates[basePath + 'hora'] = ultimaLeituraCompleta.hora;
-        updates[basePath + 'data'] = ultimaLeituraCompleta.data;
-        updates[basePath + 'tempoParado'] = document.getElementById('txtTempoParado').textContent;
+function limparCarrinhoCompleto() {
+    if(confirm("Deseja limpar todo o carrinho?")) {
+        carrinho = []; promoAtiva = false; salvarDados(); resetPagamentoFluxo(); verificarPgto(); toggleVisibilidadeCarrinho();
+    }
+}
+</script>
 
-        updates[basePath + 'rua'] = document.getElementById('txtRua').textContent;
-        updates[basePath + 'bairro'] = document.getElementById('txtBairro').textContent;
-        updates[basePath + 'cidade'] = document.getElementById('txtCidade').textContent;
-        updates[basePath + 'estado'] = document.getElementById('txtEstado').textContent;
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCHzkyYek4fV7fs_1f6FTA9o4o3ikJuhs0",
+  authDomain: "josigourmet-af3ff.firebaseapp.com",
+  databaseURL: "https://josigourmet-af3ff-default-rtdb.firebaseio.com",
+  projectId: "josigourmet-af3ff",
+  storageBucket: "josigourmet-af3ff.firebasestorage.app",
+  messagingSenderId: "373768013260",
+  appId: "1:373768013260:web:bd5fa8dcf6053414d7c969",
+  measurementId: "G-XR4249E0QG"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window.criarPedidoComNumero = function() {
+    const novaRef = push(ref(db, "pedidos"));
+    const chave = novaRef.key;
+    const numero = Date.now().toString().slice(-6);
+    return { chave, numero };
+};
+
+window.salvarPedidoDireto = function(chave, pedido) {
+    const url = `https://josigourmet-af3ff-default-rtdb.firebaseio.com/pedidos/${chave}.json`;
+    return fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pedido),
+        keepalive: true
+    }).then(function(resp) {
+        if (!resp.ok) throw new Error('Firebase REST retornou status ' + resp.status);
+        return resp;
     });
-    comLimiteDeTempo(db.ref().update(updates), 18000).then(() => {
-        if(!firebaseOnlineConfirmado) { firebaseOnlineConfirmado = true; atualizarInterfaceEstado(); }
-    }).catch(e => {
-        console.warn(e);
-        var agora = Date.now();
-        if (e && e.message === "tempo esgotado") { forcarReconexaoFirebaseSeTravado(); }
-        var msgErro1 = "Firebase recusou salvar posição ao vivo: " + (e && e.message ? e.message : e) + " [empresaId: " + EMPRESA_ID + ", logado: " + (auth.currentUser ? auth.currentUser.email : "NÃO") + "]";
-        mostrarErroSyncPersistente(msgErro1);
-        if (agora - ultimoAvisoErroEnvioTs > 60000) {
-            ultimoAvisoErroEnvioTs = agora;
-            mostrarAvisoGps("⚠️ " + msgErro1);
-        }
-    });
+};
+</script>
+
+<!-- Logica JavaScript de Funcionamento do Chatbot IA (via Netlify Function, sem chave exposta) -->
+<script>
+function toggleChat() {
+    const janela = document.getElementById('chatJanela');
+    const aberto = (janela.style.display === 'none' || janela.style.display === '');
+    janela.style.display = aberto ? 'flex' : 'none';
+    const dot = document.getElementById('chatNotifDot');
+    if (aberto && dot) dot.style.display = 'none';
 }
 
-setInterval(function() {
-    if (appSuspenso) return;
-    var statusAtual = document.getElementById('badStatus').textContent;
-    if (statusAtual.indexOf("PARADO") !== -1 && ultimoIdPontoParadaGravado && listaVeiculos.length > 0 && firebaseOnlineConfirmado) {
-        var tempoAtualizado = document.getElementById('txtTempoParado').textContent;
-        var agoraStr = new Date().toLocaleTimeString('pt-BR');
-        var patchHistorico = {};
-
-        listaVeiculos.forEach(vNome => {
-            var path = 'empresas/' + sanitizarChavePath(EMPRESA_ID) + '/veiculos/' + sanitizarChavePath(vNome) + '/historico/' + ultimoIdPontoParadaGravado + '/';
-            patchHistorico[path + 'tempoParado'] = tempoAtualizado;
-            patchHistorico[path + 'horaFinalParada'] = agoraStr;
-        });
-
-        db.ref().update(patchHistorico).catch(e => console.warn(e));
-    }
-}, 30000);
-
-function tratarErroGps(erro) {
-    console.error(erro); errosGpsConsecutivos++;
-    if (erro.code === 1) mostrarAvisoGps("⚠️ Permissão de localização negada.");
-    else if (errosGpsConsecutivos >= 4) mostrarAvisoGps("⚠️ Instabilidade no sinal do GPS.");
+function agendarChatAutomatico() {
+    setTimeout(abrirChatAutomatico, 5500);
 }
 
-function iniciarRastreioNativoBackground() {
-    var BG = window.Capacitor.Plugins.BackgroundGeolocation;
-    if (!BG) {
-        // CORREÇÃO: antes, se o plugin nativo não estivesse presente no app compilado, o
-        // código caía pro GPS comum do navegador (iniciarRastreioWeb) completamente em
-        // silêncio — sem nenhum aviso na tela. Isso é perigoso porque o GPS do navegador
-        // dentro do WebView normalmente PARA de atualizar quando a tela apaga ou o app vai
-        // pra segundo plano no Android — ou seja, o rastreio parece funcionar durante o
-        // teste (com a tela ligada, olhando o app) e falha silenciosamente assim que o
-        // motorista guarda o celular no bolso ou apaga a tela. Agora isso gera um aviso
-        // visível, pra não passar despercebido num teste rápido.
-        mostrarAvisoGps("⚠️ Plugin nativo de rastreio em segundo plano NÃO encontrado neste app — usando GPS do navegador, que tende a PARAR quando a tela apaga ou o app sai de primeiro plano. Rastreio em 2º plano real não está garantido.");
-        iniciarRastreioWeb();
+function abrirChatAutomatico() {
+    let jaAbriu = false;
+    try { jaAbriu = !!sessionStorage.getItem('chatAutoAberto'); } catch(e) {}
+    if (jaAbriu) return;
+    try { sessionStorage.setItem('chatAutoAberto', '1'); } catch(e) {}
+
+    const janela = document.getElementById('chatJanela');
+    const dot = document.getElementById('chatNotifDot');
+    if (!janela) return;
+
+    janela.style.display = 'flex';
+    if (dot) dot.style.display = 'none';
+
+    const container = document.getElementById('chatMensagens');
+    const hora = new Date().getHours();
+    const saudacao = (hora >= 4 && hora < 12) ? "Bom dia" : (hora >= 12 && hora < 18) ? "Boa tarde" : "Boa noite";
+
+    const msg = document.createElement('div');
+    msg.className = 'msg ia';
+    msg.textContent = `${saudacao}! 🍰✨ Ficou com alguma dúvida sobre sabores, preços, entrega ou prazos? Pode perguntar aqui que eu te ajudo na hora!`;
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+}
+
+async function enviarMensagemIa() {
+    const input = document.getElementById('chatInput');
+    const btnEnviar = document.getElementById('btnEnviarChat');
+    const container = document.getElementById('chatMensagens');
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    if (!_RL.ok()) {
+        const msgLimite = document.createElement('div');
+        msgLimite.className = 'msg ia';
+        msgLimite.textContent = "Opa, muitas perguntas rapidinho! 🍰 Espera só um minutinho e pergunta de novo, tá bem? 🤎";
+        container.appendChild(msgLimite);
+        container.scrollTop = container.scrollHeight;
         return;
     }
-    atualizarBarraBackground("🟢 Rastreio em segundo plano ATIVO", true);
-    var resultadoWatcher = BG.addWatcher({
-        backgroundMessage: "Gravando rotas e telemetria em tempo real...",
-        backgroundTitle: "Everton GPS Corporativo",
-        requestPermissions: true, stale: false, distanceFilter: 0
-    }, function(location, error) {
-        if (error) {
-            // CORREÇÃO: erros do watcher nativo eram descartados em silêncio (if (error)
-            // return;) — se o Android negasse a permissão de localização em segundo plano,
-            // ou o serviço em primeiro plano fosse encerrado pelo sistema, o app ficava
-            // "rastreando" sem nunca mais receber nenhuma posição, sem nenhum aviso.
-            mostrarAvisoGps("⚠️ Erro no rastreio em segundo plano: " + (error && error.message ? error.message : error));
-            return;
-        }
-        if (location) processarNovaPosicao(location.latitude, location.longitude, location.accuracy, location.speed);
-    });
-    if (resultadoWatcher && typeof resultadoWatcher.then === 'function') {
-        resultadoWatcher.then(function(id) { bgWatcherId = id; }).catch(function(erro) {
-            console.error(erro);
-            mostrarAvisoGps("⚠️ Falha ao iniciar GPS em segundo plano (plugin nativo): " + (erro && erro.message ? erro.message : erro) + " — usando GPS padrão do navegador.");
-            atualizarBarraBackground("", false);
-            iniciarRastreioWeb();
-        });
-    } else {
-        bgWatcherId = resultadoWatcher;
-    }
-}
 
-function iniciarRastreioWeb() {
-    if (!checarContextoSeguro() || !navigator.geolocation) return;
-    navigator.geolocation.watchPosition(position => {
-        processarNovaPosicao(position.coords.latitude, position.coords.longitude, position.coords.accuracy, position.coords.speed);
-    // CORREÇÃO: maximumAge era 3000 (aceitava uma posição em cache de até 3s) — em troca de
-    // um pouco mais de bateria, agora sempre pede a leitura mais fresca disponível, o que
-    // reduz o atraso perceptível entre o veículo se mover e o app mostrar isso na tela.
-    }, tratarErroGps, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
-}
+    const msgUser = document.createElement('div');
+    msgUser.className = 'msg user';
+    msgUser.textContent = texto;
+    container.appendChild(msgUser);
+    input.value = '';
+    input.disabled = true;
+    if (btnEnviar) btnEnviar.disabled = true;
+    container.scrollTop = container.scrollHeight;
 
-function iniciarRastreioGps() {
+    const msgDigitando = document.createElement('div');
+    msgDigitando.className = 'msg ia';
+    msgDigitando.textContent = 'Digitando... 🍰';
+    container.appendChild(msgDigitando);
+    container.scrollTop = container.scrollHeight;
+
     try {
-        if (isNative) { iniciarRastreioNativoBackground(); } else { iniciarRastreioWeb(); }
+        const response = await fetch('https://josidocesgoumert.netlify.app/.netlify/functions/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mensagem: texto })
+        });
+
+        const dados = await response.json();
+        msgDigitando.remove();
+
+        if (dados.resposta) {
+            const msgIa = document.createElement('div');
+            msgIa.className = 'msg ia';
+            msgIa.textContent = dados.resposta;
+            container.appendChild(msgIa);
+        } else {
+            throw new Error(dados.erro || 'Erro na API');
+        }
+
     } catch (erro) {
-        console.error(erro);
-        mostrarAvisoGps("⚠️ Erro ao iniciar o GPS nativo: " + (erro && erro.message ? erro.message : erro) + " — usando GPS padrão do navegador.");
-        atualizarBarraBackground("", false);
-        iniciarRastreioWeb();
+        console.error("Erro na integração com a IA:", erro);
+        if (msgDigitando.parentNode) msgDigitando.remove();
+        const msgErro = document.createElement('div');
+        msgErro.className = 'msg ia';
+        msgErro.textContent = "Ops, deu um estalo técnico no meu sistema! 🍫 Se for urgente, me chama direto no WhatsApp que te ajudo rapidinho! 🤎";
+        container.appendChild(msgErro);
+    } finally {
+        input.disabled = false;
+        if (btnEnviar) btnEnviar.disabled = false;
+        input.focus();
+        container.scrollTop = container.scrollHeight;
     }
 }
-iniciarRastreioGps();
-
-var ultimaBuscaTempTs = 0; var buscandoTemp = false;
-function talvezBuscarTemperatura(lat, lon) {
-    var agora = Date.now(); if (buscandoTemp || (agora - ultimaBuscaTempTs) < 300000) return;
-    buscandoTemp = true; ultimaBuscaTempTs = agora;
-    fetchComTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature&temperature_unit=celsius&timezone=auto`, {}, TIMEOUT_FETCH_MS)
-        .then(res => res.json()).then(data => {
-            if (data && data.current && typeof data.current.temperature_2m === "number") {
-                var sensacao = typeof data.current.apparent_temperature === "number" ? ` (sensação ${data.current.apparent_temperature.toFixed(1)}°C)` : "";
-                document.getElementById('txtTemperatura').textContent = data.current.temperature_2m.toFixed(1) + " °C" + sensacao;
-            }
-        }).catch(e => console.warn(e)).finally(() => { buscandoTemp = false; });
-}
-
-function aplicarEnderecoNoPonto(lat, lon, rua, bairro, cidade, estado, dadosResposta, velocidadeNoMomento, statusNoMomento, tsNoMomento, precisaoNoMomento, numero) {
-    var tipoVia = classificarVia(rua, dadosResposta);
-    var ruaComNumero = (rua && numero) ? (rua + ", " + numero) : rua;
-
-    if (tipoVia === "rodovia") {
-        var kmExibicao = viaState.kmSincronizado !== null && viaState.tipo === 'rodovia' && viaState.nome === rua ? viaState.kmSincronizado : "—";
-        document.getElementById('txtRua').textContent = rua + " (rodovia) - Km " + kmExibicao;
-        document.getElementById('txtBairro').textContent = valorOuTraco(bairro, "Bairro não localizado");
-    } else {
-        document.getElementById('txtRua').textContent = ruaComNumero;
-        document.getElementById('txtBairro').textContent = valorOuTraco(bairro, "Bairro não localizado");
-    }
-    document.getElementById('txtCidade').textContent = cidade;
-    document.getElementById('txtEstado').textContent = estado;
-
-    var mudouDeVia = (viaState.tipo !== tipoVia) || (viaState.nome !== rua);
-
-    var velNoMomentoNum = velocidadeNoMomento != null ? velocidadeNoMomento : 0;
-    var tsEfetivo = tsNoMomento || Date.now();
-    var pareceRuidoDeGps = mudouDeVia && rua === viaAnterior && velNoMomentoNum < 15 && ultimoRegistroViaTs && (tsEfetivo - ultimoRegistroViaTs) < 15000;
-
-    if (pareceRuidoDeGps) {
-        salvarTudo();
-        sincronizarTempoRealImediato();
-    } else if (mudouDeVia && tipoVia === "rodovia" && !atualizandoKmRodovia) {
-        atualizandoKmRodovia = true;
-        buscarKmOficial(lat, lon).then(function(kmOficial) {
-            var kmFinal = (kmOficial !== null) ? Math.round(kmOficial) : null;
-            var fonte = (kmOficial !== null) ? 'oficial' : 'desconhecido';
-            viaAnterior = viaState.nome;
-            var limiteTagRodovia = extrairLimiteVelocidadeTag(dadosResposta && dadosResposta.extratags);
-            viaState = { tipo: 'rodovia', nome: rua, kmBase: kmFinal != null ? kmFinal : 0, odometroM: 0, kmSincronizado: kmFinal, limiteVelocidade: limiteTagRodovia || LIMITE_VELOCIDADE };
-            salvarViaState();
-            atualizandoKmRodovia = false;
-            ultimoRegistroViaTs = tsNoMomento || Date.now();
-
-            var agora = tsNoMomento ? new Date(tsNoMomento) : new Date();
-            var velAtual = velocidadeNoMomento != null ? velocidadeNoMomento : (ultimaLeituraCompleta ? ultimaLeituraCompleta.velocidade : 0);
-            var statusAtual = statusNoMomento || (ultimaLeituraCompleta ? ultimaLeituraCompleta.status : "PARADO");
-            registrarESincronizarPonto(lat, lon, statusAtual, velAtual, precisaoNoMomento != null ? precisaoNoMomento : null, agora, { rua: rua, bairro: bairro, cidade: cidade, estado: estado, tipoVia: "rodovia", km: kmFinal, fonteKm: fonte }, "entrada_rodovia");
-        }).catch(function() { atualizandoKmRodovia = false; });
-    } else if (mudouDeVia) {
-        viaAnterior = viaState.nome;
-        var limiteTagRua = extrairLimiteVelocidadeTag(dadosResposta && dadosResposta.extratags);
-        viaState = { tipo: 'rua', nome: rua, kmBase: 0, odometroM: 0, kmSincronizado: null, limiteVelocidade: limiteTagRua || 30 };
-        salvarViaState();
-        ultimoRegistroViaTs = tsNoMomento || Date.now();
-
-        var agora2 = tsNoMomento ? new Date(tsNoMomento) : new Date();
-        var velAtual2 = velocidadeNoMomento != null ? velocidadeNoMomento : (ultimaLeituraCompleta ? ultimaLeituraCompleta.velocidade : 0);
-        var statusAtual2 = statusNoMomento || (ultimaLeituraCompleta ? ultimaLeituraCompleta.status : "PARADO");
-        registrarESincronizarPonto(lat, lon, statusAtual2, velAtual2, precisaoNoMomento != null ? precisaoNoMomento : null, agora2, { rua: ruaComNumero, bairro: bairro, cidade: cidade, estado: estado, tipoVia: "rua" }, "troca_rua");
-    } else {
-        salvarTudo();
-        sincronizarTempoRealImediato();
-    }
-}
-
-var IDADE_MAXIMA_FILA_ENDERECO_MS = 45000;
-var TAMANHO_MAXIMO_FILA_ENDERECO = 8;
-
-function podarFilaGeocodificacao() {
-    var agora = Date.now();
-    var tamanhoAntes = filaGeocodificarDepois.length;
-    filaGeocodificarDepois = filaGeocodificarDepois.filter(function(p) {
-        return (agora - p.ts) <= IDADE_MAXIMA_FILA_ENDERECO_MS;
-    });
-    if (filaGeocodificarDepois.length > TAMANHO_MAXIMO_FILA_ENDERECO) {
-        filaGeocodificarDepois.splice(0, filaGeocodificarDepois.length - TAMANHO_MAXIMO_FILA_ENDERECO);
-    }
-    if (filaGeocodificarDepois.length !== tamanhoAntes) salvarTudo();
-}
-
-function bairroDoEndereco(addr) {
-    return addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.city_district || null;
-}
-function cidadeDoEndereco(addr) {
-    return addr.city || addr.town || addr.village || addr.municipality || addr.county || null;
-}
-
-function buscarEnderecoImediato(lat, lon) {
-    return fetchComTimeout(montarUrlGeocodificacao(lat, lon), {}, TIMEOUT_FETCH_MS)
-        .then(res => res.json())
-        .then(data => {
-            var addr = data.address || {};
-            var rua = addr.road || addr.pedestrian || null;
-            return {
-                rua: rua,
-                numero: addr.house_number || null,
-                bairro: bairroDoEndereco(addr),
-                cidade: cidadeDoEndereco(addr),
-                estado: addr.state || null,
-                tipoVia: classificarVia(rua || "", data)
-            };
-        })
-        .catch(function() { return null; });
-}
-
-var geocodificando = false;
-function processarFilaGeocodificacao() {
-    if (appSuspenso) return;
-    podarFilaGeocodificacao();
-    if (geocodificando || filaGeocodificarDepois.length === 0) return;
-    geocodificando = true; atualizarInterfaceEstado();
-    var ponto = filaGeocodificarDepois[filaGeocodificarDepois.length - 1];
-
-    fetchComTimeout(montarUrlGeocodificacao(ponto.lat, ponto.lon), {}, TIMEOUT_FETCH_MS)
-        .then(res => res.json()).then(data => {
-            var addr = data.address || {};
-            var rua = addr.road || addr.pedestrian || "Rua não localizada";
-            var numero = addr.house_number || null;
-            var bairro = bairroDoEndereco(addr) || "Bairro não localizado";
-            var cidade = cidadeDoEndereco(addr) || "Cidade não localizada";
-            var estado = addr.state || "Estado não localizado";
-            aplicarEnderecoNoPonto(ponto.lat, ponto.lon, rua, bairro, cidade, estado, data, ponto.velocidadeNoMomento, ponto.statusNoMomento, ponto.ts, ponto.precisaoNoMomento, numero);
-            filaGeocodificarDepois.pop();
-        }).catch(err => {
-            ponto.tentativas = (ponto.tentativas || 0) + 1;
-            if (ponto.tentativas >= MAX_TENTATIVAS_GEOCODIFICACAO) filaGeocodificarDepois.pop();
-        }).finally(() => {
-            geocodificando = false; salvarTudo(); atualizarInterfaceEstado();
-            if (filaGeocodificarDepois.length > 0) setTimeout(processarFilaGeocodificacao, INTERVALO_GEOCODIFICACAO_MS);
-        });
-}
-
-var enviando = false; var falhasConsecutivasLote = 0;
-var ultimoAvisoErroEnvioTs = 0;
-var MAX_FILA_PENDENTES = 300;
-function enviarDadosFila() {
-    if (appSuspenso) return;
-    if (!EMPRESA_ID) return;
-    if (enviando || filaPendentes.length === 0) { atualizarInterfaceEstado(); return; }
-    if (filaPendentes.length > MAX_FILA_PENDENTES) {
-        filaPendentes.splice(0, filaPendentes.length - MAX_FILA_PENDENTES);
-        salvarTudo();
-    }
-    enviando = true; var lote = filaPendentes.slice(0, 25); var updates = {};
-    try {
-        lote.forEach(item => {
-            var basePath = 'empresas/' + sanitizarChavePath(item.empresaId || EMPRESA_ID) + '/veiculos/' + sanitizarChavePath(item.vID) + '/historico/' + item.id;
-            updates[basePath] = item;
-        });
-        comLimiteDeTempo(db.ref().update(updates), 18000).then(() => {
-            filaPendentes.splice(0, lote.length); falhasConsecutivasLote = 0; firebaseOnlineConfirmado = true; salvarTudo();
-        }).catch(e => {
-            falhasConsecutivasLote++; if (falhasConsecutivasLote >= 20) { filaPendentes.shift(); falhasConsecutivasLote = 0; salvarTudo(); }
-            var agora = Date.now();
-            if (e && e.message === "tempo esgotado") { forcarReconexaoFirebaseSeTravado(); }
-            var empresaIdsDoLote = Array.from(new Set(lote.map(function(it) { return it.empresaId || EMPRESA_ID; })));
-            var msgErro2 = "Firebase recusou salvar os dados: " + (e && e.message ? e.message : e) + " [empresaId do(s) item(ns) que falharam: " + empresaIdsDoLote.join(", ") + " | empresaId atual do campo: " + EMPRESA_ID + ", logado: " + (auth.currentUser ? auth.currentUser.email : "NÃO") + "]";
-            mostrarErroSyncPersistente(msgErro2);
-            if (agora - ultimoAvisoErroEnvioTs > 60000) {
-                ultimoAvisoErroEnvioTs = agora;
-                mostrarAvisoGps("⚠️ " + msgErro2);
-            }
-        }).finally(() => {
-            enviando = false; atualizarInterfaceEstado();
-            if (filaPendentes.length > 0 && !appSuspenso) {
-                var esperaMs = Math.min(30000, 1000 * Math.pow(2, Math.min(falhasConsecutivasLote, 5)));
-                setTimeout(enviarDadosFila, falhasConsecutivasLote > 0 ? esperaMs : 0);
-            }
-        });
-    } catch (e) { filaPendentes.shift(); enviando = false; atualizarInterfaceEstado(); }
-}
-
-function atualizarInterfaceEstado() {
-    var barra = document.getElementById('statusConexao'); var totalPendente = filaPendentes.length + filaGeocodificarDepois.length;
-    if (!EMPRESA_ID) {
-        barra.className = "status-bar status-offline"; barra.innerHTML = "⚠️ Configure o ID da empresa acima pra começar";
-    } else if (appSuspenso) {
-        barra.className = "status-bar status-erro"; barra.innerHTML = "🚫 CONTA SUSPENSA — Sincronização pausada";
-    } else if (listaVeiculos.length === 0) {
-        barra.className = "status-bar status-offline"; barra.innerHTML = "MODO OFFLINE — Adicione um Veículo";
-    } else if (firebaseOnlineConfirmado && totalPendente === 0) {
-        barra.className = "status-bar status-online"; barra.innerHTML = "📡 SISTEMA ONLINE — Sincronizado!";
-    } else if (firebaseOnlineConfirmado) {
-        barra.className = "status-bar status-online"; barra.innerHTML = `📡 ONLINE — Sincronizando... <span>(${totalPendente} pendentes)</span>`;
-    } else {
-        barra.className = "status-bar status-offline"; barra.innerHTML = `MODO OFFLINE <span>(${totalPendente} pendentes)</span>`;
-    }
-    document.getElementById('filaInfo').textContent = registroCompleto.length + " pontos gravados localmente (" + filaPendentes.length + " no Firebase)";
-
-    var pill = document.getElementById('pillConta'); var pillTxt = document.getElementById('pillContaTexto');
-    if (pill && pillTxt) {
-        if (!EMPRESA_ID) { pill.className = "conta-pill"; pillTxt.textContent = "sem empresa"; }
-        else if (appSuspenso) { pill.className = "conta-pill"; pillTxt.textContent = "suspensa"; }
-        else if (firebaseOnlineConfirmado) { pill.className = "conta-pill ativa"; pillTxt.textContent = EMPRESA_ID; }
-        else { pill.className = "conta-pill"; pillTxt.textContent = EMPRESA_ID + " · offline"; }
-    }
-}
-
-window.addEventListener('online', function() { firebaseOnlineConfirmado = true; atualizarInterfaceEstado(); processarFilaGeocodificacao(); enviarDadosFila(); });
-window.addEventListener('offline', function() { firebaseOnlineConfirmado = false; atualizarInterfaceEstado(); });
-
-document.getElementById('btnForcar').addEventListener('click', function() {
-    if (appSuspenso) { alert("Conta suspensa por falta de pagamento. Entre em contato com o suporte."); return; }
-    geocodificando = false;
-    enviando = false;
-    processarFilaGeocodificacao();
-    enviarDadosFila();
-    sincronizarTempoRealImediato();
-});
-
-document.getElementById('btnExportar').addEventListener('click', async function() {
-    if (registroCompleto.length === 0) return alert("Sem pontos.");
-    var lines = ["Data;Hora;Latitude;Longitude;Velocidade(km/h);Situacao;Rua;Bairro;Cidade;Estado;Motivo;FonteKm;LimiteVia;ExcessoKmh"];
-    registroCompleto.forEach(p => { lines.push([p.data, p.hora, p.lat, p.lon, p.velocidade, p.status, p.rua, p.bairro, p.cidade, p.estado, p.motivo || "", p.fonteKm || "", p.limiteVia != null ? p.limiteVia : "", p.excessoKmh != null ? p.excessoKmh : ""].join(";")); });
-    var conteudoCsv = lines.join("\n");
-    var nomeArquivo = "rota_real_" + new Date().toISOString().slice(0,10) + ".csv";
-    var out = document.getElementById('diagnosticoResultado');
-
-    try {
-        if (isNative && window.Capacitor.Plugins.Filesystem && window.Capacitor.Plugins.Share) {
-            var Filesystem = window.Capacitor.Plugins.Filesystem;
-            var Share = window.Capacitor.Plugins.Share;
-            var resultado = await Filesystem.writeFile({
-                path: nomeArquivo,
-                data: conteudoCsv,
-                directory: 'CACHE',
-                encoding: 'utf8'
-            });
-            await Share.share({ title: "Rota exportada", url: resultado.uri });
-            out.textContent = "✅ Exportado e compartilhado com sucesso.";
-            return;
-        }
-    } catch (e) {
-        console.warn(e);
-        out.textContent = "⚠️ Falha ao exportar via plugin nativo: " + (e && e.message ? e.message : e) + " — tentando alternativa...";
-    }
-    try {
-        var arquivo = new File([conteudoCsv], nomeArquivo, { type: "text/csv" });
-        if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
-            await navigator.share({ files: [arquivo], title: "Rota exportada - " + nomeArquivo });
-            out.textContent = "✅ Compartilhado com sucesso.";
-            return;
-        }
-    } catch (e2) { console.warn(e2); }
-    var blob = new Blob([conteudoCsv], { type: "text/csv;charset=utf-8;" });
-    var url = URL.createObjectURL(blob); var a = document.createElement("a"); a.href = url; a.download = nomeArquivo; a.click(); URL.revokeObjectURL(url);
-});
-
-document.getElementById('btnDiagnostico').addEventListener('click', function() {
-    var out = document.getElementById('diagnosticoResultado'); out.textContent = "Testando...";
-    fetchComTimeout(montarUrlGeocodificacao(-29.6133, -52.1919), {}, 10000)
-        .then(res => res.text()).then(txt => { out.textContent = "✅ SUCESSO\n\n" + txt.slice(0, 300); }).catch(e => { out.textContent = "❌ ERRO: " + e.message; });
-});
-
-renderizarFrotaLocal(); atualizarInterfaceEstado(); checarContextoSeguro();
-
-setInterval(function() { sincronizarTempoRealImediato(); }, 3000);
-setInterval(function() { if (filaGeocodificarDepois.length > 0) processarFilaGeocodificacao(); if (filaPendentes.length > 0) enviarDadosFila(); }, 6000);
-
-var ultimoPulsoTs = 0;
-var INTERVALO_PULSO_MS = 15000;
-setInterval(function() {
-    if (appSuspenso) return;
-    if (!ultimaLeituraCompleta || listaVeiculos.length === 0) return;
-    var agoraPulso = new Date();
-    if (agoraPulso.getTime() - ultimoPulsoTs < INTERVALO_PULSO_MS) return;
-    ultimoPulsoTs = agoraPulso.getTime();
-
-    // CORREÇÃO: enquanto o veículo já está PARADO e o ponto de início dessa mesma parada já
-    // foi gravado (ultimoIdPontoParadaGravado), o pulso não cria mais um ponto novo a cada
-    // 15s — isso é o que fazia uma única parada longa aparecer como várias "setas de parada"
-    // separadas no histórico/painel admin. O tempo de parada continua sendo atualizado
-    // normalmente no MESMO ponto original pelo patch que já roda a cada 30s, então nada é
-    // perdido — só para de duplicar pontos. O pulso continua gravando normalmente quando o
-    // veículo está em movimento (pra manter o traçado da rota), e volta a criar um ponto novo
-    // de parada assim que houver movimento real entre uma parada e outra.
-    if (ultimaLeituraCompleta.status === "PARADO" && ultimoIdPontoParadaGravado) {
-        return;
-    }
-
-    // CORREÇÃO: aqui o "rua" era lido de volta do texto já exibido na tela
-    // (document.getElementById('txtRua').textContent) — só que, em rodovia, esse texto já
-    // vem com o sufixo " - Km X" colado (é só pra exibição). Como esse valor era reenviado
-    // pra registrarESincronizarPonto, que TAMBÉM cola " - Km X" no final quando é rodovia,
-    // cada pulso (a cada 15s) duplicava o sufixo em cima do que já estava duplicado —
-    // depois de alguns pulsos virava "RSC-287 - Km 78 - Km 78 - Km 78 - Km 78...".  Agora
-    // usa viaState.nome (o nome puro da via, sem nenhum sufixo) como fonte — igual todo
-    // outro lugar do código já fazia — e deixa registrarESincronizarPonto colar o "- Km X"
-    // uma única vez, na hora certa.
-    registrarESincronizarPonto(
-        ultimaLeituraCompleta.lat, ultimaLeituraCompleta.lon, ultimaLeituraCompleta.status,
-        ultimaLeituraCompleta.velocidade, ultimaLeituraCompleta.precisao, agoraPulso,
-        {
-            rua: (viaState.tipo === 'rodovia') ? viaState.nome : document.getElementById('txtRua').textContent,
-            bairro: document.getElementById('txtBairro').textContent,
-            cidade: document.getElementById('txtCidade').textContent,
-            estado: document.getElementById('txtEstado').textContent,
-            tipoVia: viaState.tipo || 'rua', km: viaState.kmSincronizado
-        }, 'pulso'
-    );
-}, 15000);
 </script>
 </body>
-</html>
+</html> 
