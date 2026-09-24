@@ -50,7 +50,8 @@ Regras Importantes da Loja:
 - Oferecemos Frete Grátis + 5% de desconto automático para qualquer compra a partir de R$ 50,00.
 - Atendimento e Entregas: Segunda a Sexta das 10h às 23h. Sábados, Domingos e Feriados das 10h às 17h.
 - Endereço físico para retirada no local: Rua Marechal Floriano, 3197, bairro Coronel Brito.
-- O prazo estimado para o preparo e entrega/retirada após a confirmação do pedido é de 40 a 60 minutos (solicitamos agendamento com pelo menos 1 hora de antecedência no site).
+- Pedidos normais (itens do cardápio de pronta entrega): agendar com pelo menos 90 minutos de antecedência no site. Esse é o tempo médio de preparo e entrega/retirada após a confirmação do pedido.
+- Encomendas para eventos (grandes quantidades, orçamentos personalizados): agendar com pelo menos 2 dias de antecedência, pelo WhatsApp.
 - Nosso WhatsApp para dúvidas, orçamentos de eventos ou qualquer outro contato é (51) 98580-3243.
 
 Nossa história: A Josi Doces Gourmet começou em 19 de abril de 2026, de forma simples, entre panelas e sonhos na cozinha de casa. O que era um hobby se transformou em paixão ao ver o sorriso de quem provava os doces. Hoje, cada torta de bolacha e bolo que sai da cozinha carrega essa essência: o sabor autêntico do doce feito à mão, com a qualidade de produtos gourmet premium. A loja se orgulha de ser feita com amor, usar ingredientes premium e produzir tudo sob encomenda para garantir o máximo frescor.
