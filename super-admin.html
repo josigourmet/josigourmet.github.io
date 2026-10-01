@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Super Admin - Josi Doces</title>
+<style>
+:root {
+  --marrom-escuro: #3e2723; --marrom-medio: #5d4037; --marrom-claro: #8d6e63;
+  --creme-fundo: #fdf5e6; --creme-escuro: #d7ccc8; --destaque: #c8860a;
+  --verde: #1da851; --vermelho: #c0392b;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: var(--creme-fundo); color: var(--marrom-escuro); min-height: 100vh; }
+.wrap { max-width: 460px; margin: auto; padding: 20px 16px 40px; }
+h1 { font-size: 20px; text-align: center; color: var(--marrom-medio); margin: 10px 0 18px; }
+.card { background: #fff; border: 1px solid var(--creme-escuro); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 16px rgba(62,39,35,.08); }
+label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--marrom-medio); margin: 12px 0 6px; }
+input, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid var(--creme-escuro); font-size: 15px; font-family: inherit; }
+textarea { min-height: 90px; resize: vertical; }
+button { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; color: #fff; cursor: pointer; margin-top: 12px; }
+.btn-principal { background: var(--marrom-medio); }
+.btn-bloquear { background: linear-gradient(135deg, #e74c3c, var(--vermelho)); }
+.btn-liberar { background: linear-gradient(135deg, #25D366, var(--verde)); }
+.btn-sair { background: #999; font-size: 13px; padding: 10px; }
+button:disabled { opacity: .6; cursor: not-allowed; }
+.status { text-align: center; padding: 16px; border-radius: 14px; font-weight: 700; font-size: 17px; }
+.status.aberto { background: #e8f5e9; color: #1b5e20; border: 1.5px dashed #81c784; }
+.status.fechado { background: #fdecea; color: #a93226; border: 1.5px dashed #e57373; }
+.status small { display: block; font-weight: 400; font-size: 12px; margin-top: 6px; opacity: .85; }
+.erro { color: var(--vermelho); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+.ok { color: #1b5e20; font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+#painel { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔐 Super Admin · Josi Doces</h1>
+
+  <div id="loginBox" class="card">
+    <label>E-mail</label>
+    <input type="email" id="email" placeholder="seu-email@gmail.com" autocomplete="username">
+    <label>Senha</label>
+    <input type="password" id="senha" placeholder="******" autocomplete="current-password">
+    <button class="btn-principal" id="btnEntrar">Entrar</button>
+    <div class="erro" id="erroLogin"></div>
+  </div>
+
+  <div id="painel">
+    <div id="statusBox" class="status aberto">Carregando...</div>
+
+    <div class="card">
+      <label>Mensagem exibida ao cliente quando bloqueado</label>
+      <textarea id="mensagem" maxlength="300">Hoje não teremos atendimento. Pedimos desculpas pelo transtorno! 🤎</textarea>
+      <button id="btnBloquear" class="btn-bloquear">🔒 Bloquear site agora</button>
+      <button id="btnLiberar" class="btn-liberar">🔓 Liberar site (voltar a atender)</button>
+      <div class="ok" id="msgOk"></div>
+      <div class="erro" id="msgErro"></div>
+    </div>
+
+    <button class="btn-sair" id="btnSair">Sair</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyCHzkyYek4fV7fs_1f6FTA9o4o3ikJuhs0",
+  authDomain: "josigourmet-af3ff.firebaseapp.com",
+  databaseURL: "https://josigourmet-af3ff-default-rtdb.firebaseio.com",
+  projectId: "josigourmet-af3ff",
+  storageBucket: "josigourmet-af3ff.firebasestorage.app",
+  messagingSenderId: "373768013260",
+  appId: "1:373768013260:web:bd5fa8dcf6053414d7c969"
+});
+var auth = firebase.auth();
+var db = firebase.database();
+var refAtendimento = db.ref('config/atendimento');
+var ouvindo = false;
+
+function $(id) { return document.getElementById(id); }
+
+function mostrarMsg(tipo, texto) {
+  $('msgOk').style.display = 'none';
+  $('msgErro').style.display = 'none';
+  var el = tipo === 'ok' ? $('msgOk') : $('msgErro');
+  el.textContent = texto;
+  el.style.display = 'block';
+}
+
+$('btnEntrar').addEventListener('click', function() {
+  var email = $('email').value.trim();
+  var senha = $('senha').value;
+  $('erroLogin').style.display = 'none';
+  if (!email || !senha) { $('erroLogin').textContent = 'Preencha e-mail e senha.'; $('erroLogin').style.display = 'block'; return; }
+  auth.signInWithEmailAndPassword(email, senha).catch(function() {
+    $('erroLogin').textContent = 'Acesso negado: dados incorretos.';
+    $('erroLogin').style.display = 'block';
+  });
+});
+
+$('btnSair').addEventListener('click', function() { auth.signOut(); });
+
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    $('loginBox').style.display = 'none';
+    $('painel').style.display = 'block';
+    if (!ouvindo) {
+      ouvindo = true;
+      refAtendimento.on('value', function(snap) {
+        var d = snap.val() || {};
+        var box = $('statusBox');
+        if (d.ativo === true) {
+          box.className = 'status fechado';
+          box.innerHTML = '🔒 SITE BLOQUEADO<small>Clientes veem a tela de sem atendimento.</small>';
+          if (d.mensagem) $('mensagem').value = d.mensagem;
+        } else {
+          box.className = 'status aberto';
+          box.innerHTML = '🟢 SITE ABERTO<small>Clientes podem fazer pedidos normalmente.</small>';
+        }
+      }, function(e) { mostrarMsg('erro', 'Sem permissão para ler o status. Confira as regras do Firebase.'); });
+    }
+  } else {
+    $('loginBox').style.display = 'block';
+    $('painel').style.display = 'none';
+  }
+});
+
+function salvar(ativo) {
+  var user = auth.currentUser;
+  if (!user) return;
+  var msg = $('mensagem').value.trim() || 'Hoje não teremos atendimento. Pedimos desculpas pelo transtorno! 🤎';
+  $('btnBloquear').disabled = true; $('btnLiberar').disabled = true;
+  refAtendimento.set({
+    ativo: ativo,
+    mensagem: msg.slice(0, 300),
+    atualizadoEm: firebase.database.ServerValue.TIMESTAMP,
+    atualizadoPor: user.email
+  }).then(function() {
+    mostrarMsg('ok', ativo ? 'Site bloqueado com sucesso!' : 'Site liberado com sucesso!');
+  }).catch(function() {
+    mostrarMsg('erro', 'Não foi possível salvar. Confira as regras do Firebase e se você está logado.');
+  }).then(function() {
+    $('btnBloquear').disabled = false; $('btnLiberar').disabled = false;
+  });
+}
+
+$('btnBloquear').addEventListener('click', function() {
+  if (confirm('Bloquear o site agora? Os clientes não conseguirão fazer pedidos.')) salvar(true);
+});
+$('btnLiberar').addEventListener('click', function() { salvar(false); });
+</script>
+</body>
+</html>
