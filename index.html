@@ -27,7 +27,7 @@
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
 
     <title>Josi Doces Gourmet</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -901,9 +901,61 @@
             background: #e74c3c; border: 2px solid #fff;
             animation: pulse 1.5s infinite;
         }
+
+        /* ===== Tela de bloqueio de atendimento ===== */
+        #telaBloqueio {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 20000;
+            background: linear-gradient(155deg, var(--marrom-escuro) 0%, var(--marrom-medio) 55%, var(--marrom-claro) 100%);
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        #telaBloqueio .bloqueio-card {
+            background: #fff;
+            border-radius: 28px;
+            padding: 32px 24px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            border: 2px solid var(--creme-escuro);
+        }
+        #telaBloqueio .bloqueio-emoji { font-size: 52px; display: block; margin-bottom: 12px; }
+        #telaBloqueio h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--marrom-medio);
+            font-size: 24px;
+            margin: 0 0 10px;
+        }
+        #telaBloqueio p { color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 14px; }
+        #telaBloqueio .bloqueio-numero {
+            display: block;
+            background: var(--creme-medio);
+            border: 1.5px dashed var(--destaque);
+            border-radius: 14px;
+            padding: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--marrom-escuro);
+            margin-bottom: 14px;
+        }
     </style>
 </head>
-<body onload="mostrarSplashBoasVindas(); carregarBannerDinamico(); carregarDados(); agendarChatAutomatico(); reenviarPedidosPendentes();">
+<body onload="aplicarBloqueioSite(); mostrarSplashBoasVindas(); carregarBannerDinamico(); carregarDados(); agendarChatAutomatico(); reenviarPedidosPendentes();">
+
+<div id="telaBloqueio">
+    <div class="bloqueio-card">
+        <span class="bloqueio-emoji">🍰</span>
+        <h2>Hoje não teremos atendimento</h2>
+        <p id="bloqueioMensagem">No momento não estamos recebendo pedidos. Pedimos desculpas pelo transtorno! 🤎</p>
+        <span class="bloqueio-numero">📱 (51) 9 8932-4150</span>
+        <a href="https://wa.me/5551989324150?text=Olá Josi! Vi que hoje não há atendimento e gostaria de falar com você." target="_blank" class="btn-duvida">💬 Chamar no WhatsApp</a>
+    </div>
+</div>
 
 <div id="splashBoasVindas" class="splash-boas-vindas" aria-hidden="true">
     <div class="splash-conteudo">
@@ -1150,6 +1202,44 @@
 </div>
 
 <script>
+/* ============================================================
+   BLOQUEIO DO SITE (dias sem atendimento)
+   ativo: true  -> mostra a tela de bloqueio e impede pedidos
+   ativo: false -> site funciona normalmente
+   ============================================================ */
+const CONFIG_BLOQUEIO = {
+    ativo: false,
+    mensagem: "Hoje não teremos atendimento. Pedimos desculpas pelo transtorno! 🤎"
+};
+
+const _BLOQUEIO_LOCAL_ATIVO = CONFIG_BLOQUEIO.ativo;
+const _BLOQUEIO_MSG_LOCAL = CONFIG_BLOQUEIO.mensagem;
+
+/* Chamada automaticamente quando o super admin muda o bloqueio no Firebase */
+function aplicarBloqueioRemoto(dados) {
+    const remotoAtivo = !!(dados && dados.ativo === true);
+    CONFIG_BLOQUEIO.ativo = _BLOQUEIO_LOCAL_ATIVO || remotoAtivo;
+    CONFIG_BLOQUEIO.mensagem = (remotoAtivo && dados.mensagem)
+        ? String(dados.mensagem).slice(0, 300)
+        : _BLOQUEIO_MSG_LOCAL;
+    aplicarBloqueioSite();
+}
+window.aplicarBloqueioRemoto = aplicarBloqueioRemoto;
+
+function aplicarBloqueioSite() {
+    const tela = document.getElementById('telaBloqueio');
+    if (!tela) return;
+    if (!CONFIG_BLOQUEIO.ativo) {
+        tela.style.display = 'none';
+        document.body.style.overflow = '';
+        return;
+    }
+    const msg = document.getElementById('bloqueioMensagem');
+    if (msg) msg.textContent = CONFIG_BLOQUEIO.mensagem;
+    tela.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
 const _RL = (function(){
     const JANELA = 60000;
     const LIMITE = 5;
@@ -1407,6 +1497,7 @@ function carregarDados() {
 let _saboresContexto = null;
 
 function addComSabor(nomeBase, preco, sabores) {
+    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
     _saboresContexto = { nomeBase, preco, sabores, selecionados: new Set() };
 
     const titulo = document.getElementById('saboresTitulo');
@@ -1498,6 +1589,7 @@ function atualizarResumoSabores() {
 }
 
 function confirmarSabores() {
+    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
     const ctx = _saboresContexto;
     if (!ctx || ctx.selecionados.size === 0) return;
 
@@ -1520,6 +1612,7 @@ function fecharModalSabores() {
 }
 
 function add(nome, preco) {
+    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
     if (!PRECOS_OFICIAIS.hasOwnProperty(nome)) return;
     if (PRECOS_OFICIAIS[nome] !== preco) return;
     const item = carrinho.find(i => i.nome === nome);
@@ -1529,6 +1622,7 @@ function add(nome, preco) {
 }
 
 function addPromoCombo() {
+    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
     carrinho = carrinho.filter(i => i.nome !== CONFIG_PROMO.nomeProduto && i.nome !== 'FRETE GRÁTIS (Ativado)');
     carrinho.push({ nome: CONFIG_PROMO.nomeProduto, preco: CONFIG_PROMO.preco, qtd: 1, fixo: true });
     carrinho.push({ nome: 'FRETE GRÁTIS (Ativado)', preco: 0, qtd: 1, fixo: true });
@@ -1685,6 +1779,7 @@ function verificarPgto() {
 }
 
 function gerarPixReal() {
+    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
     const totalCalculado = atualizar();
     if (totalCalculado <= 0) {
         alert("⚠️ O valor do pedido está zerado. Adicione itens ao carrinho antes de gerar o PIX.");
@@ -1718,7 +1813,10 @@ function gerarPixReal() {
 }
 
 function copyPix() { const brcode = document.getElementById("brcode"); brcode.select(); document.execCommand("copy"); alert("Código Pix copiado!"); }
-function abrirMercadoPago() { window.open("https://link.mercadopago.com.br/josidocesgoumert"); }
+function abrirMercadoPago() {
+    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
+    window.open("https://link.mercadopago.com.br/josidocesgoumert");
+}
 
 /* ============================================================
    FILA DE PEDIDOS PENDENTES
@@ -1817,6 +1915,7 @@ function montarTextoPedido(numeroPedido) {
 }
 
 function finalizarZap() {
+    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
     const btnZap = document.getElementById("btnWhatsapp");
     if (btnZap.disabled) return;
     if (carrinho.length === 0) {
@@ -1880,7 +1979,7 @@ function limparCarrinhoCompleto() {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHzkyYek4fV7fs_1f6FTA9o4o3ikJuhs0",
@@ -1895,6 +1994,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
+/* Bloqueio do site controlado pelo super admin (config/atendimento) */
+onValue(ref(db, "config/atendimento"), function(snap) {
+    if (typeof window.aplicarBloqueioRemoto === 'function') window.aplicarBloqueioRemoto(snap.val());
+}, function(erro) {
+    console.warn("Não foi possível ler o status de atendimento:", erro);
+});
 
 window.criarPedidoComNumero = function() {
     const novaRef = push(ref(db, "pedidos"));
@@ -1928,10 +2034,12 @@ function toggleChat() {
 }
 
 function agendarChatAutomatico() {
+    if (CONFIG_BLOQUEIO.ativo) return;
     setTimeout(abrirChatAutomatico, 5500);
 }
 
 function abrirChatAutomatico() {
+    if (CONFIG_BLOQUEIO.ativo) return;
     let jaAbriu = false;
     try { jaAbriu = !!sessionStorage.getItem('chatAutoAberto'); } catch(e) {}
     if (jaAbriu) return;
@@ -2021,4 +2129,4 @@ async function enviarMensagemIa() {
 }
 </script>
 </body>
-</html> 
+</html>
