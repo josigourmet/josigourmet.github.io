@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
+<head><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
+</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy"
@@ -968,7 +989,7 @@
 </div>
 
 <div class="barra-cupom" id="barraCupom">
-    🎉 PROMOÇÃO: Ganhe 5% de DESCONTO + FRETE GRÁTIS em compras a partir de R$ 50,00! 🍰
+    🎉 PROMOÇÃO: Ganhe 5% de DESCONTO + FRETE GRÁTIS em compras a partir de R$ 50,00! 🍰 | 🤖 Automação Grátis Ativa!
 </div>
 
 <a href="https://www.instagram.com/josigourmet" target="_blank" class="insta-float">
@@ -1177,6 +1198,7 @@
             <button onclick="copyPix()" style="background: linear-gradient(135deg, #444, #222); padding: 9px; font-size: 12px; width:100%; margin-top:8px; border-radius: 10px;">Copiar Código Pix</button>
         </div>
         <button id="btnWhatsapp" onclick="finalizarZap()" class="btn-finalizar" disabled>⚠️ Preencha os dados no formulário</button>
+        <p style="font-size:11px;color:#8d6e63;text-align:center;margin-top:8px">🤖 Automação grátis: cliente receberá confirmação automática</p>
     </div>
 </div>
 
@@ -1202,718 +1224,69 @@
 </div>
 
 <script>
-/* ============================================================
-   BLOQUEIO DO SITE (dias sem atendimento)
-   ativo: true  -> mostra a tela de bloqueio e impede pedidos
-   ativo: false -> site funciona normalmente
-   ============================================================ */
-const CONFIG_BLOQUEIO = {
-    ativo: false,
-    mensagem: "Hoje não teremos atendimento. Pedimos desculpas pelo transtorno! 🤎"
-};
-
+/* BLOQUEIO DO SITE */
+const CONFIG_BLOQUEIO = { ativo: false, mensagem: "Hoje não teremos atendimento. Pedimos desculpas pelo transtorno! 🤎" };
 const _BLOQUEIO_LOCAL_ATIVO = CONFIG_BLOQUEIO.ativo;
 const _BLOQUEIO_MSG_LOCAL = CONFIG_BLOQUEIO.mensagem;
-
-/* Chamada automaticamente quando o super admin muda o bloqueio no Firebase */
-function aplicarBloqueioRemoto(dados) {
-    const remotoAtivo = !!(dados && dados.ativo === true);
-    CONFIG_BLOQUEIO.ativo = _BLOQUEIO_LOCAL_ATIVO || remotoAtivo;
-    CONFIG_BLOQUEIO.mensagem = (remotoAtivo && dados.mensagem)
-        ? String(dados.mensagem).slice(0, 300)
-        : _BLOQUEIO_MSG_LOCAL;
-    aplicarBloqueioSite();
-}
+function aplicarBloqueioRemoto(dados) { const remotoAtivo = !!(dados && dados.ativo === true); CONFIG_BLOQUEIO.ativo = _BLOQUEIO_LOCAL_ATIVO || remotoAtivo; CONFIG_BLOQUEIO.mensagem = (remotoAtivo && dados.mensagem) ? String(dados.mensagem).slice(0, 300) : _BLOQUEIO_MSG_LOCAL; aplicarBloqueioSite(); }
 window.aplicarBloqueioRemoto = aplicarBloqueioRemoto;
-
-function aplicarBloqueioSite() {
-    const tela = document.getElementById('telaBloqueio');
-    if (!tela) return;
-    if (!CONFIG_BLOQUEIO.ativo) {
-        tela.style.display = 'none';
-        document.body.style.overflow = '';
-        return;
-    }
-    const msg = document.getElementById('bloqueioMensagem');
-    if (msg) msg.textContent = CONFIG_BLOQUEIO.mensagem;
-    tela.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-
-const _RL = (function(){
-    const JANELA = 60000;
-    const LIMITE = 5;
-    const historico = [];
-    return {
-        ok: function(){
-            const agora = Date.now();
-            while(historico.length && agora - historico[0] > JANELA) historico.shift();
-            if(historico.length >= LIMITE) return false;
-            historico.push(agora);
-            return true;
-        }
-    };
-})();
-
-function _sanitize(str) {
-    if (typeof str !== 'string') return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/`/g, '&#x60;')
-        .replace(/javascript:/gi, '')
-        .replace(/on\w+\s*=/gi, '')
-        .trim();
-}
-
-function _validarNome(nome) {
-    const re = /^[a-zA-ZÀ-ÿ\s]{2,80}$/;
-    return re.test(nome.trim());
-}
-
-function _validarTelefone(tel) {
-    const digits = tel.replace(/\D/g, '');
-    return (digits.length === 11 && digits[2] === '9') ||
-           (digits.length === 9  && digits[0] === '9');
-}
-
-function _validarEndereco(end) {
-    return end.trim().length >= 5 && end.trim().length <= 300;
-}
-
-function _validarDataFutura(dataStr, horaStr) {
-    if (!dataStr || !horaStr) return false;
-    const dt = new Date(`${dataStr}T${horaStr}`);
-    return dt > new Date();
-}
-
-function _lsGet(chave) {
-    try {
-        const raw = localStorage.getItem(chave);
-        if (!raw) return null;
-        if (raw.length > 51200) { localStorage.removeItem(chave); return null; }
-        return JSON.parse(raw);
-    } catch(e) {
-        localStorage.removeItem(chave);
-        return null;
-    }
-}
-
-function _lsSet(chave, valor) {
-    try {
-        const str = JSON.stringify(valor);
-        if (str.length > 51200) return;
-        localStorage.setItem(chave, str);
-    } catch(e) { }
-}
-
-const PRECOS_OFICIAIS = {
-    'Torta grande (A partir de 1 kg)': 60,
-    'Torta de Bolacha Grande 1 kg': 55,
-    'Bolo no Pote com Pudim': 14,
-    'Bolo de Stikadinho no Pote': 12,
-    'FRETE GRÁTIS (Ativado)': 0,
-};
-
-function _validarCarrinho(arr) {
-    if (!Array.isArray(arr)) return [];
-    return arr.filter(item => {
-        if (!item || typeof item.nome !== 'string') return false;
-        if (typeof item.qtd !== 'number' || item.qtd < 1 || item.qtd > 999) return false;
-        
-        const baseConhecida = Object.keys(PRECOS_OFICIAIS).some(base => item.nome.startsWith(base)) || 
-                             item.nome.includes('Torta de bolacha no pote') || 
-                             item.nome.includes('Bolo grande') || 
-                             item.nome.includes('Bolo no pote');
-                             
-        if (baseConhecida && typeof item.preco === 'number' && item.preco >= 0 && item.preco < 10000) {
-            return true;
-        }
-        return false;
-    });
-}
-
-function _recalcularTotalSeguro(carrinhoLocal, frete) {
-    let subtotal = 0;
-    for (const item of carrinhoLocal) {
-        subtotal += item.preco * item.qtd;
-    }
-    const desconto = subtotal >= 50 ? subtotal * 0.05 : 0;
-    return { subtotal, desconto, total: subtotal - desconto + frete };
-}
-
+function aplicarBloqueioSite() { const tela = document.getElementById('telaBloqueio'); if (!tela) return; if (!CONFIG_BLOQUEIO.ativo) { tela.style.display = 'none'; document.body.style.overflow = ''; return; } const msg = document.getElementById('bloqueioMensagem'); if (msg) msg.textContent = CONFIG_BLOQUEIO.mensagem; tela.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+const _RL = (function(){ const JANELA = 60000; const LIMITE = 5; const historico = []; return { ok: function(){ const agora = Date.now(); while(historico.length && agora - historico[0] > JANELA) historico.shift(); if(historico.length >= LIMITE) return false; historico.push(agora); return true; } }; })();
+function _sanitize(str) { if (typeof str !== 'string') return ''; return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/`/g, '&#x60;').replace(/javascript:/gi, '').replace(/on\w+\s*=/gi, '').trim(); }
+function _validarNome(nome) { const re = /^[a-zA-ZÀ-ÿ\s]{2,80}$/; return re.test(nome.trim()); }
+function _validarTelefone(tel) { const digits = tel.replace(/\D/g, ''); return (digits.length === 11 && digits[2] === '9') || (digits.length === 9  && digits[0] === '9'); }
+function _validarEndereco(end) { return end.trim().length >= 5 && end.trim().length <= 300; }
+function _validarDataFutura(dataStr, horaStr) { if (!dataStr || !horaStr) return false; const dt = new Date(`${dataStr}T${horaStr}`); return dt > new Date(); }
+function _lsGet(chave) { try { const raw = localStorage.getItem(chave); if (!raw) return null; if (raw.length > 51200) { localStorage.removeItem(chave); return null; } return JSON.parse(raw); } catch(e) { localStorage.removeItem(chave); return null; } }
+function _lsSet(chave, valor) { try { const str = JSON.stringify(valor); if (str.length > 51200) return; localStorage.setItem(chave, str); } catch(e) { } }
+const PRECOS_OFICIAIS = { 'Torta grande (A partir de 1 kg)': 60, 'Torta de Bolacha Grande 1 kg': 55, 'Bolo no Pote com Pudim': 14, 'Bolo de Stikadinho no Pote': 12, 'FRETE GRÁTIS (Ativado)': 0, };
+function _validarCarrinho(arr) { if (!Array.isArray(arr)) return []; return arr.filter(item => { if (!item || typeof item.nome !== 'string') return false; if (typeof item.qtd !== 'number' || item.qtd < 1 || item.qtd > 999) return false; const baseConhecida = Object.keys(PRECOS_OFICIAIS).some(base => item.nome.startsWith(base)) || item.nome.includes('Torta de bolacha no pote') || item.nome.includes('Bolo grande') || item.nome.includes('Bolo no pote'); if (baseConhecida && typeof item.preco === 'number' && item.preco >= 0 && item.preco < 10000) { return true; } return false; }); }
+function _recalcularTotalSeguro(carrinhoLocal, frete) { let subtotal = 0; for (const item of carrinhoLocal) { subtotal += item.preco * item.qtd; } const desconto = subtotal >= 50 ? subtotal * 0.05 : 0; return { subtotal, desconto, total: subtotal - desconto + frete }; }
 const ENDERECO_RETIRADA = "Rua Marechal Floriano, 3197,  Coronel Brito ";
-
-function avisoHorario() {
-    alert("⏰ Atenção!\n\nPor favor, escolha um horário com pelo menos 1 hora de antecedência.\n\nEsse é o tempo médio para preparo, entrega ou retirada do pedido. 🤎🍰");
-}
-
-const CONFIG_PROMO = {
-    ativa: false,
-    imagemUrl: "https://i.postimg.cc/T3BNcdCq/1777779837866.png",
-    nomeProduto: "COMBO: Bolo Pudim + Torta Bolacha Doce de Leite",
-    preco: 22.90,
-    textoBotao: "🚀 APROVEITAR COMBO: BOLO COM PUDIM + TORTA DE BOLACHA COM DOCE DE LEITE + FRETE GRÁTIS POR (R$ 22,90)",
-    textoBotaoFlutuante: "🔥 PROMOÇÃO"
-};
-
-function mostrarSplashBoasVindas() {
-    const splash = document.getElementById('splashBoasVindas');
-    if (!splash) return;
-    const agora = new Date();
-    const hora = agora.getHours();
-    let saudacao = (hora >= 4 && hora < 12) ? "☀️ Bom dia" : (hora >= 12 && hora < 18) ? "🍰 Boa tarde" : "🌙 Boa noite";
-    const elSaudacao = document.getElementById('splashSaudacao');
-    if (elSaudacao) elSaudacao.textContent = saudacao;
-    setTimeout(function() { if (splash) splash.remove(); }, 4000);
-}
-
-function carregarBannerDinamico() {
-    const container = document.getElementById("conteudoBanner");
-    const btnFlutuante = document.getElementById("btnReabrirPromo");
-    if (!CONFIG_PROMO.ativa) { btnFlutuante.style.display = "none"; return; }
-    btnFlutuante.innerText = CONFIG_PROMO.textoBotaoFlutuante;
-    const img = document.createElement('img');
-    img.alt = 'Promoção';
-    if (/^https:\/\//.test(CONFIG_PROMO.imagemUrl)) img.src = CONFIG_PROMO.imagemUrl;
-    const btnAdd = document.createElement('button');
-    btnAdd.className = 'btn-promo-add';
-    btnAdd.textContent = CONFIG_PROMO.textoBotao;
-    btnAdd.onclick = function(){ addPromoCombo(); fecharBannerPromo(); };
-    const btnClose = document.createElement('button');
-    btnClose.className = 'btn-promo-close';
-    btnClose.textContent = 'Ver outros produtos';
-    btnClose.onclick = fecharBannerPromo;
-    container.innerHTML = ''; container.appendChild(img); container.appendChild(btnAdd); container.appendChild(btnClose);
-}
-
+function avisoHorario() { alert("⏰ Atenção!\n\nPor favor, escolha um horário com pelo menos 1 hora de antecedência.\n\nEsse é o tempo médio para preparo, entrega ou retirada do pedido. 🤎🍰"); }
+const CONFIG_PROMO = { ativa: false, imagemUrl: "https://i.postimg.cc/T3BNcdCq/1777779837866.png", nomeProduto: "COMBO: Bolo Pudim + Torta Bolacha Doce de Leite", preco: 22.90, textoBotao: "🚀 APROVEITAR COMBO: BOLO COM PUDIM + TORTA DE BOLACHA COM DOCE DE LEITE + FRETE GRÁTIS POR (R$ 22,90)", textoBotaoFlutuante: "🔥 PROMOÇÃO" };
+function mostrarSplashBoasVindas() { const splash = document.getElementById('splashBoasVindas'); if (!splash) return; const agora = new Date(); const hora = agora.getHours(); let saudacao = (hora >= 4 && hora < 12) ? "☀️ Bom dia" : (hora >= 12 && hora < 18) ? "🍰 Boa tarde" : "🌙 Boa noite"; const elSaudacao = document.getElementById('splashSaudacao'); if (elSaudacao) elSaudacao.textContent = saudacao; setTimeout(function() { if (splash) splash.remove(); }, 4000); }
+function carregarBannerDinamico() { const container = document.getElementById("conteudoBanner"); const btnFlutuante = document.getElementById("btnReabrirPromo"); if (!CONFIG_PROMO.ativa) { btnFlutuante.style.display = "none"; return; } btnFlutuante.innerText = CONFIG_PROMO.textoBotaoFlutuante; const img = document.createElement('img'); img.alt = 'Promoção'; if (/^https:\/\//.test(CONFIG_PROMO.imagemUrl)) img.src = CONFIG_PROMO.imagemUrl; const btnAdd = document.createElement('button'); btnAdd.className = 'btn-promo-add'; btnAdd.textContent = CONFIG_PROMO.textoBotao; btnAdd.onclick = function(){ addPromoCombo(); fecharBannerPromo(); }; const btnClose = document.createElement('button'); btnClose.className = 'btn-promo-close'; btnClose.textContent = 'Ver outros produtos'; btnClose.onclick = fecharBannerPromo; container.innerHTML = ''; container.appendChild(img); container.appendChild(btnAdd); container.appendChild(btnClose); }
 function fecharGaleriaAbrirHorarios() { document.getElementById("modalFotosIniciais").style.display = "none"; document.getElementById("modalAviso").style.display = "block"; }
 function fecharModalAviso() { document.getElementById("modalAviso").style.display = "none"; abrirBannerPromo(); }
 function abrirBannerPromo() { if(CONFIG_PROMO.ativa) document.getElementById("modalPromo").style.display = "block"; }
 function fecharBannerPromo() { document.getElementById("modalPromo").style.display = "none"; }
-
-let promoAtiva = false;
-let carrinho = [];
-let pixGerado = false;
-const CHAVE_PIX = "00431179026"; 
-const NOME_RECEBEDOR = "JOSI DOCES";
-const CIDADE_RECEBEDOR = "VENANCIO AIRES";
-
-function configuringLimitesData() {
-    const hoje = new Date();
-    const ano = hoje.getFullYear();
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoje.getDate()).padStart(2, '0');
-    document.getElementById('dataAgendamento').setAttribute('min', `${ano}-${mes}-${dia}`);
-}
-
-function validarDataHora() {
-    const dataInput = document.getElementById('dataAgendamento');
-    const horaInput = document.getElementById('horaAgendamento');
-    if (!dataInput.value) return;
-    const agora = new Date();
-    const dataSelecionada = new Date(dataInput.value + 'T00:00:00');
-    const hojeApenasData = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-    if (dataSelecionada < hojeApenasData) {
-        alert("Ops! Você não pode selecionar uma data que já passou.");
-        dataInput.value = ""; horaInput.value = ""; return;
-    }
-    if (dataSelecionada.getTime() === hojeApenasData.getTime() && horaInput.value) {
-        const [horaSel, minSel] = horaInput.value.split(':');
-        const dataHoraSelecionada = new Date();
-        dataHoraSelecionada.setHours(horaSel, minSel, 0, 0);
-        if (dataHoraSelecionada < agora) {
-            alert("Este horário já passou! Por favor, escolha um horário futuro.");
-            horaInput.value = "";
-        }
-    }
-}
-
-function verificarHorarioValidoParaAgendamento(dataStr, horaStr) {
-    if (!dataStr || !horaStr) return false;
-    
-    const dataAgendada = new Date(dataStr + 'T' + horaStr);
-    const diaSemana = dataAgendada.getDay(); 
-    const horaAtual = dataAgendada.getHours();
-    
-    const feriados = ["01/01", "17/02", "03/04", "21/04", "01/05", "04/06", "07/09", "12/10", "02/11", "15/11", "25/12"];
-    const dataFormatada = dataAgendada.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    const ehFeriado = feriados.includes(dataFormatada);
-    
-    if (diaSemana >= 1 && diaSemana <= 5 && !ehFeriado) {
-        return (horaAtual >= 08 && horaAtual < 17);
-    } else {
-        return (horaAtual >= 08 && horaAtual < 17);
-    }
-}
-
-function toggleVisibilidadeCarrinho() {
-    const box = document.getElementById("carrinhoBox");
-    box.style.display = (box.style.display === "none" || box.style.display === "") ? "block" : "none";
-    verificarPgto();
-}
-
-function mascaraTelefone(i) {
-    let v = i.value.replace(/\D/g, "");
-    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-    v = v.replace(/(\d)(\d{4})$/, "$1-$2");
-    i.value = v;
-}
-
-function salvarDados() {
-    _lsSet('pedidoJosiDoces', {
-        nome: document.getElementById("nome").value,
-        telefone: document.getElementById("telefone").value,
-        bairro: document.getElementById("bairro").value,
-        endereco: document.getElementById("endereco").value,
-        data: document.getElementById('dataAgendamento').value,
-        hora: document.getElementById('horaAgendamento').value,
-        pagamento: document.getElementById("pagamento").value,
-        carrinho: carrinho,
-        promoAtiva: promoAtiva
-    });
-}
-
-function carregarDados() {
-    configuringLimitesData();
-    const d = _lsGet('pedidoJosiDoces');
-    if (d) {
-        document.getElementById("nome").value = d.nome || "";
-        document.getElementById("telefone").value = d.telefone || "";
-        document.getElementById("bairro").value = d.bairro || "retirada";
-        document.getElementById("endereco").value = d.endereco || "";
-        document.getElementById("pagamento").value = d.pagamento || "Pix";
-        carrinho = _validarCarrinho(d.carrinho || []);
-        promoAtiva = d.promoAtiva || false;
-        document.getElementById('dataAgendamento').value = d.data || "";
-        document.getElementById('horaAgendamento').value = d.hora || "";
-        alternarEndereco(); validarDataHora(); verificarPgto();
-    }
-}
-
+let promoAtiva = false; let carrinho = []; let pixGerado = false;
+const CHAVE_PIX = "00431179026"; const NOME_RECEBEDOR = "JOSI DOCES"; const CIDADE_RECEBEDOR = "VENANCIO AIRES";
+function configuringLimitesData() { const hoje = new Date(); const ano = hoje.getFullYear(); const mes = String(hoje.getMonth() + 1).padStart(2, '0'); const dia = String(hoje.getDate()).padStart(2, '0'); document.getElementById('dataAgendamento').setAttribute('min', `${ano}-${mes}-${dia}`); }
+function validarDataHora() { const dataInput = document.getElementById('dataAgendamento'); const horaInput = document.getElementById('horaAgendamento'); if (!dataInput.value) return; const agora = new Date(); const dataSelecionada = new Date(dataInput.value + 'T00:00:00'); const hojeApenasData = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()); if (dataSelecionada < hojeApenasData) { alert("Ops! Você não pode selecionar uma data que já passou."); dataInput.value = ""; horaInput.value = ""; return; } if (dataSelecionada.getTime() === hojeApenasData.getTime() && horaInput.value) { const [horaSel, minSel] = horaInput.value.split(':'); const dataHoraSelecionada = new Date(); dataHoraSelecionada.setHours(horaSel, minSel, 0, 0); if (dataHoraSelecionada < agora) { alert("Este horário já passou! Por favor, escolha um horário futuro."); horaInput.value = ""; } } }
+function verificarHorarioValidoParaAgendamento(dataStr, horaStr) { if (!dataStr || !horaStr) return false; const dataAgendada = new Date(dataStr + 'T' + horaStr); const diaSemana = dataAgendada.getDay(); const horaAtual = dataAgendada.getHours(); const feriados = ["01/01", "17/02", "03/04", "21/04", "01/05", "04/06", "07/09", "12/10", "02/11", "15/11", "25/12"]; const dataFormatada = dataAgendada.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); const ehFeriado = feriados.includes(dataFormatada); if (diaSemana >= 1 && diaSemana <= 5 && !ehFeriado) { return (horaAtual >= 08 && horaAtual < 17); } else { return (horaAtual >= 08 && horaAtual < 17); } }
+function toggleVisibilidadeCarrinho() { const box = document.getElementById("carrinhoBox"); box.style.display = (box.style.display === "none" || box.style.display === "") ? "block" : "none"; verificarPgto(); }
+function mascaraTelefone(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); v = v.replace(/(\d)(\d{4})$/, "$1-$2"); i.value = v; }
+function salvarDados() { _lsSet('pedidoJosiDoces', { nome: document.getElementById("nome").value, telefone: document.getElementById("telefone").value, bairro: document.getElementById("bairro").value, endereco: document.getElementById("endereco").value, data: document.getElementById('dataAgendamento').value, hora: document.getElementById('horaAgendamento').value, pagamento: document.getElementById("pagamento").value, carrinho: carrinho, promoAtiva: promoAtiva }); }
+function carregarDados() { configuringLimitesData(); const d = _lsGet('pedidoJosiDoces'); if (d) { document.getElementById("nome").value = d.nome || ""; document.getElementById("telefone").value = d.telefone || ""; document.getElementById("bairro").value = d.bairro || "retirada"; document.getElementById("endereco").value = d.endereco || ""; document.getElementById("pagamento").value = d.pagamento || "Pix"; carrinho = _validarCarrinho(d.carrinho || []); promoAtiva = d.promoAtiva || false; document.getElementById('dataAgendamento').value = d.data || ""; document.getElementById('horaAgendamento').value = d.hora || ""; alternarEndereco(); validarDataHora(); verificarPgto(); } }
 let _saboresContexto = null;
-
-function addComSabor(nomeBase, preco, sabores) {
-    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
-    _saboresContexto = { nomeBase, preco, sabores, selecionados: new Set() };
-
-    const titulo = document.getElementById('saboresTitulo');
-    titulo.textContent = `🍰 ${nomeBase}`;
-
-    const lista = document.getElementById('saboresLista');
-    lista.innerHTML = '';
-    sabores.forEach((sabor, idx) => {
-        const div = document.createElement('div');
-        div.className = 'sabor-opcao';
-        div.dataset.idx = idx;
-
-        const check = document.createElement('span');
-        check.className = 'sabor-check';
-        check.textContent = '✓';
-
-        const nomeSpan = document.createElement('span');
-        nomeSpan.className = 'sabor-nome';
-        nomeSpan.textContent = sabor;
-
-        div.appendChild(check);
-        div.appendChild(nomeSpan);
-        div.onclick = function () { toggleSabor(idx, div); };
-        lista.appendChild(div);
-    });
-
-    atualizarResumoSabores();
-    document.getElementById('modalSabores').style.display = 'block';
-}
-
-function toggleSabor(idx, el) {
-    if (!_saboresContexto) return;
-    if (_saboresContexto.selecionados.has(idx)) {
-        _saboresContexto.selecionados.delete(idx);
-        el.classList.remove('selecionado');
-    } else {
-        _saboresContexto.selecionados.add(idx);
-        el.classList.add('selecionado');
-    }
-    atualizarResumoSabores();
-}
-
-function atualizarResumoSabores() {
-    const ctx = _saboresContexto;
-    const btn = document.getElementById('btnConfirmarSabores');
-    const resumo = document.getElementById('saboresPrecoResumo');
-    if (!ctx) return;
-    const qtd = ctx.selecionados.size;
-
-    if (qtd === 0) {
-        resumo.innerHTML = '';
-        const aviso = document.createElement('span');
-        aviso.className = 'sabores-aviso-vazio';
-        aviso.textContent = '⚠️ Selecione ao menos 1 sabor para continuar';
-        resumo.appendChild(aviso);
-        btn.disabled = true;
-        return;
-    }
-
-    const precoFinal = ctx.preco + (qtd - 1) * 3;
-    const nomesEscolhidos = Array.from(ctx.selecionados).sort((a, b) => a - b).map(i => ctx.sabores[i]);
-
-    resumo.innerHTML = '';
-    const tagsWrap = document.createElement('div');
-    tagsWrap.className = 'sabores-selecionados-tags';
-    nomesEscolhidos.forEach(nome => {
-        const tag = document.createElement('span');
-        tag.className = 'tag-sabor-escolhido';
-        tag.textContent = nome;
-        tagsWrap.appendChild(tag);
-    });
-
-    const precoLinha = document.createElement('div');
-    precoLinha.className = 'sabores-preco-final';
-    precoLinha.textContent = 'Total do item: ';
-    const bPreco = document.createElement('b');
-    bPreco.textContent = `R$ ${precoFinal.toFixed(2).replace('.', ',')}`;
-    precoLinha.appendChild(bPreco);
-    if (qtd > 1) {
-        const extra = document.createElement('span');
-        extra.className = 'sabores-extra';
-        extra.textContent = ' (+R$ 3,00 por sabor extra)';
-        precoLinha.appendChild(extra);
-    }
-
-    resumo.appendChild(tagsWrap);
-    resumo.appendChild(precoLinha);
-    btn.disabled = false;
-}
-
-function confirmarSabores() {
-    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
-    const ctx = _saboresContexto;
-    if (!ctx || ctx.selecionados.size === 0) return;
-
-    const idxOrdenados = Array.from(ctx.selecionados).sort((a, b) => a - b);
-    const saboresEscolhidos = idxOrdenados.map(i => ctx.sabores[i]);
-    const precoFinal = ctx.preco + (saboresEscolhidos.length - 1) * 3;
-    const nomeCompleto = `${ctx.nomeBase} (${saboresEscolhidos.join(' + ')})`;
-
-    const item = carrinho.find(i => i.nome === nomeCompleto);
-    if (item) item.qtd++;
-    else carrinho.push({ nome: nomeCompleto, preco: precoFinal, qtd: 1, base: ctx.nomeBase });
-
-    salvarDados(); resetPagamentoFluxo(); verificarPgto();
-    fecharModalSabores();
-}
-
-function fecharModalSabores() {
-    document.getElementById('modalSabores').style.display = 'none';
-    _saboresContexto = null;
-}
-
-function add(nome, preco) {
-    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
-    if (!PRECOS_OFICIAIS.hasOwnProperty(nome)) return;
-    if (PRECOS_OFICIAIS[nome] !== preco) return;
-    const item = carrinho.find(i => i.nome === nome);
-    if (item) item.qtd++;
-    else carrinho.push({ nome, preco, qtd: 1 });
-    salvarDados(); resetPagamentoFluxo(); verificarPgto();
-}
-
-function addPromoCombo() {
-    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
-    carrinho = carrinho.filter(i => i.nome !== CONFIG_PROMO.nomeProduto && i.nome !== 'FRETE GRÁTIS (Ativado)');
-    carrinho.push({ nome: CONFIG_PROMO.nomeProduto, preco: CONFIG_PROMO.preco, qtd: 1, fixo: true });
-    carrinho.push({ nome: 'FRETE GRÁTIS (Ativado)', preco: 0, qtd: 1, fixo: true });
-    promoAtiva = true;
-    salvarDados(); resetPagamentoFluxo(); verificarPgto(); toggleVisibilidadeCarrinho();
-}
-
-function alternarEndereco() {
-    const bairro = document.getElementById("bairro").value;
-    document.getElementById("blocoEndereco").style.display = (bairro === "retirada") ? "none" : "block";
-}
-
-function atualizar() {
-    const valorBairro = document.getElementById("bairro").value;
-    let subtotal = carrinho.reduce((acc, item) => acc + (item.preco * (item.qtd || 1)), 0);
-    let frete = (subtotal >= 50 || promoAtiva || valorBairro === "retirada") ? 0 : parseFloat(valorBairro);
-    
-    let desconto = 0;
-    const divAlertaCupom = document.getElementById("alertaCupomDinamico");
-
-    if (subtotal >= 50) {
-        desconto = subtotal * 0.05;
-        if(divAlertaCupom) divAlertaCupom.innerHTML = `<div class="alerta-sucesso-cupom">🎉 Parabéns! Você atingiu R$ 50,00 e ganhou 5% de desconto + FRETE GRÁTIS!</div>`;
-    } else if (subtotal > 0 && subtotal < 50) {
-        let quantoFalta = (50 - subtotal).toFixed(2).replace('.', ',');
-        if(divAlertaCupom) divAlertaCupom.innerHTML = `<div class="alerta-progresso-cupom">🛒 Adicione mais <b>R$ ${quantoFalta}</b> para ganhar <b>5% de DESCONTO + FRETE GRÁTIS</b> no seu pedido!</div>`;
-    } else {
-        if(divAlertaCupom) divAlertaCupom.innerHTML = "";
-    }
-    
-    const total = subtotal - desconto + frete;
-    const qtdTotal = carrinho.reduce((acc, item) => acc + (item.nome !== 'FRETE GRÁTIS (Ativado)' ? item.qtd : 0), 0);
-    
-    document.getElementById("cartBadge").innerText = qtdTotal;
-    document.getElementById("btnToggle").style.background = (qtdTotal > 0) ? "linear-gradient(135deg, #25D366, #1da851)" : "linear-gradient(135deg, #007bff, #0055cc)";
-
-    const todosDisplays = document.querySelectorAll('.qtd-display');
-    todosDisplays.forEach(span => span.innerText = "0");
-    
-    carrinho.forEach(item => {
-        const idAlvo = item.base ? `qtd-${item.base}` : `qtd-${item.nome}`;
-        const span = document.getElementById(idAlvo);
-        if(span) {
-            let totalDaqueleCard = carrinho.filter(i => (i.base && i.base === item.base) || (i.nome === item.nome)).reduce((a, b) => a + b.qtd, 0);
-            span.innerText = totalDaqueleCard;
-        }
-    });
-
-    const listaDiv = document.getElementById("itensCarrinhoLista");
-    listaDiv.innerHTML = "";
-    carrinho.forEach((item, index) => {
-        const row = document.createElement('div');
-        row.className = 'item-carrinho';
-        const spanNome = document.createElement('span');
-        spanNome.textContent = `${item.qtd}x ${item.nome}`;
-        const spanPreco = document.createElement('span');
-        spanPreco.textContent = `R$ ${(item.preco*item.qtd).toFixed(2).replace('.', ',')} `;
-        const spanRemover = document.createElement('span');
-        spanRemover.className = 'remover';
-        spanRemover.textContent = '×';
-        spanRemover.onclick = (function(i){ return function(){ remover(i); }; })(index);
-        spanPreco.appendChild(spanRemover); row.appendChild(spanNome); row.appendChild(spanPreco); listaDiv.appendChild(row);
-    });
-
-    let descontoHtml = desconto > 0 ? `<div style="color: #2e7d32;">🏷️ <b>Desconto (5%):</b> -R$ ${desconto.toFixed(2).replace('.', ',')}</div>` : '';
-    let freteTexto = (frete === 0) ? '<span style="color:#2e7d32; font-weight:700;">GRÁTIS</span>' : `R$ ${frete.toFixed(2).replace('.', ',')}`;
-
-    document.getElementById("resumo").innerHTML = `
-        <div style="font-size:14px; text-align:left; line-height:1.8;">
-            <div>🧁 <b>Itens:</b> ${qtdTotal}</div>
-            <div>💰 <b>Subtotal:</b> R$ ${subtotal.toFixed(2).replace('.', ',')}</div>
-            ${descontoHtml}
-            <div>🚚 <b>Frete:</b> ${freteTexto}</div>
-            <div>📍 <b>Forma:</b> ${valorBairro === "retirada" ? "Retirada no local" : "Entrega"}</div>
-            <hr style="margin:10px 0; border:none; border-top: 1.5px dashed var(--creme-escuro);">
-            <div style="font-size:20px; color: var(--marrom-escuro); font-family: 'Playfair Display', serif;">
-                <b>TOTAL: R$ ${total.toFixed(2).replace('.', ',')}</b>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById("secaoDadosPedido").style.display = (carrinho.length > 0) ? "block" : "none";
-    document.getElementById("btnToggle").style.display = "flex";
-    return total;
-}
-
-function removerPorNome(nome) {
-    const index = carrinho.findIndex(i => i.nome === nome);
-    if (index !== -1) remover(index);
-}
-
-function removerPorNomeBasico(nomeBase) {
-    const index = carrinho.findIndex(i => i.base === nomeBase || i.nome === nomeBase);
-    if (index !== -1) remover(index);
-}
-
-function remover(index) {
-    if (carrinho[index].qtd > 1) {
-        carrinho[index].qtd -= 1;
-    } else {
-        const itemRemovido = carrinho[index].nome;
-        carrinho.splice(index, 1);
-        if (itemRemovido === CONFIG_PROMO.nomeProduto) {
-            if (!carrinho.some(i => i.nome === CONFIG_PROMO.nomeProduto)) {
-                carrinho = carrinho.filter(i => i.nome !== 'FRETE GRÁTIS (Ativado)');
-                promoAtiva = false;
-            }
-        }
-    }
-    if (carrinho.length === 0) promoAtiva = false;
-    salvarDados(); resetPagamentoFluxo(); verificarPgto();
-}
-
+function addComSabor(nomeBase, preco, sabores) { if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; } _saboresContexto = { nomeBase, preco, sabores, selecionados: new Set() }; const titulo = document.getElementById('saboresTitulo'); titulo.textContent = `🍰 ${nomeBase}`; const lista = document.getElementById('saboresLista'); lista.innerHTML = ''; sabores.forEach((sabor, idx) => { const div = document.createElement('div'); div.className = 'sabor-opcao'; div.dataset.idx = idx; const check = document.createElement('span'); check.className = 'sabor-check'; check.textContent = '✓'; const nomeSpan = document.createElement('span'); nomeSpan.className = 'sabor-nome'; nomeSpan.textContent = sabor; div.appendChild(check); div.appendChild(nomeSpan); div.onclick = function () { toggleSabor(idx, div); }; lista.appendChild(div); }); atualizarResumoSabores(); document.getElementById('modalSabores').style.display = 'block'; }
+function toggleSabor(idx, el) { if (!_saboresContexto) return; if (_saboresContexto.selecionados.has(idx)) { _saboresContexto.selecionados.delete(idx); el.classList.remove('selecionado'); } else { _saboresContexto.selecionados.add(idx); el.classList.add('selecionado'); } atualizarResumoSabores(); }
+function atualizarResumoSabores() { const ctx = _saboresContexto; const btn = document.getElementById('btnConfirmarSabores'); const resumo = document.getElementById('saboresPrecoResumo'); if (!ctx) return; const qtd = ctx.selecionados.size; if (qtd === 0) { resumo.innerHTML = ''; const aviso = document.createElement('span'); aviso.className = 'sabores-aviso-vazio'; aviso.textContent = '⚠️ Selecione ao menos 1 sabor para continuar'; resumo.appendChild(aviso); btn.disabled = true; return; } const precoFinal = ctx.preco + (qtd - 1) * 3; const nomesEscolhidos = Array.from(ctx.selecionados).sort((a, b) => a - b).map(i => ctx.sabores[i]); resumo.innerHTML = ''; const tagsWrap = document.createElement('div'); tagsWrap.className = 'sabores-selecionados-tags'; nomesEscolhidos.forEach(nome => { const tag = document.createElement('span'); tag.className = 'tag-sabor-escolhido'; tag.textContent = nome; tagsWrap.appendChild(tag); }); const precoLinha = document.createElement('div'); precoLinha.className = 'sabores-preco-final'; precoLinha.textContent = 'Total do item: '; const bPreco = document.createElement('b'); bPreco.textContent = `R$ ${precoFinal.toFixed(2).replace('.', ',')}`; precoLinha.appendChild(bPreco); if (qtd > 1) { const extra = document.createElement('span'); extra.className = 'sabores-extra'; extra.textContent = ' (+R$ 3,00 por sabor extra)'; precoLinha.appendChild(extra); } resumo.appendChild(tagsWrap); resumo.appendChild(precoLinha); btn.disabled = false; }
+function confirmarSabores() { if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; } const ctx = _saboresContexto; if (!ctx || ctx.selecionados.size === 0) return; const idxOrdenados = Array.from(ctx.selecionados).sort((a, b) => a - b); const saboresEscolhidos = idxOrdenados.map(i => ctx.sabores[i]); const precoFinal = ctx.preco + (saboresEscolhidos.length - 1) * 3; const nomeCompleto = `${ctx.nomeBase} (${saboresEscolhidos.join(' + ')})`; const item = carrinho.find(i => i.nome === nomeCompleto); if (item) item.qtd++; else carrinho.push({ nome: nomeCompleto, preco: precoFinal, qtd: 1, base: ctx.nomeBase }); salvarDados(); resetPagamentoFluxo(); verificarPgto(); fecharModalSabores(); }
+function fecharModalSabores() { document.getElementById('modalSabores').style.display = 'none'; _saboresContexto = null; }
+function add(nome, preco) { if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; } if (!PRECOS_OFICIAIS.hasOwnProperty(nome)) return; if (PRECOS_OFICIAIS[nome] !== preco) return; const item = carrinho.find(i => i.nome === nome); if (item) item.qtd++; else carrinho.push({ nome, preco, qtd: 1 }); salvarDados(); resetPagamentoFluxo(); verificarPgto(); }
+function addPromoCombo() { if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; } carrinho = carrinho.filter(i => i.nome !== CONFIG_PROMO.nomeProduto && i.nome !== 'FRETE GRÁTIS (Ativado)'); carrinho.push({ nome: CONFIG_PROMO.nomeProduto, preco: CONFIG_PROMO.preco, qtd: 1, fixo: true }); carrinho.push({ nome: 'FRETE GRÁTIS (Ativado)', preco: 0, qtd: 1, fixo: true }); promoAtiva = true; salvarDados(); resetPagamentoFluxo(); verificarPgto(); toggleVisibilidadeCarrinho(); }
+function alternarEndereco() { const bairro = document.getElementById("bairro").value; document.getElementById("blocoEndereco").style.display = (bairro === "retirada") ? "none" : "block"; }
+function atualizar() { const valorBairro = document.getElementById("bairro").value; let subtotal = carrinho.reduce((acc, item) => acc + (item.preco * (item.qtd || 1)), 0); let frete = (subtotal >= 50 || promoAtiva || valorBairro === "retirada") ? 0 : parseFloat(valorBairro); let desconto = 0; const divAlertaCupom = document.getElementById("alertaCupomDinamico"); if (subtotal >= 50) { desconto = subtotal * 0.05; if(divAlertaCupom) divAlertaCupom.innerHTML = `<div class="alerta-sucesso-cupom">🎉 Parabéns! Você atingiu R$ 50,00 e ganhou 5% de desconto + FRETE GRÁTIS!</div>`; } else if (subtotal > 0 && subtotal < 50) { let quantoFalta = (50 - subtotal).toFixed(2).replace('.', ','); if(divAlertaCupom) divAlertaCupom.innerHTML = `<div class="alerta-progresso-cupom">🛒 Adicione mais <b>R$ ${quantoFalta}</b> para ganhar <b>5% de DESCONTO + FRETE GRÁTIS</b> no seu pedido!</div>`; } else { if(divAlertaCupom) divAlertaCupom.innerHTML = ""; } const total = subtotal - desconto + frete; const qtdTotal = carrinho.reduce((acc, item) => acc + (item.nome !== 'FRETE GRÁTIS (Ativado)' ? item.qtd : 0), 0); document.getElementById("cartBadge").innerText = qtdTotal; document.getElementById("btnToggle").style.background = (qtdTotal > 0) ? "linear-gradient(135deg, #25D366, #1da851)" : "linear-gradient(135deg, #007bff, #0055cc)"; const todosDisplays = document.querySelectorAll('.qtd-display'); todosDisplays.forEach(span => span.innerText = "0"); carrinho.forEach(item => { const idAlvo = item.base ? `qtd-${item.base}` : `qtd-${item.nome}`; const span = document.getElementById(idAlvo); if(span) { let totalDaqueleCard = carrinho.filter(i => (i.base && i.base === item.base) || (i.nome === item.nome)).reduce((a, b) => a + b.qtd, 0); span.innerText = totalDaqueleCard; } }); const listaDiv = document.getElementById("itensCarrinhoLista"); listaDiv.innerHTML = ""; carrinho.forEach((item, index) => { const row = document.createElement('div'); row.className = 'item-carrinho'; const spanNome = document.createElement('span'); spanNome.textContent = `${item.qtd}x ${item.nome}`; const spanPreco = document.createElement('span'); spanPreco.textContent = `R$ ${(item.preco*item.qtd).toFixed(2).replace('.', ',')} `; const spanRemover = document.createElement('span'); spanRemover.className = 'remover'; spanRemover.textContent = '×'; spanRemover.onclick = (function(i){ return function(){ remover(i); }; })(index); spanPreco.appendChild(spanRemover); row.appendChild(spanNome); row.appendChild(spanPreco); listaDiv.appendChild(row); }); let descontoHtml = desconto > 0 ? `<div style="color: #2e7d32;">🏷️ <b>Desconto (5%):</b> -R$ ${desconto.toFixed(2).replace('.', ',')}</div>` : ''; let freteTexto = (frete === 0) ? '<span style="color:#2e7d32; font-weight:700;">GRÁTIS</span>' : `R$ ${frete.toFixed(2).replace('.', ',')}`; document.getElementById("resumo").innerHTML = `<div style="font-size:14px; text-align:left; line-height:1.8;"><div>🧁 <b>Itens:</b> ${qtdTotal}</div><div>💰 <b>Subtotal:</b> R$ ${subtotal.toFixed(2).replace('.', ',')}</div>${descontoHtml}<div>🚚 <b>Frete:</b> ${freteTexto}</div><div>📍 <b>Forma:</b> ${valorBairro === "retirada" ? "Retirada no local" : "Entrega"}</div><hr style="margin:10px 0; border:none; border-top: 1.5px dashed var(--creme-escuro);"><div style="font-size:20px; color: var(--marrom-escuro); font-family: 'Playfair Display', serif;"><b>TOTAL: R$ ${total.toFixed(2).replace('.', ',')}</b></div></div>`; document.getElementById("secaoDadosPedido").style.display = (carrinho.length > 0) ? "block" : "none"; document.getElementById("btnToggle").style.display = "flex"; return total; }
+function removerPorNome(nome) { const index = carrinho.findIndex(i => i.nome === nome); if (index !== -1) remover(index); }
+function removerPorNomeBasico(nomeBase) { const index = carrinho.findIndex(i => i.base === nomeBase || i.nome === nomeBase); if (index !== -1) remover(index); }
+function remover(index) { if (carrinho[index].qtd > 1) { carrinho[index].qtd -= 1; } else { const itemRemovido = carrinho[index].nome; carrinho.splice(index, 1); if (itemRemovido === CONFIG_PROMO.nomeProduto) { if (!carrinho.some(i => i.nome === CONFIG_PROMO.nomeProduto)) { carrinho = carrinho.filter(i => i.nome !== 'FRETE GRÁTIS (Ativado)'); promoAtiva = false; } } } if (carrinho.length === 0) promoAtiva = false; salvarDados(); resetPagamentoFluxo(); verificarPgto(); }
 function resetPagamentoFluxo() { pixGerado = false; document.getElementById("pixDisplay").style.display = "none"; verificarPgto(); }
-
-function verificarPgto() {
-    const pag = document.getElementById("pagamento").value;
-    const btnZap = document.getElementById("btnWhatsapp");
-    const btnPix = document.getElementById("btnGerarPix");
-    const btnMP = document.getElementById("btnPagarMP");
-    const nome = document.getElementById("nome").value.trim();
-    const telRaw = document.getElementById("telefone").value.replace(/\D/g, "");
-    const data = document.getElementById("dataAgendamento").value;
-    const hora = document.getElementById("horaAgendamento").value;
-    const bairro = document.getElementById("bairro").value;
-    const endereco = document.getElementById("endereco").value.trim();
-
-    const totalAtual = atualizar();
-    let telValido = (telRaw.length === 11 && telRaw[2] === "9") || (telRaw.length === 9 && telRaw[0] === "9");
-    document.getElementById("erroTelefone").style.display = (telRaw.length > 0 && !telValido) ? "block" : "none";
-
-    const tudoPronto = (nome !== "" && telValido && data !== "" && hora !== "" && (bairro === "retirada" || endereco !== "") && totalAtual > 0);
-
-    if (data !== "" && hora !== "") {
-        const horarioValido = verificarHorarioValidoParaAgendamento(data, hora);
-        if (!horarioValido) {
-            btnPix.style.display = "none"; btnMP.style.display = "none";
-            btnZap.disabled = true; btnZap.style.background = "linear-gradient(135deg, #e74c3c, #c0392b)"; 
-            btnZap.innerText = "🔴 HORÁRIO DE ATENDIMENTO INVÁLIDO";
-            return;
-        }
-    }
-
-    btnPix.style.display = (pag === "Pix" && !pixGerado) ? "block" : "none";
-    btnMP.style.display = (pag.includes("Cartão")) ? "block" : "none";
-    btnPix.disabled = !tudoPronto; btnMP.disabled = !tudoPronto;
-    
-    if (tudoPronto && (pag === "Pix" ? pixGerado : true)) {
-        btnZap.disabled = false; btnZap.innerText = "✅ Enviar no WhatsApp"; btnZap.style.background = "linear-gradient(135deg, #25D366, #1da851)";
-    } else {
-        btnZap.disabled = true; btnZap.style.background = "linear-gradient(135deg, #bbb, #ccc)";
-        btnZap.innerText = (pag === "Pix" && !pixGerado) ? "💎 Gere o PIX primeiro" : "⚠️ Preencha os dados";
-    }
-}
-
-function gerarPixReal() {
-    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
-    const totalCalculado = atualizar();
-    if (totalCalculado <= 0) {
-        alert("⚠️ O valor do pedido está zerado. Adicione itens ao carrinho antes de gerar o PIX.");
-        return;
-    }
-    const valor = totalCalculado.toFixed(2);
-    const chavePix = CHAVE_PIX.replace(/\D/g, "");
-    const nome = NOME_RECEBEDOR.substring(0, 25).toUpperCase();
-    const city = CIDADE_RECEBEDOR.substring(0, 15).toUpperCase();
-
-    function format(id, value) { return id + value.length.toString().padStart(2, '0') + value; }
-    function crc16(payload) {
-        let polinomio = 0x1021, resultado = 0xFFFF;
-        for (let i = 0; i < payload.length; i++) {
-            resultado ^= (payload.charCodeAt(i) << 8);
-            for (let j = 0; j < 8; j++) {
-                if ((resultado <<= 1) & 0x10000) resultado ^= polinomio;
-                resultado &= 0xFFFF;
-            }
-        }
-        return resultado.toString(16).toUpperCase().padStart(4, '0');
-    }
-
-    const payloadSemCRC = format("00", "01") + format("26", format("00", "BR.GOV.BCB.PIX") + format("01", chavePix)) + format("52", "0000") + format("53", "986") + format("54", valor) + format("58", "BR") + format("59", nome) + format("60", city) + format("62", format("05", "***")) + "6304";
-    const pixCopiaECola = payloadSemCRC + crc16(payloadSemCRC);
-    const qrcodeContainer = document.getElementById("qrcode"); qrcodeContainer.innerHTML = "";
-    new QRCode(qrcodeContainer, { text: pixCopiaECola, width: 180, height: 180 });
-    document.getElementById("brcode").value = pixCopiaECola;
-    document.getElementById("pixDisplay").style.display = "block";
-    pixGerado = true; verificarPgto();
-}
-
+function verificarPgto() { const pag = document.getElementById("pagamento").value; const btnZap = document.getElementById("btnWhatsapp"); const btnPix = document.getElementById("btnGerarPix"); const btnMP = document.getElementById("btnPagarMP"); const nome = document.getElementById("nome").value.trim(); const telRaw = document.getElementById("telefone").value.replace(/\D/g, ""); const data = document.getElementById("dataAgendamento").value; const hora = document.getElementById("horaAgendamento").value; const bairro = document.getElementById("bairro").value; const endereco = document.getElementById("endereco").value.trim(); const totalAtual = atualizar(); let telValido = (telRaw.length === 11 && telRaw[2] === "9") || (telRaw.length === 9 && telRaw[0] === "9"); document.getElementById("erroTelefone").style.display = (telRaw.length > 0 && !telValido) ? "block" : "none"; const tudoPronto = (nome !== "" && telValido && data !== "" && hora !== "" && (bairro === "retirada" || endereco !== "") && totalAtual > 0); if (data !== "" && hora !== "") { const horarioValido = verificarHorarioValidoParaAgendamento(data, hora); if (!horarioValido) { btnPix.style.display = "none"; btnMP.style.display = "none"; btnZap.disabled = true; btnZap.style.background = "linear-gradient(135deg, #e74c3c, #c0392b)"; btnZap.innerText = "🔴 HORÁRIO DE ATENDIMENTO INVÁLIDO"; return; } } btnPix.style.display = (pag === "Pix" && !pixGerado) ? "block" : "none"; btnMP.style.display = (pag.includes("Cartão")) ? "block" : "none"; btnPix.disabled = !tudoPronto; btnMP.disabled = !tudoPronto; if (tudoPronto && (pag === "Pix" ? pixGerado : true)) { btnZap.disabled = false; btnZap.innerText = "✅ Enviar no WhatsApp"; btnZap.style.background = "linear-gradient(135deg, #25D366, #1da851)"; } else { btnZap.disabled = true; btnZap.style.background = "linear-gradient(135deg, #bbb, #ccc)"; btnZap.innerText = (pag === "Pix" && !pixGerado) ? "💎 Gere o PIX primeiro" : "⚠️ Preencha os dados"; } }
+function gerarPixReal() { if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; } const totalCalculado = atualizar(); if (totalCalculado <= 0) { alert("⚠️ O valor do pedido está zerado. Adicione itens ao carrinho antes de gerar o PIX."); return; } const valor = totalCalculado.toFixed(2); const chavePix = CHAVE_PIX.replace(/\D/g, ""); const nome = NOME_RECEBEDOR.substring(0, 25).toUpperCase(); const city = CIDADE_RECEBEDOR.substring(0, 15).toUpperCase(); function format(id, value) { return id + value.length.toString().padStart(2, '0') + value; } function crc16(payload) { let polinomio = 0x1021, resultado = 0xFFFF; for (let i = 0; i < payload.length; i++) { resultado ^= (payload.charCodeAt(i) << 8); for (let j = 0; j < 8; j++) { if ((resultado <<= 1) & 0x10000) resultado ^= polinomio; resultado &= 0xFFFF; } } return resultado.toString(16).toUpperCase().padStart(4, '0'); } const payloadSemCRC = format("00", "01") + format("26", format("00", "BR.GOV.BCB.PIX") + format("01", chavePix)) + format("52", "0000") + format("53", "986") + format("54", valor) + format("58", "BR") + format("59", nome) + format("60", city) + format("62", format("05", "***")) + "6304"; const pixCopiaECola = payloadSemCRC + crc16(payloadSemCRC); const qrcodeContainer = document.getElementById("qrcode"); qrcodeContainer.innerHTML = ""; new QRCode(qrcodeContainer, { text: pixCopiaECola, width: 180, height: 180 }); document.getElementById("brcode").value = pixCopiaECola; document.getElementById("pixDisplay").style.display = "block"; pixGerado = true; verificarPgto(); }
 function copyPix() { const brcode = document.getElementById("brcode"); brcode.select(); document.execCommand("copy"); alert("Código Pix copiado!"); }
-function abrirMercadoPago() {
-    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
-    window.open("https://link.mercadopago.com.br/josidocesgoumert");
-}
-
-/* ============================================================
-   FILA DE PEDIDOS PENDENTES
-   ============================================================ */
+function abrirMercadoPago() { if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; } window.open("https://link.mercadopago.com.br/josidocesgoumert"); }
 const CHAVE_FILA_PENDENTES = 'pedidosPendentesJosi';
-
-function _guardarPedidoPendente(chave, pedido) {
-    const fila = _lsGet(CHAVE_FILA_PENDENTES) || [];
-    fila.push({ chave, pedido });
-    _lsSet(CHAVE_FILA_PENDENTES, fila);
-}
-
-function _removerDaFilaPendente(chave) {
-    const fila = (_lsGet(CHAVE_FILA_PENDENTES) || []).filter(item => item.chave !== chave);
-    _lsSet(CHAVE_FILA_PENDENTES, fila);
-}
-
-async function reenviarPedidosPendentes() {
-    if (typeof window.salvarPedidoDireto !== 'function') return;
-    const fila = _lsGet(CHAVE_FILA_PENDENTES) || [];
-    for (const item of fila) {
-        try {
-            await window.salvarPedidoDireto(item.chave, item.pedido);
-            _removerDaFilaPendente(item.chave);
-            console.log("Pedido pendente reenviado com sucesso:", item.chave);
-        } catch (erro) {
-            console.error("Ainda não foi possível reenviar o pedido pendente:", item.chave, erro);
-        }
-    }
-}
-
-document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') reenviarPedidosPendentes();
-});
+function _guardarPedidoPendente(chave, pedido) { const fila = _lsGet(CHAVE_FILA_PENDENTES) || []; fila.push({ chave, pedido }); _lsSet(CHAVE_FILA_PENDENTES, fila); }
+function _removerDaFilaPendente(chave) { const fila = (_lsGet(CHAVE_FILA_PENDENTES) || []).filter(item => item.chave !== chave); _lsSet(CHAVE_FILA_PENDENTES, fila); }
+async function reenviarPedidosPendentes() { if (typeof window.salvarPedidoDireto !== 'function') return; const fila = _lsGet(CHAVE_FILA_PENDENTES) || []; for (const item of fila) { try { await window.salvarPedidoDireto(item.chave, item.pedido); _removerDaFilaPendente(item.chave); console.log("Pedido pendente reenviado com sucesso:", item.chave); } catch (erro) { console.error("Ainda não foi possível reenviar o pedido pendente:", item.chave, erro); } } }
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reenviarPedidosPendentes(); });
 setInterval(reenviarPedidosPendentes, 15000);
+function montarTextoPedido(numeroPedido) { const nome = document.getElementById("nome").value.trim(); const telefone = document.getElementById("telefone").value.trim(); const bairroSelect = document.getElementById("bairro"); const bairroValor = bairroSelect.value; const bairroTexto = bairroSelect.options[bairroSelect.selectedIndex].text; const endereco = document.getElementById("endereco").value.trim(); const data = document.getElementById("dataAgendamento").value; const hora = document.getElementById("horaAgendamento").value; const pagamento = document.getElementById("pagamento").value; const subtotalBruto = carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0); const frete = (subtotalBruto >= 50 || promoAtiva || bairroValor === "retirada") ? 0 : parseFloat(bairroValor); const { subtotal, desconto, total } = _recalcularTotalSeguro(carrinho, frete); const dataFormatada = data ? new Date(data + "T00:00:00").toLocaleDateString('pt-BR') : ''; const agora = new Date(); const dataHoraCriacao = `${agora.toLocaleDateString('pt-BR')}, ${agora.toLocaleTimeString('pt-BR')}`; const qtdTotalItens = carrinho.reduce((acc, item) => acc + item.qtd, 0); const SEPARADOR = '➖➖➖➖➖➖➖➖➖➖➖➖'; let texto = `🍰 *NOVO PEDIDO - JOSI DOCES GOURMET* 🍰\n\n`; texto += `📝 *Pedido N°:* #${numeroPedido}\n`; texto += `🕐 *Pedido realizado em:* ${dataHoraCriacao}\n\n`; texto += `${SEPARADOR}\n\n`; texto += `👤 *CLIENTE*\n`; texto += `🙍 *Nome:* ${nome}\n`; texto += `📱 *WhatsApp:* ${telefone}\n\n`; texto += `${SEPARADOR}\n\n`; texto += `🛒 *ITENS DO PEDIDO*\n`; carrinho.forEach(item => { texto += `🍰 ${item.qtd}x ${item.nome}\n💵 R$ ${(item.preco * item.qtd).toFixed(2).replace('.', ',')}\n`; }); texto += `\n${SEPARADOR}\n\n`; texto += `📦 *RESUMO DO PEDIDO*\n`; texto += `🧁 *Itens:* ${qtdTotalItens}\n`; texto += `💰 *Subtotal:* R$ ${subtotal.toFixed(2).replace('.', ',')}\n`; if (desconto > 0) texto += `🏷️ *Desconto (5%):* -R$ ${desconto.toFixed(2).replace('.', ',')}\n`; texto += `🚚 *Frete:* ${frete === 0 ? 'GRÁTIS' : 'R$ ' + frete.toFixed(2).replace('.', ',')}\n`; texto += `💳 *Total:* R$ ${total.toFixed(2).replace('.', ',')}\n\n`; texto += `${SEPARADOR}\n\n`; texto += `📍 *ENTREGA*\n`; texto += bairroValor === "retirada" ? `🏠 Retirada no local (${ENDERECO_RETIRADA})\n` : `🚚 ${bairroTexto}\n🏡 *Endereço:* ${endereco}\n`; texto += `📅 *Data/Hora:* ${dataFormatada} às ${hora}\n`; texto += `💳 *Pagamento:* ${pagamento}\n`; return { texto, nome, telefone, subtotal, desconto, frete, total, bairroTexto, endereco, numeroPedido, data, hora, pagamento, bairroValor }; }
 
-/* ============================================================
-   MONTAGEM DO TEXTO DO PEDIDO (usado pelo botão do WhatsApp)
-   ============================================================ */
-function montarTextoPedido(numeroPedido) {
-    const nome = document.getElementById("nome").value.trim();
-    const telefone = document.getElementById("telefone").value.trim();
-    const bairroSelect = document.getElementById("bairro");
-    const bairroValor = bairroSelect.value;
-    const bairroTexto = bairroSelect.options[bairroSelect.selectedIndex].text;
-    const endereco = document.getElementById("endereco").value.trim();
-    const data = document.getElementById("dataAgendamento").value;
-    const hora = document.getElementById("horaAgendamento").value;
-    const pagamento = document.getElementById("pagamento").value;
-
-    const subtotalBruto = carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0);
-    const frete = (subtotalBruto >= 50 || promoAtiva || bairroValor === "retirada") ? 0 : parseFloat(bairroValor);
-    const { subtotal, desconto, total } = _recalcularTotalSeguro(carrinho, frete);
-
-    const dataFormatada = data ? new Date(data + "T00:00:00").toLocaleDateString('pt-BR') : '';
-    const agora = new Date();
-    const dataHoraCriacao = `${agora.toLocaleDateString('pt-BR')}, ${agora.toLocaleTimeString('pt-BR')}`;
-    const qtdTotalItens = carrinho.reduce((acc, item) => acc + item.qtd, 0);
-    const SEPARADOR = '➖➖➖➖➖➖➖➖➖➖➖➖';
-
-    let texto = `🍰 *NOVO PEDIDO - JOSI DOCES GOURMET* 🍰\n\n`;
-    texto += `📝 *Pedido N°:* #${numeroPedido}\n`;
-    texto += `🕐 *Pedido realizado em:* ${dataHoraCriacao}\n\n`;
-    texto += `${SEPARADOR}\n\n`;
-
-    texto += `👤 *CLIENTE*\n`;
-    texto += `🙍 *Nome:* ${nome}\n`;
-    texto += `📱 *WhatsApp:* ${telefone}\n\n`;
-    texto += `${SEPARADOR}\n\n`;
-
-    texto += `🛒 *ITENS DO PEDIDO*\n`;
-    carrinho.forEach(item => {
-        texto += `🍰 ${item.qtd}x ${item.nome}\n💵 R$ ${(item.preco * item.qtd).toFixed(2).replace('.', ',')}\n`;
-    });
-    texto += `\n${SEPARADOR}\n\n`;
-
-    texto += `📦 *RESUMO DO PEDIDO*\n`;
-    texto += `🧁 *Itens:* ${qtdTotalItens}\n`;
-    texto += `💰 *Subtotal:* R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
-    if (desconto > 0) texto += `🏷️ *Desconto (5%):* -R$ ${desconto.toFixed(2).replace('.', ',')}\n`;
-    texto += `🚚 *Frete:* ${frete === 0 ? 'GRÁTIS' : 'R$ ' + frete.toFixed(2).replace('.', ',')}\n`;
-    texto += `💳 *Total:* R$ ${total.toFixed(2).replace('.', ',')}\n\n`;
-    texto += `${SEPARADOR}\n\n`;
-
-    texto += `📍 *ENTREGA*\n`;
-    texto += bairroValor === "retirada"
-        ? `🏠 Retirada no local (${ENDERECO_RETIRADA})\n`
-        : `🚚 ${bairroTexto}\n🏡 *Endereço:* ${endereco}\n`;
-    texto += `📅 *Data/Hora:* ${dataFormatada} às ${hora}\n`;
-    texto += `💳 *Pagamento:* ${pagamento}\n`;
-
-    return {
-        texto, nome, telefone, subtotal, desconto, frete, total,
-        bairroTexto, endereco, numeroPedido, data, hora, pagamento, bairroValor
-    };
-}
-
+// ===== NOVA FUNÇÃO COM AUTOMAÇÃO GRÁTIS - SUBSTITUI A ANTIGA =====
 function finalizarZap() {
     if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
     const btnZap = document.getElementById("btnWhatsapp");
@@ -1967,7 +1340,26 @@ function finalizarZap() {
         _guardarPedidoPendente(chave, dadosPedido);
     }
 
+    // ABRE SEU WHATSAPP
     window.open(url, '_blank');
+
+    // 🤖 NOVO: MOSTRA BOTÃO DE CONFIRMAÇÃO AUTOMÁTICA PARA O CLIENTE (100% GRÁTIS)
+    let telLimpo = resumo.telefone.replace(/\D/g,'');
+    let telZap = telLimpo.startsWith('55') ? telLimpo : '55' + telLimpo;
+    let msgCliente = `Olá ${resumo.nome}! 🍰✨%0A%0ARecebemos seu pedido *#${resumo.numeroPedido}* da Josi Doces Gourmet!%0A%0A💰 Total: R$ ${resumo.total.toFixed(2).replace('.', ',')}%0A⏰ Entrega: ${resumo.data ? new Date(resumo.data+'T00:00:00').toLocaleDateString('pt-BR') : 'Hoje'} às ${resumo.hora||''}%0A📍 ${resumo.bairroTexto}%0A%0AJá estamos preparando com muito carinho! 🤎%0ATe avisamos aqui quando sair para entrega.%0A%0ADúvidas? (51) 98580-3243`;
+    let urlCliente = `https://wa.me/${telZap}?text=${msgCliente}`;
+
+    setTimeout(()=>{
+        let alerta = document.createElement('div');
+        alerta.innerHTML = `<div style="position:fixed;bottom:20px;left:10px;right:10px;background:linear-gradient(135deg,#25D366,#1da851);color:white;padding:18px;border-radius:18px;z-index:99999;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.3);font-family:Lato, sans-serif">
+            <div style="font-weight:700;font-size:16px">✅ Pedido #${resumo.numeroPedido} enviado!</div>
+            <div style="font-size:13px;margin:6px 0">Agora envie a confirmação automática para o cliente:</div>
+            <a href="${urlCliente}" target="_blank" style="background:white;color:#25D366;padding:12px 20px;border-radius:12px;display:inline-block;margin-top:10px;font-weight:700;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,0.15)">📱 Enviar confirmação para ${resumo.nome}</a>
+            <div onclick="this.parentElement.parentElement.remove()" style="margin-top:12px;font-size:12px;opacity:0.8;cursor:pointer;text-decoration:underline">Fechar</div>
+        </div>`;
+        document.body.appendChild(alerta);
+        setTimeout(()=>{ try{alerta.remove()}catch(e){} },15000);
+    }, 800);
 }
 
 function limparCarrinhoCompleto() {
@@ -2128,5 +1520,5 @@ async function enviarMensagemIa() {
     }
 }
 </script>
-</body>
+<script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
 </html>
