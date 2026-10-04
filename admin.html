@@ -95,7 +95,7 @@ function enviarZap(p, tipo){
   if(!telLimpo.startsWith('55')) telLimpo='55'+telLimpo;
   if(telLimpo==='5551985803243') { alert('Não pode enviar para seu próprio número, teste com número de cliente'); return; }
   let numero = p.numeroPedido||'';
-  let nome = p.nome||'cliente';
+  let nome = p.nome || p.cliente || p.nomeCliente || 'cliente';
   let total = parseFloat(p.total||0).toFixed(2).replace('.',',');
   let msg = '';
   if(tipo==='confirmacao'){
@@ -130,17 +130,21 @@ onValue(ref(db,'pedidos'), (snap)=>{
   lista.innerHTML='';
   pedidos.forEach(([chave,p])=>{
     p._chave = chave;
-    let ehNovo = (Date.now() - new Date(p.criadoEm).getTime()) < 120000;
+    let ehNovo = p.criadoEm ? (Date.now() - new Date(p.criadoEm).getTime()) < 180000 : true;
     let jaEnviou = autoZapEnviados.has(chave);
     let statusAtual = p.status||'recebido';
     let div = document.createElement('div');
     div.className = 'pedido' + (ehNovo ? ' novo' : '');
-    let itens = (p.itens||[]).map(i=>`• ${i.qtd}x ${i.nome} - R$ ${(i.preco*i.qtd).toFixed(2)}`).join('<br>');
+    let itens = (p.itens||[]).map(i=>`• ${i.qtd}x ${i.nome||i.name||'Item'} - R$ ${(parseFloat(i.preco||0)*parseInt(i.qtd||1)).toFixed(2)}`).join('<br>');
+      let nomeCliente = p.nome || p.cliente || p.nomeCliente || p.customer || p.name || '⚠️ Nome não salvo';
+      let telCliente = p.telefone || p.tel || p.whatsapp || p.phone || '';
+      let enderecoCliente = (p.enderecoTexto||'') + ' ' + (p.endereco||'');
+
     let dataHora = p.criadoEm ? new Date(p.criadoEm).toLocaleString('pt-BR') : '';
     let statusLabel = {recebido:'📥 Recebido', confirmacao:'✅ Confirmado', preparacao:'👩‍🍳 Em preparação', pronto_retirada:'🎉 Pronto p/ retirada', saiu_entrega:'🛵 Saiu p/ entrega', entregue:'✅ Entregue'}[statusAtual] || statusAtual;
     div.innerHTML = `
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px"><span class="badge ${ehNovo?'badge-novo':''}">#${p.numeroPedido||chave.slice(-6)} ${ehNovo?'🔥':''}</span><span class="badge" style="background:#6c757d">${statusLabel}</span>${jaEnviou?'<span class="badge badge-auto">🤖 AutoZap</span>':''}<span style="font-size:11px;color:#8d6e63">${dataHora}</span></div>
-      <div class="info"><b>👤 ${p.nome}</b><br>📱 ${p.telefone}<br>📍 ${p.enderecoTexto||''} ${p.endereco||''}<br>💳 ${p.pagamento||''} - ⏰ ${p.data||''} ${p.hora||''}<br>Tipo: <b>${p.tipoEntrega==='retirada'?'RETIRADA':'ENTREGA'}</b></div>
+      <div class="info"><b>👤 ${nomeCliente}</b><br>📱 ${telCliente}<br>📍 ${enderecoCliente}<br>💳 ${p.pagamento||''} - ⏰ ${p.data||''} ${p.hora||''}<br>Tipo: <b>${(p.tipoEntrega||'').toLowerCase()==='retirada'?'RETIRADA':'ENTREGA'}</b><br>Chave: <span style="font-size:10px;opacity:0.6">${chave}</span></div>
       <div class="info" style="background:#fdf5e6;padding:10px;border-radius:10px;font-size:13px">${itens}</div>
       <div class="total">TOTAL: R$ ${(p.total||0).toFixed(2).replace('.',',')}</div>
       <div class="grid-status">
