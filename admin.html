@@ -20,170 +20,223 @@
 :where(code, pre, kbd, samp) {
   font-family: "Optimistic Mono", ui-monospace, monospace;
 }
-</style><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Painel Josi - AutoZap + Status</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+</style><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Painel Josi - Ultra Completo</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-:root{--marrom:#3e2723;--dourado:#c8860a;--verde:#25D366;--creme:#fdf5e6;--azul:#3498db;--laranja:#e67e22;--roxo:#8e44ad}
-*{box-sizing:border-box}body{font-family:'Lato',sans-serif;background:var(--creme);margin:0;padding:0}
-header{background:linear-gradient(135deg,var(--marrom),#5d4037);color:white;padding:18px 15px;text-align:center;position:sticky;top:0;z-index:10;box-shadow:0 4px 15px rgba(0,0,0,0.2)}
-h1{font-family:'Playfair Display',serif;margin:0 0 5px;font-size:22px}
-.btn-som{background:white;color:var(--marrom);padding:12px 20px;border-radius:25px;border:none;font-weight:800;cursor:pointer;margin-top:10px;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,0.2)}
-.btn-som.ativo{background:var(--verde);color:white}
-#listaPedidos{padding:15px;max-width:650px;margin:auto;padding-bottom:120px}
-.pedido{background:white;padding:18px;border-radius:18px;margin:18px 0;box-shadow:0 4px 20px rgba(62,39,35,0.12);border-left:7px solid var(--verde);animation:slideIn 0.4s ease;position:relative}
-@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.pedido.novo{border-left-color:#e74c3c;animation:pulse 1.5s infinite, slideIn 0.4s ease}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(231,76,60,0.4)}70%{box-shadow:0 0 0 12px rgba(231,76,60,0)}100%{box-shadow:0 0 0 0 rgba(231,76,60,0)}}
-.badge{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:800;color:white;display:inline-block;margin:2px}
-.badge-novo{background:#e74c3c}.badge-auto{background:linear-gradient(135deg,#c8860a,#a06810)}.badge-prep{background:var(--laranja)}.badge-pronto{background:var(--verde)}.badge-entrega{background:var(--azul)}.badge-retirada{background:var(--roxo)}
-.btn{padding:12px;border-radius:12px;border:none;font-weight:800;cursor:pointer;width:100%;margin-top:8px;font-size:13px;display:block;text-decoration:none;text-align:center;transition:0.2s}
+:root{--marrom:#3e2723;--dourado:#c8860a;--verde:#25D366;--creme:#fdf5e6;--azul:#3498db;--laranja:#e67e22;--roxo:#8e44ad;--vermelho:#e74c3c;--cinza:#6c757d}
+*{box-sizing:border-box}body{font-family:'Lato',sans-serif;background:#f5f0e8;margin:0;padding:0}
+header{background:linear-gradient(135deg,var(--marrom),#5d4037);color:white;padding:16px 12px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.25)}
+h1{font-family:'Playfair Display',serif;margin:0;font-size:20px}
+.tabs{display:flex;gap:6px;padding:12px;background:white;overflow-x:auto;position:sticky;top:115px;z-index:90;box-shadow:0 2px 10px rgba(0,0,0,0.08);-webkit-overflow-scrolling:touch}
+.tab{padding:10px 14px;border-radius:25px;border:none;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;transition:0.2s;flex-shrink:0}
+.tab.ativo{background:var(--marrom);color:white;transform:scale(1.05)}.tab:not(.ativo){background:#efebe9;color:#5d4037;border:1px solid #d7ccc8}
+.tab-count{background:rgba(0,0,0,0.15);padding:2px 7px;border-radius:10px;margin-left:5px;font-size:10px}
+#listaPedidos{padding:12px;max-width:700px;margin:auto;padding-bottom:120px}
+.pedido{background:white;padding:16px;border-radius:18px;margin:14px 0;box-shadow:0 4px 18px rgba(62,39,35,0.12);border-left:7px solid var(--verde);animation:slideIn 0.35s ease;position:relative}
+@keyframes slideIn{from{transform:translateY(15px);opacity:0}to{transform:translateY(0);opacity:1}}
+.pedido.recebido{border-left-color:var(--vermelho)}.pedido.preparacao{border-left-color:var(--laranja)}.pedido.pronto_retirada{border-left-color:var(--verde);background:#f1f8e9}.pedido.saiu_entrega{border-left-color:var(--azul);background:#e3f2fd}.pedido.entregue{border-left-color:var(--cinza);opacity:0.8}
+.pedido.novo{animation:pulse 1.2s infinite, slideIn 0.35s ease}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(231,76,60,0.5)}70%{box-shadow:0 0 0 15px rgba(231,76,60,0)}100%{box-shadow:0 0 0 0 rgba(231,76,60,0)}}
+.header-pedido{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.badge{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:900;color:white;display:inline-block}
+.badge-num{background:var(--marrom)}.badge-novo{background:var(--vermelho);animation:blink 1s infinite}@keyframes blink{0%,100%{opacity:1}50%{opacity:0.6}}
+.badge-status{font-size:10px}
+.badge-recebido{background:var(--vermelho)}.badge-preparacao{background:var(--laranja)}.badge-pronto_retirada{background:var(--verde)}.badge-saiu_entrega{background:var(--azul)}.badge-entregue{background:var(--cinza)}.badge-confirmacao{background:var(--dourado)}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.info-box{background:#fdf5e6;padding:10px;border-radius:10px;font-size:12px;line-height:1.5}
+.info-box b{color:var(--marrom);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:2px}
+.itens-box{background:#fafafa;border:1px dashed #d7ccc8;padding:12px;border-radius:12px;margin:10px 0;font-size:13px;line-height:1.6}
+.total-box{background:linear-gradient(135deg,#3e2723,#5d4037);color:white;padding:14px;border-radius:12px;margin:12px 0;text-align:center}
+.total-box .valor{font-family:'Playfair Display',serif;font-size:24px;font-weight:700}
+.btn{padding:11px;border-radius:11px;border:none;font-weight:800;cursor:pointer;width:100%;margin-top:7px;font-size:12px;display:block;text-align:center;text-decoration:none;transition:0.15s}
 .btn:active{transform:scale(0.97)}
-.btn-zap{background:linear-gradient(135deg,var(--verde),#1da851);color:white}
 .btn-prep{background:linear-gradient(135deg,#f39c12,#e67e22);color:white}
 .btn-pronto{background:linear-gradient(135deg,#2ecc71,#27ae60);color:white}
 .btn-entrega{background:linear-gradient(135deg,#3498db,#2980b9);color:white}
 .btn-retirada{background:linear-gradient(135deg,#9b59b6,#8e44ad);color:white}
-.btn-sec{background:#efebe9;color:#5d4037;border:1px solid #d7ccc8}
-.info{font-size:13px;color:#5d4037;line-height:1.6;margin:8px 0}
-.total{font-family:'Playfair Display',serif;font-size:20px;color:var(--marrom);font-weight:700;margin-top:10px;border-top:2px dashed #d7ccc8;padding-top:10px}
-.status-top{font-size:12px;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,0.2);display:inline-block;margin-top:8px}
-.config{background:rgba(255,255,255,0.15);padding:12px;border-radius:12px;margin-top:12px;text-align:left}
-.switch{display:flex;align-items:center;justify-content:space-between;margin:8px 0;font-size:13px}
-.switch input{width:45px;height:25px;appearance:none;background:#8d6e63;border-radius:25px;position:relative;cursor:pointer;transition:0.3s}
+.btn-entregue{background:linear-gradient(135deg,#6c757d,#495057);color:white}
+.btn-zap{background:linear-gradient(135deg,var(--verde),#1da851);color:white}
+.btn-sec{background:white;color:#5d4037;border:1.5px solid #d7ccc8}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.btn-som{background:white;color:var(--marrom);padding:10px 18px;border-radius:25px;border:none;font-weight:900;cursor:pointer;font-size:12px;box-shadow:0 2px 10px rgba(0,0,0,0.2);margin:8px}
+.btn-som.ativo{background:var(--verde);color:white}
+.status-top{font-size:11px;padding:6px 12px;border-radius:20px;background:rgba(255,255,255,0.2);display:inline-block;margin-top:6px}
+.config{background:rgba(255,255,255,0.12);padding:10px;border-radius:10px;margin-top:10px;text-align:left;font-size:11px}
+.switch{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
+.switch input{width:40px;height:22px;appearance:none;background:#8d6e63;border-radius:22px;position:relative;cursor:pointer;transition:0.3s}
 .switch input:checked{background:var(--verde)}
-.switch input::before{content:'';position:absolute;width:19px;height:19px;background:white;border-radius:50%;top:3px;left:3px;transition:0.3s}
-.switch input:checked::before{left:23px}
-.grid-status{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.switch input::before{content:'';position:absolute;width:16px;height:16px;background:white;border-radius:50%;top:3px;left:3px;transition:0.3s}
+.switch input:checked::before{left:21px}
+.resumo-top{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.resumo-item{background:rgba(255,255,255,0.15);padding:6px 12px;border-radius:15px;font-size:11px;font-weight:700}
 </style>
 </head><body>
 <header>
-<h1>🍰 Josi Doces - Painel Completo</h1>
-<div id="status" class="status-top">🔴 Conectando...</div>
+<h1>🍰 Josi Doces - Painel Ultra Completo</h1>
+<div id="status" class="status-top">🔴 Conectando ao banco Firebase...</div>
+<div class="resumo-top" id="resumoTop"></div>
 <div class="config">
-<div class="switch"><span>🔔 Som e vibração</span><input type="checkbox" id="checkSom" checked></div>
-<div class="switch"><span>🤖 AutoZap confirmação automática</span><input type="checkbox" id="checkAutoZap" checked></div>
+<div class="switch"><span>🔔 Som + vibração + notificação</span><input type="checkbox" id="checkSom" checked></div>
+<div class="switch"><span>🤖 AutoZap: confirmação automática</span><input type="checkbox" id="checkAutoZap" checked></div>
+<div style="margin-top:6px;opacity:0.8">✅ Deixe aberto o dia todo! Quando chegar pedido toca som e envia confirmação automática</div>
 </div>
-<button class="btn-som" id="btnSom" onclick="ativarSom()">🔔 CLIQUE PARA ATIVAR SOM E AUTOZAP</button>
+<button class="btn-som" id="btnSom" onclick="ativarSom()">🔔 ATIVAR SOM E AUTOZAP - CLIQUE AQUI</button>
 </header>
-<div id="listaPedidos"><p style="text-align:center;padding:40px;color:#8d6e63">🔄 Carregando pedidos...</p></div>
-<audio id="somPedido" preload="auto"><source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=notification-sound-7062.mp3" type="audio/mpeg"></audio>
+<div class="tabs" id="tabs">
+<button class="tab ativo" data-filtro="todos" onclick="filtrar('todos')">📋 Todos <span class="tab-count" id="count-todos">0</span></button>
+<button class="tab" data-filtro="recebido" onclick="filtrar('recebido')">📥 Recebidos <span class="tab-count" id="count-recebido">0</span></button>
+<button class="tab" data-filtro="preparacao" onclick="filtrar('preparacao')">👩‍🍳 Preparação <span class="tab-count" id="count-preparacao">0</span></button>
+<button class="tab" data-filtro="pronto_retirada" onclick="filtrar('pronto_retirada')">🎉 Retirada <span class="tab-count" id="count-pronto_retirada">0</span></button>
+<button class="tab" data-filtro="saiu_entrega" onclick="filtrar('saiu_entrega')">🛵 Entrega <span class="tab-count" id="count-saiu_entrega">0</span></button>
+<button class="tab" data-filtro="entregue" onclick="filtrar('entregue')">✅ Entregues <span class="tab-count" id="count-entregue">0</span></button>
+</div>
+<div style="max-width:700px;margin:auto;padding:12px 12px 0;display:flex;gap:8px;position:sticky;top:165px;z-index:80;background:#f5f0e8">
+<div style="flex:1;position:relative">
+<input id="busca" type="text" placeholder="🔍 Pesquisar por nome, nº pedido, telefone ou endereço..." oninput="buscar(this.value)" style="width:100%;padding:12px 12px 12px 40px;border-radius:25px;border:1.5px solid #d7ccc8;font-size:13px;outline:none;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+<span style="position:absolute;left:14px;top:12px;font-size:16px">🔍</span>
+</div>
+<button onclick="document.getElementById('busca').value='';buscar('')" style="padding:12px 16px;border-radius:25px;border:none;background:#efebe9;color:#5d4037;font-weight:700;cursor:pointer;font-size:12px">✕ Limpar</button>
+</div>
+<div id="listaPedidos"><p style="text-align:center;padding:40px;color:#8d6e63">🔄 Carregando pedidos completos do banco...</p></div>
+<audio id="somPedido" preload="auto"><source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3" type="audio/mpeg"></audio>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onChildAdded, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 const firebaseConfig = { apiKey: "AIzaSyCHzkyYek4fV7fs_1f6FTA9o4o3ikJuhs0", authDomain: "josigourmet-af3ff.firebaseapp.com", databaseURL: "https://josigourmet-af3ff-default-rtdb.firebaseio.com", projectId: "josigourmet-af3ff", storageBucket: "josigourmet-af3ff.firebasestorage.app", messagingSenderId: "373768013260", appId: "1:373768013260:web:bd5fa8dcf6053414d7c969" };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-let somAtivo = false;
-let pedidosConhecidos = new Set();
-let autoZapEnviados = new Set();
+let somAtivo=false, filtroAtual='todos', todosPedidos=[], conhecidos=new Set(), autoEnviados=new Set(), termoBusca='';
 
-window.ativarSom = ()=>{
+window.ativarSom=()=>{
   somAtivo=true;
-  let a1 = document.getElementById('somPedido');
-  a1.play().then(()=>{ a1.pause(); a1.currentTime=0; }).catch(()=>{});
-  document.getElementById('btnSom').innerHTML='✅ ATIVADO! Deixe aberto';
+  document.getElementById('somPedido').play().then(()=>{document.getElementById('somPedido').pause();document.getElementById('somPedido').currentTime=0;}).catch(()=>{});
+  document.getElementById('btnSom').innerHTML='✅ ATIVADO! Pode deixar aberto';
   document.getElementById('btnSom').classList.add('ativo');
-  document.getElementById('status').innerHTML='🟢 AutoZap + Som ATIVOS!';
-  if(Notification && Notification.permission!=='granted'){ Notification.requestPermission(); }
-  if('vibrate' in navigator) navigator.vibrate([100,50,100]);
-  setTimeout(()=>{ document.getElementById('btnSom').style.display='none'; }, 2000);
+  document.getElementById('status').innerHTML='🟢 Som + AutoZap ATIVOS!';
+  if(Notification && Notification.permission!=='granted') Notification.requestPermission();
+  if('vibrate' in navigator) navigator.vibrate(100);
+  setTimeout(()=>document.getElementById('btnSom').style.display='none',2500);
 }
-
-function enviarZap(p, tipo){
-  let telLimpo = (p.telefone||'').replace(/\D/g,'');
-  if(telLimpo.length<10) return;
-  if(!telLimpo.startsWith('55')) telLimpo='55'+telLimpo;
-  if(telLimpo==='5551985803243') { alert('Não pode enviar para seu próprio número, teste com número de cliente'); return; }
-  let numero = p.numeroPedido||'';
-  let nome = p.nome || p.cliente || p.nomeCliente || 'cliente';
-  let total = parseFloat(p.total||0).toFixed(2).replace('.',',');
-  let msg = '';
+window.filtrar=(f)=>{
+  filtroAtual=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('ativo'));
+  document.querySelector(`[data-filtro="${f}"]`)?.classList.add('ativo');
+  render();
+}
+function getNome(p){return p.nome||p.cliente||p.nomeCliente||p.customerName||'⚠️ Nome não informado';}
+function getTel(p){return p.telefone||p.tel||p.whatsapp||p.phone||'';}
+function getStatus(p){return (p.status||'recebido').toLowerCase();}
+function enviarZap(p,tipo){
+  let tel=(getTel(p)||'').replace(/\D/g,''); if(tel.length<10){alert('Telefone inválido');return;} if(!tel.startsWith('55')) tel='55'+tel; if(tel==='5551985803243'){alert('Teste com número de cliente, não seu próprio');return;}
+  let numero=p.numeroPedido||p._chave?.slice(-6)||''; let nome=getNome(p); let total=parseFloat(p.total||0).toFixed(2).replace('.',',');
+  let enderecoCompleto=`${p.enderecoTexto||''} ${p.endereco||''}`.trim();
+  let itensTexto=(p.itens||[]).map(i=>`${i.qtd}x ${i.nome||i.name}`).join(', ');
+  let msg='';
   if(tipo==='confirmacao'){
-    msg = `Olá ${nome}! 🍰✨\n\nRecebemos seu pedido *#${numero}* da Josi Doces Gourmet!\n\n💰 Total: R$ ${total}\n📍 ${p.enderecoTexto||''}\n\nJá estamos preparando com muito carinho! 🤎\nTe avisamos aqui quando sair para entrega.\n\nDúvidas? (51) 98580-3243`;
+    msg=`Olá ${nome}! 🍰✨\n\n✅ *PEDIDO RECEBIDO COM SUCESSO!*\n\n📋 *Pedido #${numero}* - Josi Doces Gourmet\n\n👤 *Cliente:* ${nome}\n📱 *Whats:* ${getTel(p)}\n📍 *Entrega:* ${enderecoCompleto}\n📅 *Data/Hora:* ${p.data||''} ${p.hora||''}\n💳 *Pagamento:* ${p.pagamento||'Pix'}\n\n🛒 *Itens:*\n${(p.itens||[]).map(i=>`• ${i.qtd}x ${i.nome} - R$ ${(i.preco*i.qtd).toFixed(2)}`).join('\n')}\n\n💰 *Resumo:*\nSubtotal: R$ ${parseFloat(p.subtotal||p.total||0).toFixed(2)}\nFrete: ${(p.frete==0||p.frete=='0')?'GRÁTIS':'R$ '+(p.frete||0)}\n*TOTAL: R$ ${total}*\n\nJá estamos preparando com muito carinho! 🤎\nTe avisamos em cada etapa por aqui!\n\nJosi Doces - (51) 98580-3243`;
   } else if(tipo==='preparacao'){
-    msg = `Olá ${nome}! 👩‍🍳✨\n\nSeu pedido *#${numero}* da Josi Doces entrou em *PREPARAÇÃO*!\n\nEstamos preparando tudo com muito carinho e capricho! 🤎\nEm breve te avisamos quando estiver pronto!\n\n💰 Total: R$ ${total}\n\nJosi Doces Gourmet - (51) 98580-3243`;
+    msg=`Olá ${nome}! 👩‍🍳✨\n\nSeu pedido *#${numero}* entrou em *PREPARAÇÃO*!\n\n👩‍🍳 Nossa equipe já está preparando:\n${itensTexto}\n\n⏰ Previsão: 30-50 min\n\nTe avisamos quando estiver pronto! 🤎\n\nJosi Doces Gourmet`;
   } else if(tipo==='pronto_retirada'){
-    msg = `Olá ${nome}! 🎉✨\n\nSeu pedido *#${numero}* da Josi Doces está *PRONTO PARA RETIRADA*!\n\n📍 Pode vir buscar no nosso endereço!\n⏰ Horário: 09h às 20h\n\n💰 Total: R$ ${total}\n\nEstamos te esperando! 🤎\n\nJosi Doces Gourmet\n📍 Camaquã - RS\n📱 (51) 98580-3243`;
+    msg=`Olá ${nome}! 🎉✨\n\nSeu pedido *#${numero}* está *PRONTO PARA RETIRADA*!\n\n📍 *Local:* Josi Doces Gourmet\n📌 Camaquã - RS (enviar localização se precisar)\n⏰ *Retire até:* 20h de hoje\n\n🛒 ${itensTexto}\n💰 Total: R$ ${total} - ${p.pagamento||'Pix'}\n\nEstamos te esperando! 🤎\n(51) 98580-3243`;
   } else if(tipo==='saiu_entrega'){
-    msg = `Olá ${nome}! 🛵💨\n\nSeu pedido *#${numero}* da Josi Doces *SAIU PARA ENTREGA*!\n\n📍 Endereço: ${p.enderecoTexto||''} ${p.endereco||''}\n⏰ Chega em até 40 minutos!\n\n💰 Total: R$ ${total}\n\nFica de olho! Nosso entregador já está a caminho! 🤎✨\n\nJosi Doces Gourmet - (51) 98580-3243`;
+    msg=`Olá ${nome}! 🛵💨\n\nSeu pedido *#${numero}* *SAIU PARA ENTREGA*!\n\n📍 *Endereço:* ${enderecoCompleto}\n🛵 *Entregador:* a caminho!\n⏰ *Chega em:* até 40 minutos\n\n🛒 ${itensTexto}\n💰 Total: R$ ${total}\n💳 ${p.pagamento||'Pix'}\n\nFica de olho no portão! 🤎✨\n\nJosi Doces - (51) 98580-3243`;
   } else if(tipo==='entregue'){
-    msg = `Olá ${nome}! 😍\n\nSeu pedido *#${numero}* foi *ENTREGUE*!\n\nEsperamos que você ame! 🤎✨\n\nSe puder, deixa uma avaliação pra gente no Instagram @josigourmet ?\n\nMuito obrigada pela preferência!\n\nJosi Doces Gourmet 💖`;
+    msg=`Olá ${nome}! 😍\n\nSeu pedido *#${numero}* foi *ENTREGUE*!\n\nAproveite muito! 🤎✨\n\nSe você amou, deixa uma avaliação no nosso Instagram?\n📸 @josigourmet\n\nMuito obrigada pela preferência!\nEsperamos você de novo em breve! 💖\n\nJosi Doces Gourmet`;
   }
-  window.open(`https://wa.me/${telLimpo}?text=${encodeURIComponent(msg)}`,'_blank');
-  // Atualiza status no Firebase
-  try{ update(ref(db, 'pedidos/' + p._chave), { status: tipo, statusAtualizadoEm: new Date().toISOString() }); }catch(e){}
+  window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`,'_blank');
+  try{ update(ref(db,'pedidos/'+p._chave),{status:tipo,statusAtualizadoEm:Date.now(),ultimaAtualizacao:new Date().toISOString()}); }catch(e){}
 }
 
-function enviarZapAutomatico(p, chave){
-  if(!somAtivo) return;
-  if(!document.getElementById('checkAutoZap').checked) return;
-  if(autoZapEnviados.has(chave)) return;
-  autoZapEnviados.add(chave);
-  enviarZap({...p, _chave:chave}, 'confirmacao');
+function enviarAuto(p,chave){
+  if(!somAtivo) return; if(!document.getElementById('checkAutoZap').checked) return; if(autoEnviados.has(chave)) return; autoEnviados.add(chave);
+  enviarZap({...p,_chave:chave},'confirmacao');
 }
 
-onValue(ref(db,'pedidos'), (snap)=>{
-  let lista = document.getElementById('listaPedidos');
-  let dados = snap.val();
-  if(!dados){ lista.innerHTML='<div style="text-align:center;padding:40px">📭 Nenhum pedido</div>'; return; }
-  let pedidos = Object.entries(dados).sort((a,b)=> new Date(b[1].criadoEm) - new Date(a[1].criadoEm));
+window.buscar=(termo)=>{
+  termoBusca = (termo||'').toLowerCase().trim();
+  render();
+}
+function render(){
+  let lista=document.getElementById('listaPedidos');
+  let filtrados = todosPedidos.filter(([k,p])=>{
+    let statusOk = filtroAtual==='todos' ? true : (getStatus(p)===filtroAtual || (filtroAtual==='recebido' && ['recebido','confirmacao'].includes(getStatus(p))));
+    if(!statusOk) return false;
+    if(!termoBusca) return true;
+    let nome = (getNome(p)||'').toLowerCase();
+    let tel = (getTel(p)||'').toLowerCase();
+    let numero = (p.numeroPedido||k||'').toLowerCase();
+    let endereco = `${p.enderecoTexto||''} ${p.endereco||''}`.toLowerCase();
+    let itens = (p.itens||[]).map(i=> (i.nome||'').toLowerCase()).join(' ');
+    return nome.includes(termoBusca) || tel.includes(termoBusca) || numero.includes(termoBusca) || endereco.includes(termoBusca) || itens.includes(termoBusca) || k.toLowerCase().includes(termoBusca);
+  });
+  if(filtrados.length===0){ lista.innerHTML=`<div style="text-align:center;padding:50px"><div style="font-size:50px">🔍</div><p>${termoBusca?`Nenhum pedido encontrado para "<b>${termoBusca}</b>"`:`Nenhum pedido em <b>${filtroAtual}</b>`}</p><p style="font-size:12px;color:#8d6e63">${termoBusca?`Tente buscar por nome, nº pedido ou telefone`:`Os pedidos aparecerão aqui automaticamente`}</p><button onclick="document.getElementById('busca').value='';buscar('')" class="btn btn-sec" style="max-width:200px;margin:15px auto">✕ Limpar busca</button></div>`; return; }
   lista.innerHTML='';
-  pedidos.forEach(([chave,p])=>{
-    p._chave = chave;
-    let ehNovo = p.criadoEm ? (Date.now() - new Date(p.criadoEm).getTime()) < 180000 : true;
-    let jaEnviou = autoZapEnviados.has(chave);
-    let statusAtual = p.status||'recebido';
-    let div = document.createElement('div');
-    div.className = 'pedido' + (ehNovo ? ' novo' : '');
-    let itens = (p.itens||[]).map(i=>`• ${i.qtd}x ${i.nome||i.name||'Item'} - R$ ${(parseFloat(i.preco||0)*parseInt(i.qtd||1)).toFixed(2)}`).join('<br>');
-      let nomeCliente = p.nome || p.cliente || p.nomeCliente || p.customer || p.name || '⚠️ Nome não salvo';
-      let telCliente = p.telefone || p.tel || p.whatsapp || p.phone || '';
-      let enderecoCliente = (p.enderecoTexto||'') + ' ' + (p.endereco||'');
-
+  filtrados.forEach(([chave,p])=>{
+    p._chave=chave;
+    let ehNovo = p.criadoEm ? (Date.now()-new Date(p.criadoEm).getTime())<180000 : false;
+    let status = getStatus(p);
+    let nome = getNome(p);
+    let tel = getTel(p);
+    let enderecoCompleto = `${p.enderecoTexto||''} ${p.endereco||''}`.trim() || 'Retirada no local';
+    let itens = p.itens||[];
     let dataHora = p.criadoEm ? new Date(p.criadoEm).toLocaleString('pt-BR') : '';
-    let statusLabel = {recebido:'📥 Recebido', confirmacao:'✅ Confirmado', preparacao:'👩‍🍳 Em preparação', pronto_retirada:'🎉 Pronto p/ retirada', saiu_entrega:'🛵 Saiu p/ entrega', entregue:'✅ Entregue'}[statusAtual] || statusAtual;
-    div.innerHTML = `
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px"><span class="badge ${ehNovo?'badge-novo':''}">#${p.numeroPedido||chave.slice(-6)} ${ehNovo?'🔥':''}</span><span class="badge" style="background:#6c757d">${statusLabel}</span>${jaEnviou?'<span class="badge badge-auto">🤖 AutoZap</span>':''}<span style="font-size:11px;color:#8d6e63">${dataHora}</span></div>
-      <div class="info"><b>👤 ${nomeCliente}</b><br>📱 ${telCliente}<br>📍 ${enderecoCliente}<br>💳 ${p.pagamento||''} - ⏰ ${p.data||''} ${p.hora||''}<br>Tipo: <b>${(p.tipoEntrega||'').toLowerCase()==='retirada'?'RETIRADA':'ENTREGA'}</b><br>Chave: <span style="font-size:10px;opacity:0.6">${chave}</span></div>
-      <div class="info" style="background:#fdf5e6;padding:10px;border-radius:10px;font-size:13px">${itens}</div>
-      <div class="total">TOTAL: R$ ${(p.total||0).toFixed(2).replace('.',',')}</div>
-      <div class="grid-status">
+    let statusLabel = {recebido:'📥 Recebido', confirmacao:'✅ Confirmado', preparacao:'👩‍🍳 Em preparação', pronto_retirada:'🎉 Pronto retirada', saiu_entrega:'🛵 Saiu entrega', entregue:'✅ Entregue'}[status]||status;
+    let div=document.createElement('div');
+    div.className='pedido '+status+(ehNovo?' novo':'');
+    div.innerHTML=`
+      <div class="header-pedido">
+        <div><span class="badge badge-num">#${p.numeroPedido||chave.slice(-6)}</span> ${ehNovo?'<span class="badge badge-novo">🔥 NOVO</span>':''} <span class="badge badge-status badge-${status}">${statusLabel}</span></div>
+        <span style="font-size:11px;color:#8d6e63">${dataHora}</span>
+      </div>
+      <div class="info-grid">
+        <div class="info-box"><b>👤 Cliente</b>${nome}<br><span style="font-size:11px">📱 ${tel}</span></div>
+        <div class="info-box"><b>📍 Entrega</b>${enderecoCompleto}<br><span style="font-size:11px">📅 ${p.data||'Hoje'} ${p.hora||''} • 💳 ${p.pagamento||'Pix'}</span></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-box"><b>💰 Financeiro</b>Subtotal: R$ ${parseFloat(p.subtotal||0).toFixed(2)}<br>Frete: ${(p.frete==0?'GRÁTIS':'R$ '+(p.frete||0))}<br><b>Total: R$ ${parseFloat(p.total||0).toFixed(2).replace('.',',')}</b></div>
+        <div class="info-box"><b>📦 Tipo</b>${(p.tipoEntrega||'').toLowerCase()==='retirada'?'🏠 RETIRADA NO LOCAL':'🚚 ENTREGA'}<br><span style="font-size:11px">${p.tipoEntrega==='retirada'?'Cliente busca':'Entregar no endereço'}</span><br><span style="font-size:10px;opacity:0.6">ID: ${chave.slice(-8)}</span></div>
+      </div>
+      <div class="itens-box"><b>🛒 ITENS DO PEDIDO (${itens.length} tipos, ${itens.reduce((a,i)=>a+(i.qtd||0),0)} unidades)</b><br><br>${itens.map(i=>`• <b>${i.qtd}x</b> ${i.nome||i.name} <span style="float:right">R$ ${(parseFloat(i.preco||0)*parseInt(i.qtd||1)).toFixed(2)}</span>`).join('<br>')}</div>
+      <div class="total-box"><div style="font-size:11px;opacity:0.8;letter-spacing:1px">TOTAL DO PEDIDO</div><div class="valor">R$ ${parseFloat(p.total||0).toFixed(2).replace('.',',')}</div><div style="font-size:11px;opacity:0.8">${p.pagamento||'Pix'} • ${p.tipoEntrega==='retirada'?'Retirada':'Entrega'}</div></div>
+      <div class="grid2">
         <button class="btn btn-prep" onclick="enviarStatus('${chave}','preparacao')">👩‍🍳 Em preparação</button>
         <button class="btn btn-pronto" onclick="enviarStatus('${chave}','pronto_retirada')">🎉 Pronto retirada</button>
         <button class="btn btn-entrega" onclick="enviarStatus('${chave}','saiu_entrega')">🛵 Saiu entrega</button>
-        <button class="btn btn-zap" onclick="enviarStatus('${chave}','entregue')">✅ Entregue</button>
+        <button class="btn btn-entregue" onclick="enviarStatus('${chave}','entregue')">✅ Entregue</button>
       </div>
-      <button class="btn btn-sec" onclick="enviarStatus('${chave}','confirmacao')">🔄 Reenviar confirmação</button>
+      <button class="btn btn-zap" onclick="enviarStatus('${chave}','confirmacao')" style="margin-top:10px">🔄 Reenviar confirmação completa</button>
     `;
     lista.appendChild(div);
   });
-});
-
-window.enviarStatus = (chave, tipo)=>{
-  onValue(ref(db,'pedidos/'+chave), (snap)=>{
-    let p = snap.val();
-    if(!p) return;
-    p._chave = chave;
-    enviarZap(p, tipo);
-  }, {onlyOnce:true});
 }
 
-onChildAdded(ref(db,'pedidos'), (snap)=>{
-  let chave = snap.key;
-  let p = snap.val();
-  if(pedidosConhecidos.has(chave)) return;
-  pedidosConhecidos.add(chave);
-  let ehRecente = (Date.now() - new Date(p.criadoEm).getTime()) < 120000;
-  if(!ehRecente) return;
-  if(somAtivo && document.getElementById('checkSom').checked){
-    document.getElementById('somPedido').currentTime=0;
-    document.getElementById('somPedido').play().catch(()=>{});
-    if('vibrate' in navigator) navigator.vibrate([400,150,400]);
-    if(Notification && Notification.permission==='granted'){ new Notification('🍰 NOVO PEDIDO!',{body:`${p.nome} - R$ ${p.total}`}); }
-  }
-  if(somAtivo && document.getElementById('checkAutoZap').checked){
-    setTimeout(()=>{ enviarZapAutomatico(p, chave); }, 3000);
-  }
+onValue(ref(db,'pedidos'),(snap)=>{
+  let dados=snap.val();
+  if(!dados){todosPedidos=[]; render(); document.getElementById('status').innerHTML='🟢 Conectado - 0 pedidos'; return;}
+  todosPedidos=Object.entries(dados).sort((a,b)=> new Date(b[1].criadoEm||0)-new Date(a[1].criadoEm||0));
+  // contadores
+  let counts={todos:todosPedidos.length, recebido:0, preparacao:0, pronto_retirada:0, saiu_entrega:0, entregue:0};
+  todosPedidos.forEach(([k,p])=>{ let s=getStatus(p); if(['recebido','confirmacao'].includes(s)) counts.recebido++; else if(counts[s]!==undefined) counts[s]++; });
+  Object.keys(counts).forEach(k=>{ let el=document.getElementById('count-'+k); if(el) el.innerText=counts[k]; });
+  document.getElementById('resumoTop').innerHTML=`<div class="resumo-item">📋 ${counts.todos} total</div><div class="resumo-item">📥 ${counts.recebido} novos</div><div class="resumo-item">👩‍🍳 ${counts.preparacao} prep</div><div class="resumo-item">🛵 ${counts.saiu_entrega} entrega</div>`;
+  document.getElementById('status').innerHTML=`🟢 Conectado - ${counts.todos} pedidos | ${new Date().toLocaleTimeString('pt-BR')}`;
+  render();
 });
+
+window.enviarStatus=(chave,tipo)=>{
+  onValue(ref(db,'pedidos/'+chave),(snap)=>{ let p=snap.val(); if(!p) return; p._chave=chave; enviarZap(p,tipo); },{onlyOnce:true});
+};
+
+onChildAdded(ref(db,'pedidos'),(snap)=>{
+  let chave=snap.key; let p=snap.val(); if(conhecidos.has(chave)) return; conhecidos.add(chave);
+  let ehRecente = p.criadoEm ? (Date.now()-new Date(p.criadoEm).getTime())<120000 : true; if(!ehRecente) return;
+  if(somAtivo && document.getElementById('checkSom').checked){
+    document.getElementById('somPedido').currentTime=0; document.getElementById('somPedido').play().catch(()=>{});
+    if('vibrate' in navigator) navigator.vibrate([400,150,400]); 
+    if(Notification && Notification.permission==='granted'){ new Notification('🍰 NOVO PEDIDO! #'+(p.numeroPedido||chave.slice(-6)),{body:`${getNome(p)} - R$ ${p.total} - ${p.tipoEntrega}`}); }
+  }
+  if(somAtivo && document.getElementById('checkAutoZap').checked){ setTimeout(()=>enviarAuto(p,chave),3500); }
+});
+if(Notification) Notification.requestPermission();
 </script>
 <script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body></html>
