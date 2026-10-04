@@ -137,7 +137,7 @@ function enviarZap(p,tipo){
   } else if(tipo==='preparacao'){
     msg=`Olá ${nome}! 👩‍🍳✨\n\nSeu pedido *#${numero}* entrou em *PREPARAÇÃO*!\n\n👩‍🍳 Nossa equipe já está preparando:\n${itensTexto}\n\n⏰ Previsão: 30-50 min\n\nTe avisamos quando estiver pronto! 🤎\n\nJosi Doces Gourmet`;
   } else if(tipo==='pronto_retirada'){
-    msg=`Olá ${nome}! 🎉✨\n\nSeu pedido *#${numero}* está *PRONTO PARA RETIRADA*!\n\n📍 *Local:* Josi Doces Gourmet\n📌 Camaquã - RS (enviar localização se precisar)\n⏰ *Retire até:* 20h de hoje\n\n🛒 ${itensTexto}\n💰 Total: R$ ${total} - ${p.pagamento||'Pix'}\n\nEstamos te esperando! 🤎\n(51) 98580-3243`;
+    msg=`Olá ${nome}! 🎉✨\n\nSeu pedido *#${numero}* está *PRONTO PARA RETIRADA*!\n\n📍 *Local:* Josi Doces Gourmet - Rua Marechal Floriano, 3197, Coronel Brito, Venâncio Aires - RS - Rua Marechal Floriano, 3197, Coronel Brito, Venâncio Aires - RS\n📌 Venâncio Aires - RS (enviar localização se precisar)\n⏰ *Retire até:* 20h de hoje\n\n🛒 ${itensTexto}\n💰 Total: R$ ${total} - ${p.pagamento||'Pix'}\n\nEstamos te esperando! 🤎\n(51) 98580-3243`;
   } else if(tipo==='saiu_entrega'){
     msg=`Olá ${nome}! 🛵💨\n\nSeu pedido *#${numero}* *SAIU PARA ENTREGA*!\n\n📍 *Endereço:* ${enderecoCompleto}\n🛵 *Entregador:* a caminho!\n⏰ *Chega em:* até 40 minutos\n\n🛒 ${itensTexto}\n💰 Total: R$ ${total}\n💳 ${p.pagamento||'Pix'}\n\nFica de olho no portão! 🤎✨\n\nJosi Doces - (51) 98580-3243`;
   } else if(tipo==='entregue'){
