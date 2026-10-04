@@ -1287,80 +1287,110 @@ setInterval(reenviarPedidosPendentes, 15000);
 function montarTextoPedido(numeroPedido) { const nome = document.getElementById("nome").value.trim(); const telefone = document.getElementById("telefone").value.trim(); const bairroSelect = document.getElementById("bairro"); const bairroValor = bairroSelect.value; const bairroTexto = bairroSelect.options[bairroSelect.selectedIndex].text; const endereco = document.getElementById("endereco").value.trim(); const data = document.getElementById("dataAgendamento").value; const hora = document.getElementById("horaAgendamento").value; const pagamento = document.getElementById("pagamento").value; const subtotalBruto = carrinho.reduce((acc, item) => acc + (item.preco * item.qtd), 0); const frete = (subtotalBruto >= 50 || promoAtiva || bairroValor === "retirada") ? 0 : parseFloat(bairroValor); const { subtotal, desconto, total } = _recalcularTotalSeguro(carrinho, frete); const dataFormatada = data ? new Date(data + "T00:00:00").toLocaleDateString('pt-BR') : ''; const agora = new Date(); const dataHoraCriacao = `${agora.toLocaleDateString('pt-BR')}, ${agora.toLocaleTimeString('pt-BR')}`; const qtdTotalItens = carrinho.reduce((acc, item) => acc + item.qtd, 0); const SEPARADOR = '➖➖➖➖➖➖➖➖➖➖➖➖'; let texto = `🍰 *NOVO PEDIDO - JOSI DOCES GOURMET* 🍰\n\n`; texto += `📝 *Pedido N°:* #${numeroPedido}\n`; texto += `🕐 *Pedido realizado em:* ${dataHoraCriacao}\n\n`; texto += `${SEPARADOR}\n\n`; texto += `👤 *CLIENTE*\n`; texto += `🙍 *Nome:* ${nome}\n`; texto += `📱 *WhatsApp:* ${telefone}\n\n`; texto += `${SEPARADOR}\n\n`; texto += `🛒 *ITENS DO PEDIDO*\n`; carrinho.forEach(item => { texto += `🍰 ${item.qtd}x ${item.nome}\n💵 R$ ${(item.preco * item.qtd).toFixed(2).replace('.', ',')}\n`; }); texto += `\n${SEPARADOR}\n\n`; texto += `📦 *RESUMO DO PEDIDO*\n`; texto += `🧁 *Itens:* ${qtdTotalItens}\n`; texto += `💰 *Subtotal:* R$ ${subtotal.toFixed(2).replace('.', ',')}\n`; if (desconto > 0) texto += `🏷️ *Desconto (5%):* -R$ ${desconto.toFixed(2).replace('.', ',')}\n`; texto += `🚚 *Frete:* ${frete === 0 ? 'GRÁTIS' : 'R$ ' + frete.toFixed(2).replace('.', ',')}\n`; texto += `💳 *Total:* R$ ${total.toFixed(2).replace('.', ',')}\n\n`; texto += `${SEPARADOR}\n\n`; texto += `📍 *ENTREGA*\n`; texto += bairroValor === "retirada" ? `🏠 Retirada no local (${ENDERECO_RETIRADA})\n` : `🚚 ${bairroTexto}\n🏡 *Endereço:* ${endereco}\n`; texto += `📅 *Data/Hora:* ${dataFormatada} às ${hora}\n`; texto += `💳 *Pagamento:* ${pagamento}\n`; return { texto, nome, telefone, subtotal, desconto, frete, total, bairroTexto, endereco, numeroPedido, data, hora, pagamento, bairroValor }; }
 
 // ===== NOVA FUNÇÃO COM AUTOMAÇÃO GRÁTIS - SUBSTITUI A ANTIGA =====
-function finalizarZap() {
-    if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
-    const btnZap = document.getElementById("btnWhatsapp");
-    if (btnZap.disabled) return;
+
+// ===== FUNÇÃO 100% AUTOMÁTICA - CLIENTE RECEBE CONFIRMAÇÃO DEPOIS QUE JOSI RECEBE =====
+async function finalizarZap() {
     if (carrinho.length === 0) {
-        alert("⚠️ Seu carrinho está vazio! Adicione itens antes de enviar o pedido.");
+        alert("Seu carrinho está vazio! Adicione itens antes de enviar o pedido.");
         return;
     }
-    if (typeof window.criarPedidoComNumero !== 'function') {
-        alert("⚠️ O sistema de pedidos ainda está carregando. Aguarde 2 segundos e tente novamente.");
+    let nomeEl = document.getElementById("nome");
+    let telEl = document.getElementById("telefone");
+    if (!nomeEl || !telEl) {
+        alert("Erro no formulário, recarregue a página");
         return;
     }
-
-    const { chave, numero: numeroPedido } = window.criarPedidoComNumero();
-    const resumo = montarTextoPedido(numeroPedido);
-
-    const numeroWhatsLoja = "5551985803243";
-    const url = `https://wa.me/${numeroWhatsLoja}?text=${encodeURIComponent(resumo.texto)}`;
-
-    const dadosPedido = {
-        nome: resumo.nome,
-        telefone: resumo.telefone,
-        itens: carrinho,
-        subtotal: resumo.subtotal,
-        desconto: resumo.desconto,
-        frete: resumo.frete,
-        total: resumo.total,
-        enderecoTexto: resumo.bairroTexto,
-        endereco: resumo.endereco,
-        numeroPedido: resumo.numeroPedido,
-        data: resumo.data,
-        hora: resumo.hora,
-        pagamento: resumo.pagamento,
-        tipoEntrega: resumo.bairroValor === 'retirada' ? 'retirada' : 'entrega',
-        status: 'recebido',
-        statusAtualizadoEm: Date.now(),
-        criadoEm: new Date().toISOString()
-    };
-
-    if (window.salvarPedidoDireto) {
-        window.salvarPedidoDireto(chave, dadosPedido)
-            .then(function() {
-                console.log("Pedido salvo com sucesso:", chave);
-            })
-            .catch(function(erroSalvar) {
-                console.error("Erro ao salvar pedido no Firebase — guardando na fila para reenviar:", erroSalvar);
-                _guardarPedidoPendente(chave, dadosPedido);
-            });
-    } else {
-        console.error("window.salvarPedidoDireto não está disponível — guardando na fila para reenviar.");
-        _guardarPedidoPendente(chave, dadosPedido);
+    let nome = nomeEl.value.trim();
+    let tel = telEl.value.trim();
+    let telDigits = tel.replace(/[^0-9]/g,'');
+    if(!nome || telDigits.length < 10){
+        alert('Preencha seu nome e WhatsApp com DDD - Ex: (51) 99999-9999');
+        let secao = document.getElementById("secaoDadosPedido");
+        if(secao) secao.scrollIntoView({behavior:'smooth'});
+        return;
     }
-
-    // ABRE SEU WHATSAPP
-    window.open(url, '_blank');
-
-    // 🤖 NOVO: MOSTRA BOTÃO DE CONFIRMAÇÃO AUTOMÁTICA PARA O CLIENTE (100% GRÁTIS)
-    let telLimpo = resumo.telefone.replace(/\D/g,'');
-    let telZap = telLimpo.startsWith('55') ? telLimpo : '55' + telLimpo;
-    let msgCliente = `Olá ${resumo.nome}! 🍰✨%0A%0ARecebemos seu pedido *#${resumo.numeroPedido}* da Josi Doces Gourmet!%0A%0A💰 Total: R$ ${resumo.total.toFixed(2).replace('.', ',')}%0A⏰ Entrega: ${resumo.data ? new Date(resumo.data+'T00:00:00').toLocaleDateString('pt-BR') : 'Hoje'} às ${resumo.hora||''}%0A📍 ${resumo.bairroTexto}%0A%0AJá estamos preparando com muito carinho! 🤎%0ATe avisamos aqui quando sair para entrega.%0A%0ADúvidas? (51) 98580-3243`;
-    let urlCliente = `https://wa.me/${telZap}?text=${msgCliente}`;
-
+    let numero = Date.now().toString().slice(-6);
+    let bairroSelect = document.getElementById("bairro");
+    let bairroTexto = bairroSelect ? bairroSelect.options[bairroSelect.selectedIndex].text : "Retirada";
+    let bairroValor = bairroSelect ? bairroSelect.value : "retirada";
+    let endereco = document.getElementById("endereco") ? document.getElementById("endereco").value.trim() : "";
+    let data = document.getElementById("dataAgendamento") ? document.getElementById("dataAgendamento").value : "";
+    let hora = document.getElementById("horaAgendamento") ? document.getElementById("horaAgendamento").value : "";
+    let pagamento = document.getElementById("pagamento") ? document.getElementById("pagamento").value : "Pix";
+    let subtotal = carrinho.reduce((a,i)=>a + (i.preco * i.qtd), 0);
+    let frete = (subtotal >= 50 || bairroValor === "retirada" || window.promoAtiva) ? 0 : (parseFloat(bairroValor) || 0);
+    let desconto = subtotal >= 50 ? subtotal * 0.05 : 0;
+    let total = subtotal - desconto + frete;
+    let df = data ? new Date(data + "T00:00:00").toLocaleDateString('pt-BR') : "";
+    let textoLoja = `🍰 *NOVO PEDIDO - JOSI DOCES GOURMET* #${numero}\n\n👤 ${nome}\n📱 ${tel}\n📍 ${bairroTexto} ${endereco}\n⏰ ${df} ${hora}\n💳 ${pagamento}\n\n`;
+    carrinho.forEach(item => {
+        textoLoja += `${item.qtd}x ${item.nome} - R$ ${(item.preco*item.qtd).toFixed(2).replace('.', ',')}\n`;
+    });
+    textoLoja += `\n💰 Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
+    if(desconto>0) textoLoja += `🏷️ Desconto 5%: -R$ ${desconto.toFixed(2).replace('.', ',')}\n`;
+    textoLoja += `🚚 Frete: ${frete===0?'GRATIS':'R$ '+frete.toFixed(2).replace('.', ',')}\n💵 *TOTAL: R$ ${total.toFixed(2).replace('.', ',')}*`;
+    
+    let btn = document.getElementById("btnWhatsapp");
+    if(btn){
+        btn.innerText = '⏳ Enviando pedido...';
+        btn.disabled = true;
+    }
+    
+    try {
+        if(typeof window.criarPedidoComNumero === 'function' && typeof window.salvarPedidoDireto === 'function'){
+            let info = window.criarPedidoComNumero();
+            let dadosPedido = {
+                nome: nome,
+                telefone: tel,
+                itens: carrinho,
+                subtotal: subtotal,
+                desconto: desconto,
+                frete: frete,
+                total: total,
+                enderecoTexto: bairroTexto,
+                endereco: endereco,
+                numeroPedido: numero,
+                data: data,
+                hora: hora,
+                pagamento: pagamento,
+                tipoEntrega: bairroValor === 'retirada' ? 'retirada' : 'entrega',
+                status: 'recebido',
+                criadoEm: new Date().toISOString()
+            };
+            await window.salvarPedidoDireto(info.chave, dadosPedido);
+            console.log("Pedido salvo Firebase:", info.chave);
+        }
+    } catch(e) {
+        console.log("Firebase:", e);
+    }
+    
+    // 1. VOCÊ RECEBE O PEDIDO NO SEU ZAP 51 98580-3243
+    let urlLoja = `https://wa.me/5551985803243?text=${encodeURIComponent(textoLoja)}`;
+    window.open(urlLoja, '_blank');
+    
+    // 2. DEPOIS QUE VOCÊ RECEBER (2 segundos), CLIENTE RECEBE AUTOMÁTICO
     setTimeout(()=>{
-        let alerta = document.createElement('div');
-        alerta.innerHTML = `<div style="position:fixed;bottom:20px;left:10px;right:10px;background:linear-gradient(135deg,#25D366,#1da851);color:white;padding:18px;border-radius:18px;z-index:99999;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.3);font-family:Lato, sans-serif">
-            <div style="font-weight:700;font-size:16px">✅ Pedido #${resumo.numeroPedido} enviado!</div>
-            <div style="font-size:13px;margin:6px 0">Agora envie a confirmação automática para o cliente:</div>
-            <a href="${urlCliente}" target="_blank" style="background:white;color:#25D366;padding:12px 20px;border-radius:12px;display:inline-block;margin-top:10px;font-weight:700;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,0.15)">📱 Enviar confirmação para ${resumo.nome}</a>
-            <div onclick="this.parentElement.parentElement.remove()" style="margin-top:12px;font-size:12px;opacity:0.8;cursor:pointer;text-decoration:underline">Fechar</div>
-        </div>`;
-        document.body.appendChild(alerta);
-        setTimeout(()=>{ try{alerta.remove()}catch(e){} },15000);
-    }, 800);
+        let telLimpo = telDigits;
+        let telCliente = telLimpo.startsWith('55') ? telLimpo : '55' + telLimpo;
+        let msgCliente = `Olá ${nome}! 🍰✨\n\nRecebemos seu pedido *#${numero}* da Josi Doces Gourmet!\n\n💰 Total: R$ ${total.toFixed(2).replace('.', ',')}\n⏰ Entrega: ${df||'Hoje'} às ${hora||'a combinar'}\n📍 ${bairroTexto}\n\nJá estamos preparando com muito carinho! 🤎\nTe avisamos aqui quando sair para entrega.\n\nDúvidas? (51) 98580-3243`;
+        let urlCliente = `https://wa.me/${telCliente}?text=${encodeURIComponent(msgCliente)}`;
+        window.open(urlCliente, '_blank');
+        
+        if(btn){
+            btn.innerText = '✅ Pedido enviado! Cliente recebeu confirmação automática!';
+            btn.disabled = false;
+            btn.style.background = 'linear-gradient(135deg,#2e7d32,#1b5e20)';
+        }
+        
+        let antigo = document.getElementById('btnConfirmacaoAuto');
+        if(antigo) antigo.remove();
+        let div = document.createElement('div');
+        div.id = 'btnConfirmacaoAuto';
+        div.innerHTML = `<div style="position:fixed;bottom:20px;left:10px;right:10px;background:linear-gradient(135deg,#25D366,#1da851);color:white;padding:20px;border-radius:20px;z-index:99999;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.35)"><div style="font-size:22px">✅</div><div style="font-weight:800;font-size:16px;margin:4px 0">Pedido #${numero} enviado!</div><div style="font-size:13px;opacity:0.95">Você recebeu o pedido no seu Zap<br>Cliente recebeu confirmação automática!<br><span style="font-size:11px;opacity:0.8">Clique em Enviar nas 2 janelas do WhatsApp que abriram</span></div><div onclick="document.getElementById('btnConfirmacaoAuto').remove()" style="margin-top:12px;font-size:12px;opacity:0.8;cursor:pointer;text-decoration:underline">Fechar</div></div>`;
+        document.body.appendChild(div);
+    }, 1800);
 }
+
 
 function limparCarrinhoCompleto() {
     if(confirm("Deseja limpar todo o carrinho?")) {
