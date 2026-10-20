@@ -20,6 +20,27 @@
 :where(code, pre, kbd, samp) {
   font-family: "Optimistic Mono", ui-monospace, monospace;
 }
+</style><style>
+@font-face {
+  font-family: "Optimistic";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/OptimisticAI_VF_Optimized.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Optimistic Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/OptimisticMono_W_TextRegular.woff2") format("woff2");
+}
+:where(html) {
+  font-family: "Optimistic", system-ui, sans-serif;
+}
+:where(code, pre, kbd, samp) {
+  font-family: "Optimistic Mono", ui-monospace, monospace;
+}
 </style><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Painel Josi - Ultra Completo</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -89,6 +110,7 @@ h1{font-family:'Playfair Display',serif;margin:0;font-size:20px}
 <button class="tab" data-filtro="pronto_retirada" onclick="filtrar('pronto_retirada')">🎉 Retirada <span class="tab-count" id="count-pronto_retirada">0</span></button>
 <button class="tab" data-filtro="saiu_entrega" onclick="filtrar('saiu_entrega')">🛵 Entrega <span class="tab-count" id="count-saiu_entrega">0</span></button>
 <button class="tab" data-filtro="entregue" onclick="filtrar('entregue')">✅ Entregues <span class="tab-count" id="count-entregue">0</span></button>
+<button class="tab" data-filtro="abandonados" onclick="filtrar('abandonados')">🛒 Abandonados <span class="tab-count" id="count-abandonados">0</span></button>
 </div>
 <div style="max-width:700px;margin:auto;padding:12px 12px 0;display:flex;gap:8px;position:sticky;top:165px;z-index:80;background:#f5f0e8">
 <div style="flex:1;position:relative">
@@ -101,11 +123,11 @@ h1{font-family:'Playfair Display',serif;margin:0;font-size:20px}
 <audio id="somPedido" preload="auto"><source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3" type="audio/mpeg"></audio>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, onChildAdded, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onChildAdded, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 const firebaseConfig = { apiKey: "AIzaSyCHzkyYek4fV7fs_1f6FTA9o4o3ikJuhs0", authDomain: "josigourmet-af3ff.firebaseapp.com", databaseURL: "https://josigourmet-af3ff-default-rtdb.firebaseio.com", projectId: "josigourmet-af3ff", storageBucket: "josigourmet-af3ff.firebasestorage.app", messagingSenderId: "373768013260", appId: "1:373768013260:web:bd5fa8dcf6053414d7c969" };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-let somAtivo=false, filtroAtual='todos', todosPedidos=[], conhecidos=new Set(), autoEnviados=new Set(), termoBusca='';
+let somAtivo=false, filtroAtual='todos', todosPedidos=[], todosAbandonos=[], conhecidos=new Set(), autoEnviados=new Set(), termoBusca='';
 
 window.ativarSom=()=>{
   somAtivo=true;
@@ -142,9 +164,13 @@ function enviarZap(p,tipo){
     msg=`Olá ${nome}! 🛵💨\n\nSeu pedido *#${numero}* *SAIU PARA ENTREGA*!\n\n📍 *Endereço:* ${enderecoCompleto}\n🛵 *Entregador:* a caminho!\n⏰ *Chega em:* até 40 minutos\n\n🛒 ${itensTexto}\n💰 Total: R$ ${total}\n💳 ${p.pagamento||'Pix'}\n\nFica de olho no portão! 🤎✨\n\nJosi Doces - (51) 98580-3243`;
   } else if(tipo==='entregue'){
     msg=`Olá ${nome}! 😍\n\nSeu pedido *#${numero}* foi *ENTREGUE*!\n\nAproveite muito! 🤎✨\n\nSe você amou, deixa uma avaliação no nosso Instagram?\n📸 @josigourmet\n\nMuito obrigada pela preferência!\nEsperamos você de novo em breve! 💖\n\nJosi Doces Gourmet`;
+  } else if(tipo==='abandono'){
+    // Mensagem para carrinho abandonado - 100% grátis, sem API
+    let itensAb = (p.carrinho||p.itens||[]).map(i=>`• ${i.qtd}x ${i.nome||i.name}`).join('\n');
+    msg=`Oi ${nome}! 🍰 Aqui é da Josi Doces Gourmet!\n\nVi que você deixou no carrinho:\n${itensAb}\n\nTotal: R$ ${parseFloat(p.total||0).toFixed(2).replace('.',',')}\n\nAinda quer garantir? Reservei seus doces por mais 15min! 🤎\n\nMe responde QUERO que eu finalizo pra você!\n\nJosi - (51) 98580-3243`;
   }
   window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`,'_blank');
-  try{ update(ref(db,'pedidos/'+p._chave),{status:tipo,statusAtualizadoEm:Date.now(),ultimaAtualizacao:new Date().toISOString()}); }catch(e){}
+  try{ if(tipo!=='abandono') update(ref(db,'pedidos/'+p._chave),{status:tipo,statusAtualizadoEm:Date.now(),ultimaAtualizacao:new Date().toISOString()}); }catch(e){}
 }
 
 function enviarAuto(p,chave){
@@ -156,8 +182,59 @@ window.buscar=(termo)=>{
   termoBusca = (termo||'').toLowerCase().trim();
   render();
 }
+
+window.removerAbandono=(chave)=>{
+  if(!confirm('Remover este abandono da lista?')) return;
+  remove(ref(db,'carrinhos_abandonados/'+chave));
+}
+
 function render(){
   let lista=document.getElementById('listaPedidos');
+  
+  // SE FOR ABA ABANDONADOS - Mostra abandonos grátis
+  if(filtroAtual==='abandonados'){
+    let filtrados = todosAbandonos.filter(([k,p])=>{
+      if(!termoBusca) return true;
+      let nome = (getNome(p)||'').toLowerCase();
+      let tel = (getTel(p)||'').toLowerCase();
+      return nome.includes(termoBusca) || tel.includes(termoBusca) || k.toLowerCase().includes(termoBusca);
+    });
+    if(filtrados.length===0){
+      lista.innerHTML=`<div style="text-align:center;padding:50px"><div style="font-size:50px">🛒</div><p>${termoBusca?`Nenhum abandono para "<b>${termoBusca}</b>"`:`Nenhum carrinho abandonado ainda`}</p><p style="font-size:12px;color:#8d6e63">Quando alguém colocar no carrinho e sair sem finalizar, aparece aqui automático e grátis</p></div>`;
+      return;
+    }
+    lista.innerHTML='';
+    filtrados.forEach(([chave,p])=>{
+      p._chave=chave;
+      let nome=getNome(p);
+      let tel=getTel(p);
+      let itens=p.carrinho||p.itens||[];
+      let dataHora=p.data|| (p.timestamp? new Date(p.timestamp).toLocaleString('pt-BR') : '');
+      let div=document.createElement('div');
+      div.className='pedido';
+      div.style.borderLeftColor='#e67e22';
+      div.style.background='#fff8e1';
+      div.innerHTML=`
+        <div class="header-pedido">
+          <div><span class="badge badge-num">🛒 ABANDONO</span> <span class="badge" style="background:#e67e22">⏰ ${dataHora}</span></div>
+          <button onclick="removerAbandono('${chave}')" style="background:#efebe9;border:none;border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer">✕ Remover</button>
+        </div>
+        <div class="info-grid">
+          <div class="info-box"><b>👤 Cliente</b>${nome}<br><span style="font-size:11px">📱 ${tel}</span></div>
+          <div class="info-box"><b>💰 Valor perdido</b><span style="font-size:16px;font-weight:900;color:#e67e22">R$ ${parseFloat(p.total||0).toFixed(2).replace('.',',')}</span><br><span style="font-size:10px">Salvo automático grátis</span></div>
+        </div>
+        <div class="itens-box"><b>🛒 ITENS ABANDONADOS (${itens.length} tipos)</b><br><br>${itens.map(i=>`• <b>${i.qtd}x</b> ${i.nome||i.name} <span style="float:right">R$ ${(parseFloat(i.preco||0)*parseInt(i.qtd||1)).toFixed(2)}</span>`).join('<br>')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+          <button class="btn btn-zap" onclick="enviarStatus('${chave}','abandono')">💬 Chamar no Zap (1 clique)</button>
+          <button class="btn btn-sec" onclick="navigator.clipboard.writeText('${tel}');alert('Telefone copiado!')">📋 Copiar tel</button>
+        </div>
+      `;
+      lista.appendChild(div);
+    });
+    return;
+  }
+
+  // ABA NORMAL DE PEDIDOS
   let filtrados = todosPedidos.filter(([k,p])=>{
     let statusOk = filtroAtual==='todos' ? true : (getStatus(p)===filtroAtual || (filtroAtual==='recebido' && ['recebido','confirmacao'].includes(getStatus(p))));
     if(!statusOk) return false;
@@ -214,17 +291,37 @@ onValue(ref(db,'pedidos'),(snap)=>{
   let dados=snap.val();
   if(!dados){todosPedidos=[]; render(); document.getElementById('status').innerHTML='🟢 Conectado - 0 pedidos'; return;}
   todosPedidos=Object.entries(dados).sort((a,b)=> new Date(b[1].criadoEm||0)-new Date(a[1].criadoEm||0));
-  // contadores
-  let counts={todos:todosPedidos.length, recebido:0, preparacao:0, pronto_retirada:0, saiu_entrega:0, entregue:0};
+  let counts={todos:todosPedidos.length, recebido:0, preparacao:0, pronto_retirada:0, saiu_entrega:0, entregue:0, abandonados:todosAbandonos.length};
   todosPedidos.forEach(([k,p])=>{ let s=getStatus(p); if(['recebido','confirmacao'].includes(s)) counts.recebido++; else if(counts[s]!==undefined) counts[s]++; });
   Object.keys(counts).forEach(k=>{ let el=document.getElementById('count-'+k); if(el) el.innerText=counts[k]; });
-  document.getElementById('resumoTop').innerHTML=`<div class="resumo-item">📋 ${counts.todos} total</div><div class="resumo-item">📥 ${counts.recebido} novos</div><div class="resumo-item">👩‍🍳 ${counts.preparacao} prep</div><div class="resumo-item">🛵 ${counts.saiu_entrega} entrega</div>`;
+  document.getElementById('resumoTop').innerHTML=`<div class="resumo-item">📋 ${counts.todos} total</div><div class="resumo-item">📥 ${counts.recebido} novos</div><div class="resumo-item">👩‍🍳 ${counts.preparacao} prep</div><div class="resumo-item">🛒 ${counts.abandonados} abandonos</div>`;
   document.getElementById('status').innerHTML=`🟢 Conectado - ${counts.todos} pedidos | ${new Date().toLocaleTimeString('pt-BR')}`;
   render();
 });
 
+// NOVO: Escuta carrinhos abandonados grátis
+onValue(ref(db,'carrinhos_abandonados'),(snap)=>{
+  let dados=snap.val() || {};
+  todosAbandonos=Object.entries(dados).sort((a,b)=> (b[1].timestamp||0)-(a[1].timestamp||0));
+  let el=document.getElementById('count-abandonados');
+  if(el) el.innerText=todosAbandonos.length;
+  let resumo = document.getElementById('resumoTop');
+  if(resumo){
+    // atualiza resumo
+    let counts={todos:todosPedidos.length, recebido:0, preparacao:0, pronto_retirada:0, saiu_entrega:0, entregue:0, abandonados:todosAbandonos.length};
+    todosPedidos.forEach(([k,p])=>{ let s=getStatus(p); if(['recebido','confirmacao'].includes(s)) counts.recebido++; else if(counts[s]!==undefined) counts[s]++; });
+    Object.keys(counts).forEach(k=>{ let e=document.getElementById('count-'+k); if(e) e.innerText=counts[k]; });
+    resumo.innerHTML=`<div class="resumo-item">📋 ${counts.todos} total</div><div class="resumo-item">📥 ${counts.recebido} novos</div><div class="resumo-item">👩‍🍳 ${counts.preparacao} prep</div><div class="resumo-item">🛒 ${counts.abandonados} abandonos</div>`;
+  }
+  if(filtroAtual==='abandonados') render();
+});
+
 window.enviarStatus=(chave,tipo)=>{
-  onValue(ref(db,'pedidos/'+chave),(snap)=>{ let p=snap.val(); if(!p) return; p._chave=chave; enviarZap(p,tipo); },{onlyOnce:true});
+  if(tipo==='abandono'){
+    onValue(ref(db,'carrinhos_abandonados/'+chave),(snap)=>{ let p=snap.val(); if(!p) return; p._chave=chave; enviarZap(p,tipo); },{onlyOnce:true});
+  } else {
+    onValue(ref(db,'pedidos/'+chave),(snap)=>{ let p=snap.val(); if(!p) return; p._chave=chave; enviarZap(p,tipo); },{onlyOnce:true});
+  }
 };
 
 onChildAdded(ref(db,'pedidos'),(snap)=>{
@@ -303,4 +400,4 @@ function salvarBloqueio(ativo) {
 }
 $b('blqBloquear').onclick = () => { if (confirm('Bloquear o site agora? Os clientes não conseguirão fazer pedidos.')) salvarBloqueio(true); };
 $b('blqLiberar').onclick = () => salvarBloqueio(false);
-</script></body></html>
+</script><script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body></html>
