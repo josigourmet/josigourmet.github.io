@@ -1139,7 +1139,7 @@
 </header>
 
 <div class="container">
-    <div class="card-evento">
+    ___TEMP_EVENTO___<div class="card-evento">
         <h3>✨ Encomendas para Eventos</h3>
         <p>Temos condições especiais para grandes quantidades!</p>
         <a href="https://wa.me/5551985803243?text=Olá Josi! Gostaria de um orçamento para evento." target="_blank" class="btn-evento">Solicitar Orçamento</a>
@@ -1155,6 +1155,18 @@
             <button class="btn-maior" onclick="addComSabor('Torta de bolacha no pote', 10, ['Nata e Ninho', 'Doce de leite com chocolate amargo', 'Bombom'])">+</button>
         </div>
     </div>
+
+    <div class="card" style="border:2px solid var(--destaque); background: linear-gradient(135deg, #fff8e1, #fff); position:relative; overflow:hidden;">
+        <div style="position:absolute; top:0; right:0; background:var(--destaque); color:#fff; font-size:11px; font-weight:800; padding:4px 10px; border-bottom-left-radius:10px;">MAIS VENDIDO</div>
+        <h3>🔥 COMBO FAMÍLIA - 4 Bolos no Pote</h3>
+        <p style="font-size:12px; color:#8d6e63; margin:4px 0;">Escolha os sabores na hora de adicionar</p>
+        <p class="price"><span style="text-decoration:line-through; font-size:14px; color:#aaa; font-weight:400;">R$ 40,00</span> R$ 36,00</p>
+        <div class="sabores-tags" style="background:#fff;"><span class="sabores-tags-label">🎁 Economia de R$4 + Frete Grátis</span><span class="sabores-tags-lista">Leva 4, paga 3 e meio. Ideal para família!</span></div>
+        <div class="controles-quantidade">
+            <button class="btn-maior" style="width:100% !important; border-radius:12px !important;" onclick="addComboFamilia()">+ Adicionar Combo por R$36</button>
+        </div>
+    </div>
+
 
     <div class="card">
         <h3>Torta de Bolacha Grande 1 kg</h3>
@@ -1270,6 +1282,13 @@
     
     <div id="alertaCupomDinamico"></div>
     <div id="itensCarrinhoLista"></div>
+
+    <div id="upsellBox" style="display:none; background:linear-gradient(135deg,#fff8e1,#fff3cd); border:1.5px dashed #c8860a; border-radius:14px; padding:12px; margin:12px 0; text-align:left;">
+        <div style="font-size:12px; font-weight:800; color:#7a5800; letter-spacing:0.5px;">🎁 OFERTA ESPECIAL PRA VOCÊ</div>
+        <div style="font-size:13px; margin:4px 0; color:#5d4037;">Adicione 1 <b>Torta de bolacha no pote</b> por apenas <b style="color:#c8860a;">R$ 8,00</b> (em vez de R$10)</div>
+        <button onclick="addUpsell()" style="background:linear-gradient(135deg,#c8860a,#a06810); padding:8px; font-size:13px; margin-top:6px; border-radius:10px;">Adicionar por R$8</button>
+    </div>
+
     <button class="btn-limpar" onclick="limparCarrinhoCompleto()">🗑️ Esvaziar Carrinho</button>
     <div id="resumo"><b>Total: R$ 0,00</b></div>
     <div style="margin-top:15px;">
@@ -1330,8 +1349,8 @@ function _validarEndereco(end) { return end.trim().length >= 5 && end.trim().len
 function _validarDataFutura(dataStr, horaStr) { if (!dataStr || !horaStr) return false; const dt = new Date(`${dataStr}T${horaStr}`); return dt > new Date(); }
 function _lsGet(chave) { try { const raw = localStorage.getItem(chave); if (!raw) return null; if (raw.length > 51200) { localStorage.removeItem(chave); return null; } return JSON.parse(raw); } catch(e) { localStorage.removeItem(chave); return null; } }
 function _lsSet(chave, valor) { try { const str = JSON.stringify(valor); if (str.length > 51200) return; localStorage.setItem(chave, str); } catch(e) { } }
-const PRECOS_OFICIAIS = { 'Torta grande (A partir de 1 kg)': 60, 'Torta de Bolacha Grande 1 kg': 55, 'Bolo no Pote com Pudim': 14, 'Bolo de Stikadinho no Pote': 12, 'FRETE GRÁTIS (Ativado)': 0, };
-function _validarCarrinho(arr) { if (!Array.isArray(arr)) return []; return arr.filter(item => { if (!item || typeof item.nome !== 'string') return false; if (typeof item.qtd !== 'number' || item.qtd < 1 || item.qtd > 999) return false; const baseConhecida = Object.keys(PRECOS_OFICIAIS).some(base => item.nome.startsWith(base)) || item.nome.includes('Torta de bolacha no pote') || item.nome.includes('Bolo grande') || item.nome.includes('Bolo no pote'); if (baseConhecida && typeof item.preco === 'number' && item.preco >= 0 && item.preco < 10000) { return true; } return false; }); }
+const PRECOS_OFICIAIS = { 'Torta grande (A partir de 1 kg)': 60, 'Torta de Bolacha Grande 1 kg': 55, 'Bolo no Pote com Pudim': 14, 'Bolo de Stikadinho no Pote': 12, 'FRETE GRÁTIS (Ativado)': 0, 'COMBO FAMÍLIA - 4 Bolos no Pote': 36, 'Torta de bolacha no pote (OFERTA R$8)': 8, };
+function _validarCarrinho(arr) { if (!Array.isArray(arr)) return []; return arr.filter(item => { if (!item || typeof item.nome !== 'string') return false; if (typeof item.qtd !== 'number' || item.qtd < 1 || item.qtd > 999) return false; const baseConhecida = Object.keys(PRECOS_OFICIAIS).some(base => item.nome.startsWith(base)) || item.nome.includes('Torta de bolacha no pote') || item.nome.includes('Bolo grande') || item.nome.includes('Bolo no pote') || item.nome.includes('COMBO FAMÍLIA') || item.nome.includes('OFERTA R$8'); if (baseConhecida && typeof item.preco === 'number' && item.preco >= 0 && item.preco < 10000) { return true; } return false; }); }
 function _recalcularTotalSeguro(carrinhoLocal, frete) { let subtotal = 0; for (const item of carrinhoLocal) { subtotal += item.preco * item.qtd; } const desconto = subtotal >= 50 ? subtotal * 0.05 : 0; return { subtotal, desconto, total: subtotal - desconto + frete }; }
 const ENDERECO_RETIRADA = "Rua Marechal Floriano, 3197, Coronel Brito, Venâncio Aires - RS";
 function avisoHorario() { alert("⏰ Atenção!\n\nPor favor, escolha um horário com pelo menos 1 hora de antecedência.\n\nEsse é o tempo médio para preparo, entrega ou retirada do pedido. 🤎🍰"); }
@@ -1686,5 +1705,244 @@ async function enviarMensagemIa() {
     }
 }
 </script>
+
+<!-- MODAL CARRINHO ABANDONADO -->
+<div id="modalAbandono" class="modal-aviso" style="z-index: 35000;">
+    <div class="modal-conteudo" style="max-width:380px;">
+        <h2>🛒 Você esqueceu algo!</h2>
+        <p style="font-size:14px; color:#555; line-height:1.5;">Seus doces ainda estão no carrinho. Quer garantir antes que acabe? Reservamos por mais 15 minutos.</p>
+        <div id="abandonoResumo" style="background:var(--creme-medio); border-radius:12px; padding:10px; font-size:13px; text-align:left; margin:10px 0;"></div>
+        <button class="btn-entendi" onclick="fecharAbandonoEIrParaCarrinho()">✅ Voltar e Finalizar</button>
+        <button class="btn-promo-close" onclick="fecharModalAbandono()">Continuar olhando</button>
+    </div>
+</div>
+
+
+<script>
+// ===== TÁTICA 1: COMBO FAMÍLIA =====
+function addComboFamilia(){
+  if (typeof CONFIG_BLOQUEIO !== 'undefined' && CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
+  // Verifica se já tem combo
+  var nomeCombo = 'COMBO FAMÍLIA - 4 Bolos no Pote';
+  // Usa a mesma lógica de sabores do bolo no pote
+  addComSabor('Bolo no pote (COMBO FAMÍLIA)', 9, ['Beijinho', 'Coco', 'Doce de leite', 'Brigadeiro', 'Cenoura com brigadeiro']);
+  // Ajuste: vamos interceptar o confirmar para aplicar preço de combo
+  // Guardamos flag
+  window._isComboFamilia = true;
+}
+// Sobrescreve confirmarSabores para tratar combo
+(function(){
+  var originalConfirmar = window.confirmarSabores;
+  // Não vamos sobrescrever totalmente, vamos criar wrapper
+  window.addEventListener('DOMContentLoaded', function(){
+    // nada
+  });
+})();
+
+// Hook simples: quando adiciona bolo do combo, altera preço
+var _originalConfirmarSabores = confirmarSabores;
+confirmarSabores = function(){
+  var ctx = _saboresContexto;
+  if(!ctx) return _originalConfirmarSabores();
+  
+  var isCombo = ctx.nomeBase && ctx.nomeBase.includes('COMBO FAMÍLIA');
+  var precoBase = isCombo ? 9 : ctx.preco;
+  var qtd = ctx.selecionados.size;
+  if(qtd===0) return;
+  
+  if(isCombo){
+    // Combo família: 4 unidades por R$36, mas deixamos escolher sabores
+    // Adiciona 4 itens individuais com preço de R$9 cada = R$36
+    var idxOrdenados = Array.from(ctx.selecionados).sort((a,b)=>a-b);
+    var saboresEscolhidos = idxOrdenados.map(i=>ctx.sabores[i]);
+    // Se escolheu menos de 4, completa repetindo
+    while(saboresEscolhidos.length < 4){
+      saboresEscolhidos.push(saboresEscolhidos[0] || ctx.sabores[0]);
+    }
+    saboresEscolhidos.slice(0,4).forEach(function(sabor){
+      var nomeCompleto = `Bolo no pote (${sabor}) [COMBO]`;
+      var item = carrinho.find(i=>i.nome===nomeCompleto);
+      if(item) item.qtd++; else carrinho.push({nome:nomeCompleto, preco:9, qtd:1, base:'Bolo no pote'});
+    });
+    salvarDados(); resetPagamentoFluxo(); verificarPgto(); fecharModalSabores();
+    // Feedback
+    if(!CONFIG_BLOQUEIO.ativo) toggleVisibilidadeCarrinho();
+    return;
+  }
+  // Fluxo normal
+  return _originalConfirmarSabores();
+};
+
+// ===== TÁTICA 2: UPSELL R$8 =====
+function addUpsell(){
+  var nomeUpsell = 'Torta de bolacha no pote (OFERTA R$8)';
+  var item = carrinho.find(i=>i.nome===nomeUpsell);
+  if(item) item.qtd++; else carrinho.push({nome:nomeUpsell, preco:8, qtd:1, base:'Torta de bolacha no pote'});
+  salvarDados(); resetPagamentoFluxo(); verificarPgto();
+}
+
+function atualizarUpsell(){
+  var box = document.getElementById('upsellBox');
+  if(!box) return;
+  var temCarrinho = carrinho.length>0;
+  var temUpsell = carrinho.some(i=>i.nome.includes('OFERTA R$8'));
+  var subtotal = carrinho.reduce((a,i)=>a+i.preco*i.qtd,0);
+  // Mostra só se tem itens, não tem upsell ainda e subtotal > 20
+  if(temCarrinho && !temUpsell && subtotal>=20){
+    box.style.display='block';
+  }else{
+    box.style.display='none';
+  }
+}
+
+// Hook no atualizar existente
+var _originalAtualizar = atualizar;
+atualizar = function(){
+  var total = _originalAtualizar();
+  try{ atualizarUpsell(); rastrearAbandono(); }catch(e){}
+  return total;
+};
+
+// ===== TÁTICA 3: CARRINHO ABANDONADO =====
+var _abandonoTimer = null;
+function rastrearAbandono(){
+  if(carrinho.length===0){
+    localStorage.removeItem('josi_abandono_inicio');
+    return;
+  }
+  if(!localStorage.getItem('josi_abandono_inicio')){
+    localStorage.setItem('josi_abandono_inicio', Date.now().toString());
+  }
+}
+
+function verificarAbandono(){
+  var inicio = localStorage.getItem('josi_abandono_inicio');
+  if(!inicio) return;
+  var passou = Date.now() - parseInt(inicio);
+  // 10 minutos = 600000ms
+  if(passou > 600000 && carrinho.length>0){
+    // Mostra modal só 1 vez por sessão
+    if(sessionStorage.getItem('josi_abandono_mostrado')) return;
+    sessionStorage.setItem('josi_abandono_mostrado','1');
+    mostrarModalAbandono();
+  }
+}
+
+function mostrarModalAbandono(){
+  var modal = document.getElementById('modalAbandono');
+  var resumo = document.getElementById('abandonoResumo');
+  if(!modal || !resumo) return;
+  var qtd = carrinho.reduce((a,i)=>a+i.qtd,0);
+  var total = carrinho.reduce((a,i)=>a+i.preco*i.qtd,0);
+  resumo.innerHTML = `🧁 ${qtd} itens no carrinho<br>💰 Total: R$ ${total.toFixed(2).replace('.',',')}<br><br>Finalize agora e ganhe entrega priorizada!`;
+  modal.style.display='block';
+}
+
+function fecharModalAbandono(){
+  document.getElementById('modalAbandono').style.display='none';
+}
+
+function fecharAbandonoEIrParaCarrinho(){
+  fecharModalAbandono();
+  document.getElementById('carrinhoBox').style.display='block';
+  document.getElementById('secaoDadosPedido').scrollIntoView({behavior:'smooth'});
+}
+
+// Verifica a cada 60s
+setInterval(verificarAbandono, 60000);
+// Verifica ao voltar na aba
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') verificarAbandono(); });
+</script>
+
+
+<script>
+// ===== SISTEMA GRÁTIS SEM API - ABANDONO JOSI =====
+window._abandonosSalvos = new Set();
+
+function salvarAbandonoGratis(){
+  try{
+    var nome = document.getElementById('nome')?.value?.trim() || '';
+    var telefone = document.getElementById('telefone')?.value?.trim() || '';
+    if(carrinho.length===0) return;
+    if(nome.length < 2 || telefone.replace(/\D/g,'').length < 10) return;
+    
+    // Evita duplicar mesmo abandono
+    var chaveDedup = telefone.replace(/\D/g,'') + '_' + carrinho.length;
+    if(window._abandonosSalvos.has(chaveDedup)) return;
+    window._abandonosSalvos.add(chaveDedup);
+    
+    var total = carrinho.reduce((a,i)=>a+i.preco*i.qtd,0);
+    var dados = {
+      nome: nome,
+      telefone: telefone,
+      telefone_limpo: telefone.replace(/\D/g,''),
+      carrinho: carrinho.map(i=>({nome:i.nome, qtd:i.qtd, preco:i.preco})),
+      total: total,
+      total_fmt: 'R$ ' + total.toFixed(2).replace('.',','),
+      data: new Date().toLocaleString('pt-BR'),
+      timestamp: Date.now(),
+      status: 'abandonado',
+      origem: 'site_automatico'
+    };
+    
+    // Salva no Firebase - coleção carrinhos_abandonados
+    var url = `https://josigourmet-af3ff-default-rtdb.firebaseio.com/carrinhos_abandonados/${Date.now()}.json`;
+    fetch(url, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(dados)
+    }).then(()=>{
+      console.log('Abandono salvo grátis:', dados.nome);
+      // Notificação visual discreta para você se estiver no painel
+      try{ localStorage.setItem('josi_ultimo_abandono', JSON.stringify(dados)); }catch(e){}
+    });
+    
+    // Salva também no localStorage para painel local rápido
+    try{
+      var lista = JSON.parse(localStorage.getItem('josi_abandonos_local') || '[]');
+      lista.unshift(dados);
+      if(lista.length > 50) lista = lista.slice(0,50);
+      localStorage.setItem('josi_abandonos_local', JSON.stringify(lista));
+    }catch(e){}
+    
+  }catch(e){ console.error('Erro salvar abandono gratis', e); }
+}
+
+// Verifica abandono a cada 1 minuto
+setInterval(function(){
+  var inicio = localStorage.getItem('josi_abandono_inicio');
+  if(!inicio || carrinho.length===0) return;
+  var passou = Date.now() - parseInt(inicio);
+  // 8 minutos = 480000ms - mais rápido que antes
+  if(passou > 480000){
+    if(!sessionStorage.getItem('josi_abandono_gratis_enviado')){
+      sessionStorage.setItem('josi_abandono_gratis_enviado','1');
+      salvarAbandonoGratis();
+    }
+  }
+}, 60000);
+
+// Também salva quando a pessoa tenta sair da página
+window.addEventListener('beforeunload', function(){
+  if(carrinho.length>0){
+    var nome = document.getElementById('nome')?.value || '';
+    var tel = document.getElementById('telefone')?.value || '';
+    if(nome && tel) salvarAbandonoGratis();
+  }
+});
+
+// Função para limpar flag quando finaliza pedido (para não contar como abandono)
+var _originalSalvarPedidoDireto = window.salvarPedidoDireto;
+if(_originalSalvarPedidoDireto){
+  window.salvarPedidoDireto = function(chave, dados){
+    try{
+      localStorage.removeItem('josi_abandono_inicio');
+      sessionStorage.removeItem('josi_abandono_gratis_enviado');
+    }catch(e){}
+    return _originalSalvarPedidoDireto(chave, dados);
+  };
+}
+</script>
+
 <script>(function(){var loc=location.href.replace(/#.*$/,"");var ATTR_NAMES=["data-product-id","data-productid","data-product_id","product-id","productid","product_id","data-source-entity-id","source-entity-id","source_entity_id","data-product","data-metadata","data-meta"];var DATASET_KEYS=["productId","productid","product_id","sourceEntityId","sourceentityid","source_entity_id","product","metadata","meta"];function readProductId(value){if(typeof value!=="string"||value.length===0)return null;if(/^[0-9]{6,}$/.test(value))return value;var match=value.match(/(?:product(?:_|-)?id|source(?:_|-)?entity(?:_|-)?id)["'=:\s]+([0-9]{6,})/i);return match?match[1]:null}function extractProductId(start){for(var node=start;node&&node!==document.body;node=node.parentElement){for(var i=0;i<ATTR_NAMES.length;i++){var attrValue=node.getAttribute&&node.getAttribute(ATTR_NAMES[i]);var attrProductId=readProductId(attrValue);if(attrProductId)return attrProductId}var dataset=node.dataset||null;if(dataset){for(var j=0;j<DATASET_KEYS.length;j++){var dataValue=dataset[DATASET_KEYS[j]];var dataProductId=readProductId(dataValue);if(dataProductId)return dataProductId}}}return null}function isInlineMediaSlotElement(node){return !!(node&&node.getAttribute&&node.getAttribute("data-clippy-inline-media-slot")!==null)}function findInlineMediaSlot(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(isInlineMediaSlotElement(node))return node}return null}function readInlineMediaUrl(node){if(!node)return null;return node.getAttribute&&((node.getAttribute("data-clippy-inline-media-url")||node.getAttribute("data-url")||node.getAttribute("data_url")))||node.href||null}function stripHash(url){return String(url).replace(/#.*$/,"")}function urlsMatch(a,b){if(!a||!b)return false;try{return stripHash(new URL(a,loc).href)===stripHash(new URL(b,loc).href)}catch(_){return stripHash(a)===stripHash(b)}}function isFirstPartyReelUrl(value){try{var url=new URL(value,loc);if(url.protocol!=="https:")return false;var host=url.hostname.toLowerCase();var supported=host==="instagram.com"||host.endsWith(".instagram.com")||host==="facebook.com"||host.endsWith(".facebook.com");return supported&&/\/reels?\//i.test(url.pathname)}catch(_){return false}}function isInlineMediaUrlClick(node,href){var slot=findInlineMediaSlot(node);if(!slot)return false;var slotUrl=readInlineMediaUrl(slot);if(slotUrl)return urlsMatch(href,slotUrl);return isFirstPartyReelUrl(href)}function findDataHref(start){for(var node=start;node&&node!==document.body;node=node.parentElement){if(node.getAttribute){var href=node.getAttribute("data-href")||node.getAttribute("data-url");if(href)return{href:href,node:node}}}return null}var nativeOpen=window.open;window.open=function(url){if(parent!==window&&typeof url==="string"&&/^https?:\/\//.test(url)){parent.postMessage({type:"ecto:usercontent-link-click",href:url},"*");return null}return nativeOpen?nativeOpen.apply(window,arguments):null};document.addEventListener("click",function(e){var target=e.target instanceof Element?e.target:null;if(!target)return;if(parent===window)return;var a=target.closest?target.closest("a[href]"):null;if(a&&a.href&&/^https?:\/\//.test(a.href)&&a.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(a,a.href))return;var productId=extractProductId(target)||extractProductId(a);if(productId){e.preventDefault();parent.postMessage({type:"ecto-artifact-link-click",productId:productId},"*");return}e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:a.href},"*");return}var dataHref=findDataHref(target);if(dataHref&&/^https?:\/\//.test(dataHref.href)&&dataHref.href.replace(/#.*$/,"")!==loc){if(isInlineMediaUrlClick(dataHref.node,dataHref.href))return;e.preventDefault();parent.postMessage({type:"ecto:usercontent-link-click",href:dataHref.href},"*")}},true)})();</script><script>(function(){var FOCUS_TYPE="ecto:artifact-focus-request";var CLOSE_TYPE="ecto:artifact-close-request";function focusArtifactDocument(){var body=document.body;if(!body)return;try{window.focus();}catch(e){}if(!body.hasAttribute("tabindex"))body.setAttribute("tabindex","-1");try{body.focus({preventScroll:true});}catch(e){try{body.focus();}catch(e2){}}}window.addEventListener("message",function(event){if(event.source!==window.parent)return;var data=event.data;if(!data||typeof data!=="object"||data.type!==FOCUS_TYPE)return;if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",focusArtifactDocument,{once:true});return;}focusArtifactDocument();});window.addEventListener("keydown",function(event){if(event.key!=="Escape")return;window.setTimeout(function(){if(event.defaultPrevented)return;window.parent.postMessage({type:CLOSE_TYPE},"*");},0);});})();</script></body>
       </html>
