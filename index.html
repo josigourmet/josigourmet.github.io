@@ -886,6 +886,80 @@
             opacity: 0.7;
         }
 
+
+        /* ===== Cores por produto ===== */
+        .card-cor, .card-faixa { position: relative; overflow: hidden; }
+        .card-cor::before, .card-faixa::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 7px;
+            background: linear-gradient(90deg, var(--faixa));
+        }
+        .card-cor {
+            background: linear-gradient(135deg, var(--t1), var(--t2));
+            border: 2px solid var(--borda);
+        }
+        .card-cor h3 { margin-top: 6px; }
+        .card-cor .price { color: var(--preco); }
+        .card-cor .adicionar-texto { color: var(--preco); }
+        .card-cor .sabores-tags { background: rgba(255,255,255,0.7); border-color: var(--borda); }
+        .card-cor .sabores-tags .sabores-tags-label { color: var(--preco); }
+
+        /* Torta de bolacha no pote: nata/ninho + doce de leite + chocolate */
+        .cor-torta-pote { --t1:#fffaf0; --t2:#f3e3d3; --borda:#c68642; --preco:#8a4b14; --faixa:#f3dfb0, #c68642, #4e2a1a; }
+        /* Torta de bolacha grande 1 kg: bolacha/caramelo */
+        .cor-torta-1kg { --t1:#fdf3e1; --t2:#f4dcb8; --borda:#c9984f; --preco:#8a5a1c; --faixa:#e8c88e, #b87333; }
+        /* Bolo grande: chocolate + beijinho/brigadeiro + cenoura + doce de leite */
+        .cor-bolo-grande { --t1:#fbf1e6; --t2:#f1e0d4; --borda:#a0623a; --preco:#7a3f1d; --faixa:#5a2d1a, #f1d98a, #e8872b, #c68642; }
+        /* Bolo no pote: beijinho/coco + doce de leite + brigadeiro + cenoura */
+        .cor-bolo-pote { --t1:#fffdf6; --t2:#f8e9da; --borda:#c9a27a; --preco:#8a4b14; --faixa:#e6dcc3, #c68642, #5a2d1a, #e8872b; }
+        /* Torta grande: sabores variados */
+        .cor-torta-grande { --t1:#fff8f0; --t2:#f9e4e0; --borda:#d99a8a; --preco:#8a3f3f; --faixa:#f0c987, #7b3f2a, #e57a8c; }
+        /* Bolo no pote com pudim: caramelo/pudim */
+        .cor-pudim { --t1:#fff8dc; --t2:#fde7b0; --borda:#d9a032; --preco:#a35d0c; --faixa:#f6c453, #b8651b; }
+        /* Bolo de Stikadinho: chocolate */
+        .cor-stika { --t1:#f4e9e3; --t2:#e6d3c9; --borda:#6b3a24; --preco:#4e2a1a; --faixa:#3e2218, #6b3a24; }
+
+        /* ===== Açaí (tema roxo) ===== */
+        :root { --acai-escuro:#3b0a57; --acai-medio:#6a1b9a; --acai-claro:#ab47bc; --acai-fundo:#f3e5f5; --acai-borda:#ce93d8; }
+        .card-acai {
+            background: linear-gradient(135deg, #f3e5f5, #ffffff);
+            border: 2px solid var(--acai-borda);
+            box-shadow: 0 4px 20px rgba(106,27,154,0.18);
+        }
+        .card-acai:hover { box-shadow: 0 6px 25px rgba(106,27,154,0.3); }
+        .card-acai h3 { color: var(--acai-escuro); }
+        .card-acai .price { color: var(--acai-medio); }
+        .card-acai .adicionar-texto { color: var(--acai-medio); }
+        .card-acai .qtd-display { color: var(--acai-escuro); }
+        .card-acai .sabores-tags {
+            background: linear-gradient(135deg, #ede1f5, #f8f0fb);
+            border-color: var(--acai-medio);
+            color: var(--acai-escuro);
+        }
+        .card-acai .sabores-tags .sabores-tags-label { color: var(--acai-medio); }
+        .card-acai .btn-menor {
+            background: linear-gradient(135deg, #8e24aa, #4a148c) !important;
+            box-shadow: 0 3px 8px rgba(106,27,154,0.35);
+        }
+        .card-acai .btn-maior {
+            background: linear-gradient(135deg, #ab47bc, #6a1b9a) !important;
+            box-shadow: 0 3px 8px rgba(106,27,154,0.35);
+        }
+        .modal-acai-conteudo { border-color: var(--acai-borda); }
+        .modal-acai-conteudo h2 { color: var(--acai-escuro); }
+        .modal-acai-conteudo .sabores-instrucao { color: var(--acai-medio); }
+        .modal-acai-conteudo .sabor-opcao { background: var(--acai-fundo); border-color: var(--acai-borda); }
+        .modal-acai-conteudo .sabor-check { border-color: var(--acai-medio); }
+        .modal-acai-conteudo .sabor-opcao.selecionado {
+            background: linear-gradient(135deg, #ede1f5, #e1bee7);
+            border-color: var(--acai-medio);
+            box-shadow: 0 4px 14px rgba(106,27,154,0.25);
+        }
+        .modal-acai-conteudo .sabor-opcao.selecionado .sabor-check { background: var(--acai-medio); border-color: var(--acai-medio); color:#fff; }
+        .modal-acai-conteudo .sabores-preco-resumo { background: var(--acai-fundo); border-color: var(--acai-medio); }
+        .modal-acai-conteudo .tag-sabor-escolhido { background: var(--acai-medio); }
+        .modal-acai-conteudo .sabores-preco-final b { color: var(--acai-medio); }
+        .btn-acai-confirmar { background: linear-gradient(135deg, #8e24aa, #4a148c) !important; }
+
         /* ===== Estilos do Chatbot IA ===== */
         .chatbot-flutuante {
             position: fixed;
@@ -1072,7 +1146,7 @@
 </div>
 
 <div class="barra-cupom" id="barraCupom">
-    🎉 PROMOÇÃO: Ganhe 5% de DESCONTO + FRETE GRÁTIS em compras a partir de R$ 50,00! 🍰 | 🤖 Automação Grátis Ativa!
+    🎉 PROMOÇÃO: Ganhe 5% de DESCONTO + FRETE GRÁTIS em compras a partir de R$ 50,00! 🍰
 </div>
 
 <a href="https://www.instagram.com/josigourmet" target="_blank" class="insta-float">
@@ -1112,7 +1186,7 @@
             <li>🚀 <b>Sáb, Dom e Feriados:</b><br>Pedidos para entrega/retirada das 08h às 17h.</li>
             <li>⏰ <b>Atenção:</b> Agendamentos fora desses horários serão validados em horário comercial .</li>
         </ul>
-        <a href="https://wa.me/5551985803243?text=Olá Josi! Tenho uma dúvida sobre agendamentos." target="_blank" class="btn-duvida">💬 Dúvidas no WhatsApp</a>
+        <a href="https://wa.me/5551989324150?text=Olá Josi! Tenho uma dúvida sobre agendamentos." target="_blank" class="btn-duvida">💬 Dúvidas no WhatsApp</a>
         <button class="btn-entendi" onclick="fecharModalAviso()">Fazer meu Pedido ➔</button>
     </div>
 </div>
@@ -1128,6 +1202,17 @@
     </div>
 </div>
 
+<div id="modalAcai" class="modal-aviso">
+    <div class="modal-conteudo modal-sabores-conteudo modal-acai-conteudo">
+        <h2>🍇 Açaí Copo 400 ml</h2>
+        <p class="sabores-instrucao">Escolha até 4 adicionais (frutas, complementos ou cremes) pelo mesmo preço de R$ 18,00:</p>
+        <div id="acaiLista" class="sabores-lista"></div>
+        <div id="acaiResumo" class="sabores-preco-resumo"></div>
+        <button class="btn-entendi btn-acai-confirmar" onclick="confirmarAcai()">✅ Adicionar ao Carrinho</button>
+        <button class="btn-promo-close" onclick="fecharModalAcai()">Cancelar</button>
+    </div>
+</div>
+
 <header>
     <div class="logo-container">
         <img src="https://i.postimg.cc/9Q4WLFgY/1783348278210.png" class="logo-img" alt="Logo Josi Doces">
@@ -1139,13 +1224,13 @@
 </header>
 
 <div class="container">
-    ___TEMP_EVENTO___<div class="card-evento">
+    <div class="card-evento">
         <h3>✨ Encomendas para Eventos</h3>
         <p>Temos condições especiais para grandes quantidades!</p>
-        <a href="https://wa.me/5551985803243?text=Olá Josi! Gostaria de um orçamento para evento." target="_blank" class="btn-evento">Solicitar Orçamento</a>
+        <a href="https://wa.me/5551989324150?text=Olá Josi! Gostaria de um orçamento para evento." target="_blank" class="btn-evento">Solicitar Orçamento</a>
     </div>
 
-    <div class="card">
+    <div class="card card-cor cor-torta-pote">
         <h3>Torta de bolacha no pote</h3>
         <p class="price">R$ 10,00</p>
         <div class="sabores-tags"><span class="sabores-tags-label">🍫 Sabores disponíveis</span><span class="sabores-tags-lista">Nata Ninho, Doce de leite com chocolate amargo e Bombom</span></div>
@@ -1156,7 +1241,7 @@
         </div>
     </div>
 
-    <div class="card" style="border:2px solid var(--destaque); background: linear-gradient(135deg, #fff8e1, #fff); position:relative; overflow:hidden;">
+    <div class="card card-faixa cor-bolo-pote" style="border:2px solid var(--destaque); background: linear-gradient(135deg, #fff8e1, #fff); position:relative; overflow:hidden;">
         <div style="position:absolute; top:0; right:0; background:var(--destaque); color:#fff; font-size:11px; font-weight:800; padding:4px 10px; border-bottom-left-radius:10px;">MAIS VENDIDO</div>
         <h3>🔥 COMBO FAMÍLIA - 4 Bolos no Pote</h3>
         <p style="font-size:12px; color:#8d6e63; margin:4px 0;">Escolha os sabores na hora de adicionar</p>
@@ -1168,7 +1253,7 @@
     </div>
 
 
-    <div class="card">
+    <div class="card card-cor cor-torta-1kg">
         <h3>Torta de Bolacha Grande 1 kg</h3>
         <p class="price"> R$ 55,00</p>
         <div class="controles-quantidade">
@@ -1178,7 +1263,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card card-cor cor-bolo-grande">
         <h3>Bolo grande</h3>
         <p class="price">R$ 35,00</p>
         <div class="sabores-tags"><span class="sabores-tags-label">🍰 Sabores disponíveis</span><span class="sabores-tags-lista">Chocolate, Beijinhos e Brigadeiro, Cenoura com brigadeiro, Chocolate amargo e Doce de leite</span></div>
@@ -1189,7 +1274,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card card-cor cor-bolo-pote">
         <h3>Bolo no pote</h3>
         <p class="price">R$ 10,00</p>
         <div class="sabores-tags"><span class="sabores-tags-label">🧁 Sabores disponíveis</span><span class="sabores-tags-lista">Beijinho, Coco, Doce de leite, Brigadeiro e Cenoura com brigadeiro</span></div>
@@ -1200,7 +1285,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card card-cor cor-torta-grande">
         <h3>Torta grande (A partir de 1 kg)</h3>
         <p class="price">A partir de R$ 60,00</p>
         <div class="controles-quantidade">
@@ -1210,7 +1295,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card card-cor cor-pudim">
         <h3>Bolo no Pote com Pudim</h3>
         <p class="price">R$ 14,00</p>
         <div class="controles-quantidade">
@@ -1220,7 +1305,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card card-cor cor-stika">
         <h3>Bolo de Stikadinho no Pote</h3>
         <p class="price">R$ 12,00</p>
         <div class="controles-quantidade">
@@ -1230,23 +1315,27 @@
         </div>
     </div>
 
+    <div class="card card-acai">
+        <h3>🍇 Açaí Copo 400 ml</h3>
+        <p class="price">R$ 18,00</p>
+        <div class="sabores-tags"><span class="sabores-tags-label">🍇 Até 4 adicionais à sua escolha</span><span class="sabores-tags-lista">Escolha até 4 adicionais: Frutas (banana, manga, uva verde), Complementos (granola, leite em pó, leite condensado, granulado, suspiro, mel, sucrilhos, paçoca) e Cremes (alpino, ninho, brigadeiro)</span></div>
+        <div class="controles-quantidade">
+            <button class="btn-menor" onclick="removerPorNomeBasico('Açaí Copo 400 ml')">-</button>
+            <span class="adicionar-texto">Adicionar</span> <span class="qtd-display" id="qtd-Açaí Copo 400 ml">0</span>
+            <button class="btn-maior" onclick="abrirModalAcai()">+</button>
+        </div>
+    </div>
+
     <div id="secaoDadosPedido">
         <label>👤 Seus Dados</label>
         <input type="text" id="nome" placeholder="Seu Nome Completo" maxlength="80" oninput="salvarDados(); verificarPgto();">
         <input type="tel" id="telefone" placeholder="(51) 99999-9999" maxlength="15" oninput="mascaraTelefone(this); salvarDados(); verificarPgto();">
         <div id="erroTelefone" class="erro-tel">O número deve começar com o dígito 9.</div>
         
-        <label>🚚 Entrega e Região</label>
+        <label>🚚 Entrega</label>
         <select id="bairro" onchange="alternarEndereco(); salvarDados(); verificarPgto();">
             <option value="retirada">Vou retirar no local (R$ 0,00)</option>
-            <option value="5">Centro (R$ 5,00)</option>
-            <option value="7">Acesso Dona Leopoldina / Parque (R$ 7,00)</option>
-            <option value="7">Cidade Nova (R$ 7,00)</option>
-            <option value="0">Cruzeiro (R$ 0,00)</option>
-            <option value="8">Gressler (R$ 8,00)</option>
-            <option value="30">Interior / Outros (R$ 30,00)</option>
-            <option value="0">Coronel Brito (R$ 0,00)</option>
-            <option value="8">Santa Tecla (R$ 8,00)</option>
+            <option value="5">Entrega (taxa de R$ 5,00 — grátis acima de R$ 50,00)</option>
         </select>
 
         <div id="blocoEndereco">
@@ -1302,8 +1391,8 @@
 
         <div id="comprovanteBox" class="comprovante-box" style="display:none;">
             <label>📎 Comprovante de Pagamento</label>
-            <p style="font-size:12px; color:#8d6e63; margin:4px 0 8px; line-height:1.4;">Anexe o print do Pix ou comprovante (opcional, mas agiliza a confirmação). Aceita imagem ou PDF até 4MB.</p>
-            <input type="file" id="inputComprovante" accept="image/*,application/pdf" onchange="handleComprovante(this)">
+            <p style="font-size:12px; color:#8d6e63; margin:4px 0 8px; line-height:1.4;">Anexe o print do Pix ou comprovante (opcional, mas agiliza a confirmação). Aceita qualquer tipo de arquivo (imagem, PDF, documento...) até 4MB.</p>
+            <input type="file" id="inputComprovante" onchange="handleComprovante(this)">
             <div id="previewComprovante" style="margin-top:10px; display:none;"></div>
             <div id="statusComprovante" style="font-size:11px; margin-top:6px; color:#5d4037; font-weight:600;"></div>
             <button onclick="removerComprovante()" id="btnRemoverComp" style="display:none; background:linear-gradient(135deg,#e74c3c,#c0392b); padding:8px; font-size:12px; margin-top:8px; border-radius:8px;">🗑️ Remover comprovante</button>
@@ -1349,7 +1438,7 @@ function _validarEndereco(end) { return end.trim().length >= 5 && end.trim().len
 function _validarDataFutura(dataStr, horaStr) { if (!dataStr || !horaStr) return false; const dt = new Date(`${dataStr}T${horaStr}`); return dt > new Date(); }
 function _lsGet(chave) { try { const raw = localStorage.getItem(chave); if (!raw) return null; if (raw.length > 51200) { localStorage.removeItem(chave); return null; } return JSON.parse(raw); } catch(e) { localStorage.removeItem(chave); return null; } }
 function _lsSet(chave, valor) { try { const str = JSON.stringify(valor); if (str.length > 51200) return; localStorage.setItem(chave, str); } catch(e) { } }
-const PRECOS_OFICIAIS = { 'Torta grande (A partir de 1 kg)': 60, 'Torta de Bolacha Grande 1 kg': 55, 'Bolo no Pote com Pudim': 14, 'Bolo de Stikadinho no Pote': 12, 'FRETE GRÁTIS (Ativado)': 0, 'COMBO FAMÍLIA - 4 Bolos no Pote': 36, 'Torta de bolacha no pote (OFERTA R$8)': 8, };
+const PRECOS_OFICIAIS = { 'Torta grande (A partir de 1 kg)': 60, 'Torta de Bolacha Grande 1 kg': 55, 'Bolo no Pote com Pudim': 14, 'Bolo de Stikadinho no Pote': 12, 'Açaí Copo 400 ml': 18, 'FRETE GRÁTIS (Ativado)': 0, 'COMBO FAMÍLIA - 4 Bolos no Pote': 36, 'Torta de bolacha no pote (OFERTA R$8)': 8, };
 function _validarCarrinho(arr) { if (!Array.isArray(arr)) return []; return arr.filter(item => { if (!item || typeof item.nome !== 'string') return false; if (typeof item.qtd !== 'number' || item.qtd < 1 || item.qtd > 999) return false; const baseConhecida = Object.keys(PRECOS_OFICIAIS).some(base => item.nome.startsWith(base)) || item.nome.includes('Torta de bolacha no pote') || item.nome.includes('Bolo grande') || item.nome.includes('Bolo no pote') || item.nome.includes('COMBO FAMÍLIA') || item.nome.includes('OFERTA R$8'); if (baseConhecida && typeof item.preco === 'number' && item.preco >= 0 && item.preco < 10000) { return true; } return false; }); }
 function _recalcularTotalSeguro(carrinhoLocal, frete) { let subtotal = 0; for (const item of carrinhoLocal) { subtotal += item.preco * item.qtd; } const desconto = subtotal >= 50 ? subtotal * 0.05 : 0; return { subtotal, desconto, total: subtotal - desconto + frete }; }
 const ENDERECO_RETIRADA = "Rua Marechal Floriano, 3197, Coronel Brito, Venâncio Aires - RS";
@@ -1373,7 +1462,7 @@ function verificarHorarioValidoParaAgendamento(dataStr, horaStr) { if (!dataStr 
 function toggleVisibilidadeCarrinho() { const box = document.getElementById("carrinhoBox"); box.style.display = (box.style.display === "none" || box.style.display === "") ? "block" : "none"; verificarPgto(); }
 function mascaraTelefone(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); v = v.replace(/(\d)(\d{4})$/, "$1-$2"); i.value = v; }
 function salvarDados() { _lsSet('pedidoJosiDoces', { nome: document.getElementById("nome").value, telefone: document.getElementById("telefone").value, bairro: document.getElementById("bairro").value, endereco: document.getElementById("endereco").value, data: document.getElementById('dataAgendamento').value, hora: document.getElementById('horaAgendamento').value, pagamento: document.getElementById("pagamento").value, carrinho: carrinho, promoAtiva: promoAtiva }); }
-function carregarDados() { configuringLimitesData(); const d = _lsGet('pedidoJosiDoces'); if (d) { document.getElementById("nome").value = d.nome || ""; document.getElementById("telefone").value = d.telefone || ""; document.getElementById("bairro").value = d.bairro || "retirada"; document.getElementById("endereco").value = d.endereco || ""; document.getElementById("pagamento").value = d.pagamento || "Pix"; carrinho = _validarCarrinho(d.carrinho || []); promoAtiva = d.promoAtiva || false; document.getElementById('dataAgendamento').value = d.data || ""; document.getElementById('horaAgendamento').value = d.hora || ""; alternarEndereco(); validarDataHora(); verificarPgto(); } }
+function carregarDados() { configuringLimitesData(); const d = _lsGet('pedidoJosiDoces'); if (d) { document.getElementById("nome").value = d.nome || ""; document.getElementById("telefone").value = d.telefone || ""; document.getElementById("bairro").value = (d.bairro && d.bairro !== "retirada") ? "5" : "retirada"; document.getElementById("endereco").value = d.endereco || ""; document.getElementById("pagamento").value = d.pagamento || "Pix"; carrinho = _validarCarrinho(d.carrinho || []); promoAtiva = d.promoAtiva || false; document.getElementById('dataAgendamento').value = d.data || ""; document.getElementById('horaAgendamento').value = d.hora || ""; alternarEndereco(); validarDataHora(); verificarPgto(); } }
 let _saboresContexto = null;
 function addComSabor(nomeBase, preco, sabores) { if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; } _saboresContexto = { nomeBase, preco, sabores, selecionados: new Set() }; const titulo = document.getElementById('saboresTitulo'); titulo.textContent = `🍰 ${nomeBase}`; const lista = document.getElementById('saboresLista'); lista.innerHTML = ''; sabores.forEach((sabor, idx) => { const div = document.createElement('div'); div.className = 'sabor-opcao'; div.dataset.idx = idx; const check = document.createElement('span'); check.className = 'sabor-check'; check.textContent = '✓'; const nomeSpan = document.createElement('span'); nomeSpan.className = 'sabor-nome'; nomeSpan.textContent = sabor; div.appendChild(check); div.appendChild(nomeSpan); div.onclick = function () { toggleSabor(idx, div); }; lista.appendChild(div); }); atualizarResumoSabores(); document.getElementById('modalSabores').style.display = 'block'; }
 function toggleSabor(idx, el) { if (!_saboresContexto) return; if (_saboresContexto.selecionados.has(idx)) { _saboresContexto.selecionados.delete(idx); el.classList.remove('selecionado'); } else { _saboresContexto.selecionados.add(idx); el.classList.add('selecionado'); } atualizarResumoSabores(); }
@@ -1409,27 +1498,43 @@ function handleComprovante(input){
         input.value = "";
         return;
     }
-    const validTypes = ["image/jpeg","image/png","image/jpg","image/webp","application/pdf"];
-    if(!validTypes.includes(file.type) && !file.type.startsWith("image/")){
-        alert("Formato inválido! Envie imagem (JPG, PNG) ou PDF.");
-        input.value = "";
-        return;
-    }
     const reader = new FileReader();
     reader.onload = function(e){
-        comprovanteDataUrl = e.target.result;
-        comprovanteNome = file.name;
-        comprovanteTipo = file.type;
-        preview.style.display = "block";
-        if(file.type === "application/pdf"){
-            preview.innerHTML = `<div class="pdf-tag">📄 ${file.name} (${(file.size/1024).toFixed(0)} KB) - PDF anexado</div>`;
-        } else {
-            preview.innerHTML = `<img src="${comprovanteDataUrl}" alt="Comprovante"> <div style="font-size:11px; margin-top:4px; color:#5d4037;">📎 ${file.name}</div>`;
-        }
-        status.textContent = `✅ Comprovante "${file.name}" pronto para envio`;
-        status.style.color = "#1b5e20";
-        btnRem.style.display = "block";
-        verificarPgto();
+        const original = e.target.result;
+        const finalizar = function(dataUrl){
+            comprovanteDataUrl = dataUrl;
+            comprovanteNome = file.name;
+            comprovanteTipo = file.type;
+            preview.style.display = "block";
+            if(!(file.type || "").startsWith("image/")){
+                const ehPdf = file.type === "application/pdf";
+                preview.innerHTML = `<div class="pdf-tag">${ehPdf ? "📄" : "📎"} ${file.name} (${(file.size/1024).toFixed(0)} KB) - ${ehPdf ? "PDF" : "Arquivo"} anexado</div>`;
+            } else {
+                preview.innerHTML = `<img src="${comprovanteDataUrl}" alt="Comprovante"> <div style="font-size:11px; margin-top:4px; color:#5d4037;">📎 ${file.name}</div>`;
+            }
+            status.textContent = `✅ Comprovante "${file.name}" pronto para envio`;
+            status.style.color = "#1b5e20";
+            btnRem.style.display = "block";
+            verificarPgto();
+        };
+        if(!(file.type || "").startsWith("image/")){ finalizar(original); return; }
+        // Imagens: reduz para no máximo 1200px e JPEG 70% (fica leve para enviar)
+        const img = new Image();
+        img.onload = function(){
+            try {
+                const MAX = 1200;
+                let w = img.width, h = img.height;
+                if(w > MAX || h > MAX){ const r = Math.min(MAX/w, MAX/h); w = Math.round(w*r); h = Math.round(h*r); }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h);
+                ctx.drawImage(img, 0, 0, w, h);
+                finalizar(canvas.toDataURL('image/jpeg', 0.7));
+            } catch(err){ finalizar(original); }
+        };
+        img.onerror = function(){ finalizar(original); };
+        img.src = original;
     };
     reader.readAsDataURL(file);
 }
@@ -1509,7 +1614,7 @@ async function finalizarZap() {
         comprovanteNome: comprovanteNome || null,
         comprovanteTipo: comprovanteTipo || null,
         temComprovante: !!comprovanteDataUrl,
-        comprovanteBase64: comprovanteDataUrl ? comprovanteDataUrl.slice(0, 350000) : null
+        comprovanteBase64: (comprovanteDataUrl && comprovanteDataUrl.length <= 1500000) ? comprovanteDataUrl : null
     };
     
     let btnZap = document.getElementById("btnWhatsapp");
@@ -1520,7 +1625,7 @@ async function finalizarZap() {
             await window.salvarPedidoDireto(chave, dadosPedido);
             console.log("✅ Pedido salvo com nome:", dadosPedido.nome, "comp:", dadosPedido.temComprovante, chave);
         }
-        const numeroWhatsLoja = "5551985803243";
+        const numeroWhatsLoja = "5551989324150";
         let textoFinal = resumo.texto;
         if(comprovanteDataUrl){
             textoFinal += "\n\n⚠️ IMPORTANTE: Você anexou o comprovante no site, mas por favor envie a imagem/PDF aqui neste chat também para confirmação rápida!";
@@ -1542,7 +1647,7 @@ async function finalizarZap() {
     } catch(e){
         console.error("Erro ao finalizar:", e);
         alert('Erro ao enviar: '+e.message+' - Mas tentaremos abrir WhatsApp mesmo assim');
-        const numeroWhatsLoja = "5551985803243";
+        const numeroWhatsLoja = "5551989324150";
         const url = `https://wa.me/${numeroWhatsLoja}?text=${encodeURIComponent(resumo.texto)}`;
         window.open(url, '_blank');
     }
@@ -1589,12 +1694,14 @@ window.criarPedidoComNumero = function() {
 
 window.salvarPedidoDireto = function(chave, pedido) {
     const url = `https://josigourmet-af3ff-default-rtdb.firebaseio.com/pedidos/${chave}.json`;
-    return fetch(url, {
+    var corpo = JSON.stringify(pedido);
+    var opcoes = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pedido),
-        keepalive: true
-    }).then(function(resp) {
+        body: corpo
+    };
+    if (corpo.length < 60000) opcoes.keepalive = true;
+    return fetch(url, opcoes).then(function(resp) {
         if (!resp.ok) throw new Error('Firebase REST retornou status ' + resp.status);
         return resp;
     });
@@ -1941,6 +2048,92 @@ if(_originalSalvarPedidoDireto){
     }catch(e){}
     return _originalSalvarPedidoDireto(chave, dados);
   };
+}
+</script>
+
+
+<script>
+// ===== AÇAÍ COPO 400 ML: R$ 18,00 com até 4 adicionais (frutas, complementos ou cremes) =====
+var GRUPOS_ACAI = [
+  { titulo: '🍌 Frutas',       itens: ['Banana', 'Manga', 'Uva verde'] },
+  { titulo: '🍯 Complementos', itens: ['Granola', 'Leite em pó', 'Leite condensado', 'Granulado', 'Suspiro (merengue)', 'Mel', 'Sucrilhos', 'Paçoca'] },
+  { titulo: '🍫 Cremes',       itens: ['Creme de Alpino', 'Creme de Ninho', 'Brigadeiro'] }
+];
+var PRECO_ACAI = 18;
+var MAX_ADICIONAIS_ACAI = 4;
+var _acaiSel = new Set();
+
+function fmtReais(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
+
+function abrirModalAcai(){
+  if (typeof CONFIG_BLOQUEIO !== 'undefined' && CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
+  _acaiSel = new Set();
+  var lista = document.getElementById('acaiLista');
+  lista.innerHTML = '';
+  GRUPOS_ACAI.forEach(function(g){
+    var h = document.createElement('div');
+    h.className = 'sabores-instrucao';
+    h.style.cssText = 'font-weight:700;margin:10px 0 4px;text-align:left;';
+    h.textContent = g.titulo;
+    lista.appendChild(h);
+    g.itens.forEach(function(nome){
+      var div = document.createElement('div');
+      div.className = 'sabor-opcao';
+      var check = document.createElement('span'); check.className = 'sabor-check'; check.textContent = '✓';
+      var n = document.createElement('span'); n.className = 'sabor-nome'; n.textContent = nome;
+      div.appendChild(check); div.appendChild(n);
+      div.onclick = function(){
+        if(_acaiSel.has(nome)){ _acaiSel.delete(nome); div.classList.remove('selecionado'); }
+        else {
+          if(_acaiSel.size >= MAX_ADICIONAIS_ACAI){
+            alert('Você já escolheu ' + MAX_ADICIONAIS_ACAI + ' adicionais. Remova um para escolher outro.');
+            return;
+          }
+          _acaiSel.add(nome); div.classList.add('selecionado');
+        }
+        atualizarResumoAcai();
+      };
+      lista.appendChild(div);
+    });
+  });
+  atualizarResumoAcai();
+  document.getElementById('modalAcai').style.display = 'block';
+}
+
+function atualizarResumoAcai(){
+  var resumo = document.getElementById('acaiResumo');
+  resumo.innerHTML = '';
+  if(_acaiSel.size > 0){
+    var wrap = document.createElement('div'); wrap.className = 'sabores-selecionados-tags';
+    Array.from(_acaiSel).forEach(function(nome){
+      var t = document.createElement('span'); t.className = 'tag-sabor-escolhido'; t.textContent = nome;
+      wrap.appendChild(t);
+    });
+    resumo.appendChild(wrap);
+  }
+  var cont = document.createElement('div'); cont.className = 'sabores-extra';
+  cont.textContent = 'Adicionais: ' + _acaiSel.size + ' de ' + MAX_ADICIONAIS_ACAI;
+  resumo.appendChild(cont);
+  var linha = document.createElement('div'); linha.className = 'sabores-preco-final';
+  linha.textContent = 'Total do item: ';
+  var b = document.createElement('b'); b.textContent = fmtReais(PRECO_ACAI);
+  linha.appendChild(b);
+  resumo.appendChild(linha);
+}
+
+function confirmarAcai(){
+  if (typeof CONFIG_BLOQUEIO !== 'undefined' && CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
+  var base = 'Açaí Copo 400 ml';
+  var escolhidos = Array.from(_acaiSel);
+  var nomeCompleto = escolhidos.length ? base + ' (' + escolhidos.join(' + ') + ')' : base;
+  var item = carrinho.find(function(i){ return i.nome === nomeCompleto; });
+  if(item) item.qtd++; else carrinho.push({ nome: nomeCompleto, preco: PRECO_ACAI, qtd: 1, base: base });
+  salvarDados(); resetPagamentoFluxo(); verificarPgto();
+  fecharModalAcai();
+}
+
+function fecharModalAcai(){
+  document.getElementById('modalAcai').style.display = 'none';
 }
 </script>
 
