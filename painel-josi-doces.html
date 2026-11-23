@@ -50,6 +50,14 @@
     </div>
 
     <div class="box">
+      <h3>Faixa dourada do topo</h3>
+      <label><input type="checkbox" id="faixaAtiva"> Mostrar faixa</label>
+      <input type="text" id="faixaTexto" placeholder="Ex: PROMOÇÃO: Ganhe 5% de desconto + frete grátis!">
+      <button id="btnFaixa">Salvar faixa</button>
+      <p style="font-size:12px;color:#8d6e63;margin:6px 0 0">Deixe o texto vazio para voltar ao texto automático das regras de frete e desconto.</p>
+    </div>
+
+    <div class="box">
       <h3>Frete e desconto automático</h3>
       <input type="number" id="rFrete" step="0.01" min="0" placeholder="Frete grátis a partir de (R$)">
       <input type="number" id="rDescPct" step="0.1" min="0" placeholder="Desconto automático (%) — 0 para desligar">
@@ -61,6 +69,7 @@
       <h3>Cupons</h3>
       <input type="text" id="cCod" placeholder="Código (ex: BEMVINDO10)">
       <input type="number" id="cPct" step="0.1" min="0" placeholder="Desconto (%)">
+      <select id="cProd" style="width:100%;padding:10px;margin:4px 0 10px;border:1px solid #d7ccc8;border-radius:8px;font-size:15px"><option value="">Todos os produtos</option></select>
       <button id="btnCupom">Criar cupom</button>
       <div id="listaCupons"></div>
     </div>
@@ -150,6 +159,11 @@ function iniciar() {
     $('avAtivo').checked = !!d.ativo;
     $('avTexto').value = d.texto || '';
   });
+  onValue(ref(db, 'config/faixa'), s => {
+    const d = s.val() || {};
+    $('faixaAtiva').checked = d.ativa !== false;
+    $('faixaTexto').value = d.texto || '';
+  });
   onValue(ref(db, 'config/regras'), s => {
     const d = s.val() || {};
     $('rFrete').value = d.freteGratisMin ?? '';
@@ -180,6 +194,12 @@ $('btnAviso').onclick = () => salvar(set(ref(db, 'config/aviso'), {
   texto: $('avTexto').value.trim().slice(0, 200)
 }), 'Aviso salvo!');
 
+// ---------- Faixa dourada do topo ----------
+$('btnFaixa').onclick = () => salvar(set(ref(db, 'config/faixa'), {
+  ativa: $('faixaAtiva').checked,
+  texto: $('faixaTexto').value.trim().slice(0, 200)
+}), 'Faixa salva!');
+
 // ---------- Frete e desconto automático ----------
 $('btnRegras').onclick = () => {
   const frete = parseFloat($('rFrete').value);
@@ -196,7 +216,7 @@ $('btnCupom').onclick = () => {
   const cod = $('cCod').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
   const pct = parseFloat($('cPct').value);
   if (cod.length < 3 || !(pct > 0 && pct <= 100)) return msg('Informe código (mín. 3 letras/números) e % entre 0 e 100.', true);
-  salvar(set(ref(db, 'config/cupons/' + cod), { pct, ativo: true }), 'Cupom ' + cod + ' criado!')
+  salvar(set(ref(db, 'config/cupons/' + cod), { pct, ativo: true, produto: $('cProd').value }), 'Cupom ' + cod + ' criado!')
     .then(() => { $('cCod').value = ''; $('cPct').value = ''; });
 };
 function desenharCupons(dados) {
@@ -210,7 +230,7 @@ function desenharCupons(dados) {
     const info = document.createElement('div');
     const b = document.createElement('b'); b.textContent = cod;
     const s = document.createElement('small');
-    s.textContent = c.pct + '% de desconto' + (c.ativo === false ? ' · pausado' : '');
+    s.textContent = c.pct + '% de desconto ' + (c.produto ? 'em ' + c.produto : 'em todos os produtos') + (c.ativo === false ? ' · pausado' : '');
     info.append(b, s);
     const acoes = document.createElement('div');
     acoes.append(
@@ -255,6 +275,11 @@ $('btnAddProd').onclick = () => {
 };
 
 function desenharLista(dados) {
+  const sel = $('cProd');
+  const antes = sel.value;
+  sel.innerHTML = '<option value="">Todos os produtos</option>';
+  Object.values(dados).forEach(p => { if (p.nome) { const o = document.createElement('option'); o.value = p.nome; o.textContent = p.nome; sel.append(o); } });
+  sel.value = antes;
   const lista = $('lista');
   lista.innerHTML = '';
   const itens = Object.entries(dados).sort((a, b) => (a[1].ordem || 0) - (b[1].ordem || 0));
