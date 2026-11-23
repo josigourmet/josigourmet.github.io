@@ -43,7 +43,30 @@
     </div>
 
     <div class="box">
-      <h3>Promoção em destaque</h3>
+      <h3>Aviso no topo do site</h3>
+      <label><input type="checkbox" id="avAtivo"> Mostrar aviso</label>
+      <input type="text" id="avTexto" placeholder="Ex: Feriado: entregas só até dia 15">
+      <button id="btnAviso">Salvar aviso</button>
+    </div>
+
+    <div class="box">
+      <h3>Frete e desconto automático</h3>
+      <input type="number" id="rFrete" step="0.01" min="0" placeholder="Frete grátis a partir de (R$)">
+      <input type="number" id="rDescPct" step="0.1" min="0" placeholder="Desconto automático (%) — 0 para desligar">
+      <input type="number" id="rDescMin" step="0.01" min="0" placeholder="Desconto automático a partir de (R$)">
+      <button id="btnRegras">Salvar regras</button>
+    </div>
+
+    <div class="box">
+      <h3>Cupons</h3>
+      <input type="text" id="cCod" placeholder="Código (ex: BEMVINDO10)">
+      <input type="number" id="cPct" step="0.1" min="0" placeholder="Desconto (%)">
+      <button id="btnCupom">Criar cupom</button>
+      <div id="listaCupons"></div>
+    </div>
+
+    <div class="box">
+      <h3>Promoção em destaque (banner)</h3>
       <label><input type="checkbox" id="promoAtiva"> Mostrar promoção</label>
       <input type="text" id="promoNome" placeholder="Nome do produto (ex: COMBO: Bolo + Torta)">
       <input type="number" id="promoPreco" step="0.01" min="0" placeholder="Preço (ex: 22.90)">
@@ -56,6 +79,7 @@
       <h3>Produtos</h3>
       <input type="text" id="pNome" placeholder="Nome do produto">
       <input type="number" id="pPreco" step="0.01" min="0" placeholder="Preço (ex: 10.00)">
+      <input type="number" id="pPromo" step="0.01" min="0" placeholder="Preço promocional (opcional)">
       <input type="text" id="pSabores" placeholder="Sabores separados por vírgula (vazio se não tiver)">
       <label><input type="checkbox" id="pAPartir"> Mostrar "A partir de" antes do preço</label>
       <button id="btnAddProd">Adicionar produto</button>
@@ -103,11 +127,8 @@ function botao(texto, classe, fn) {
 let iniciado = false;
 $('btnEntrar').onclick = async () => {
   $('erroLogin').textContent = '';
-  try {
-    await signInWithEmailAndPassword(auth, $('email').value.trim(), $('senha').value);
-  } catch (e) {
-    $('erroLogin').textContent = 'E-mail ou senha incorretos.';
-  }
+  try { await signInWithEmailAndPassword(auth, $('email').value.trim(), $('senha').value); }
+  catch (e) { $('erroLogin').textContent = 'E-mail ou senha incorretos.'; }
 };
 $('btnSair').onclick = () => signOut(auth);
 onAuthStateChanged(auth, user => {
@@ -124,6 +145,18 @@ function iniciar() {
     $('atendAtivo').checked = !!d.ativo;
     $('atendMsg').value = d.mensagem || '';
   });
+  onValue(ref(db, 'config/aviso'), s => {
+    const d = s.val() || {};
+    $('avAtivo').checked = !!d.ativo;
+    $('avTexto').value = d.texto || '';
+  });
+  onValue(ref(db, 'config/regras'), s => {
+    const d = s.val() || {};
+    $('rFrete').value = d.freteGratisMin ?? '';
+    $('rDescPct').value = d.descontoPct ?? '';
+    $('rDescMin').value = d.descontoMinimo ?? '';
+  });
+  onValue(ref(db, 'config/cupons'), s => desenharCupons(s.val() || {}));
   onValue(ref(db, 'config/promocao'), s => {
     const d = s.val() || {};
     $('promoAtiva').checked = !!d.ativa;
@@ -136,15 +169,63 @@ function iniciar() {
 }
 
 // ---------- Atendimento ----------
-$('btnAtend').onclick = () => salvar(
-  set(ref(db, 'config/atendimento'), {
-    ativo: $('atendAtivo').checked,
-    mensagem: $('atendMsg').value.trim().slice(0, 300)
-  }),
-  'Atendimento salvo!'
-);
+$('btnAtend').onclick = () => salvar(set(ref(db, 'config/atendimento'), {
+  ativo: $('atendAtivo').checked,
+  mensagem: $('atendMsg').value.trim().slice(0, 300)
+}), 'Atendimento salvo!');
 
-// ---------- Promoção ----------
+// ---------- Aviso no topo ----------
+$('btnAviso').onclick = () => salvar(set(ref(db, 'config/aviso'), {
+  ativo: $('avAtivo').checked,
+  texto: $('avTexto').value.trim().slice(0, 200)
+}), 'Aviso salvo!');
+
+// ---------- Frete e desconto automático ----------
+$('btnRegras').onclick = () => {
+  const frete = parseFloat($('rFrete').value);
+  if (!(frete >= 0)) return msg('Informe o valor do frete grátis.', true);
+  salvar(set(ref(db, 'config/regras'), {
+    freteGratisMin: frete,
+    descontoPct: parseFloat($('rDescPct').value) || 0,
+    descontoMinimo: parseFloat($('rDescMin').value) || 0
+  }), 'Regras salvas!');
+};
+
+// ---------- Cupons ----------
+$('btnCupom').onclick = () => {
+  const cod = $('cCod').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  const pct = parseFloat($('cPct').value);
+  if (cod.length < 3 || !(pct > 0 && pct <= 100)) return msg('Informe código (mín. 3 letras/números) e % entre 0 e 100.', true);
+  salvar(set(ref(db, 'config/cupons/' + cod), { pct, ativo: true }), 'Cupom ' + cod + ' criado!')
+    .then(() => { $('cCod').value = ''; $('cPct').value = ''; });
+};
+function desenharCupons(dados) {
+  const box = $('listaCupons');
+  box.innerHTML = '';
+  const itens = Object.entries(dados);
+  if (!itens.length) box.textContent = 'Nenhum cupom criado.';
+  itens.forEach(([cod, c]) => {
+    const row = document.createElement('div');
+    row.className = 'item' + (c.ativo === false ? ' off' : '');
+    const info = document.createElement('div');
+    const b = document.createElement('b'); b.textContent = cod;
+    const s = document.createElement('small');
+    s.textContent = c.pct + '% de desconto' + (c.ativo === false ? ' · pausado' : '');
+    info.append(b, s);
+    const acoes = document.createElement('div');
+    acoes.append(
+      botao(c.ativo === false ? 'Ativar' : 'Pausar', 'cinza', () =>
+        salvar(update(ref(db, 'config/cupons/' + cod), { ativo: c.ativo === false }), 'Atualizado!')),
+      botao('Excluir', 'perigo', () => {
+        if (confirm('Excluir o cupom ' + cod + '?')) salvar(remove(ref(db, 'config/cupons/' + cod)), 'Cupom excluído.');
+      })
+    );
+    row.append(info, acoes);
+    box.append(row);
+  });
+}
+
+// ---------- Promoção (banner) ----------
 $('btnPromo').onclick = () => {
   const img = $('promoImg').value.trim();
   const dados = {
@@ -154,9 +235,7 @@ $('btnPromo').onclick = () => {
     textoBotao: $('promoBotao').value.trim() || '🔥 Aproveitar promoção',
     imagemUrl: /^https:\/\//.test(img) ? img : ''
   };
-  if (dados.ativa && (!dados.nomeProduto || !dados.preco)) {
-    return msg('Para ativar a promoção, informe nome e preço.', true);
-  }
+  if (dados.ativa && (!dados.nomeProduto || !dados.preco)) return msg('Para ativar, informe nome e preço.', true);
   salvar(set(ref(db, 'config/promocao'), dados), 'Promoção salva!');
 };
 
@@ -164,21 +243,14 @@ $('btnPromo').onclick = () => {
 $('btnAddProd').onclick = () => {
   const nome = $('pNome').value.trim();
   const preco = parseFloat($('pPreco').value);
+  const promo = parseFloat($('pPromo').value);
   if (nome.length < 2 || !(preco > 0)) return msg('Informe nome e preço válidos.', true);
   const sabores = $('pSabores').value.split(',').map(s => s.trim()).filter(Boolean);
-  salvar(
-    push(ref(db, 'config/cardapio'), {
-      nome, preco, sabores,
-      aPartir: $('pAPartir').checked,
-      ativo: true,
-      ordem: Date.now()
-    }),
-    'Produto adicionado!'
-  ).then(() => {
-    $('pNome').value = '';
-    $('pPreco').value = '';
-    $('pSabores').value = '';
-    $('pAPartir').checked = false;
+  const prod = { nome, preco, sabores, aPartir: $('pAPartir').checked, ativo: true, ordem: Date.now() };
+  if (promo > 0 && promo < preco) prod.precoPromo = promo;
+  salvar(push(ref(db, 'config/cardapio'), prod), 'Produto adicionado!').then(() => {
+    $('pNome').value = ''; $('pPreco').value = ''; $('pPromo').value = '';
+    $('pSabores').value = ''; $('pAPartir').checked = false;
   });
 };
 
@@ -190,28 +262,32 @@ function desenharLista(dados) {
   itens.forEach(([id, p]) => {
     const row = document.createElement('div');
     row.className = 'item' + (p.ativo === false ? ' off' : '');
-
     const info = document.createElement('div');
-    const nomeEl = document.createElement('b');
-    nomeEl.textContent = p.nome;
+    const nomeEl = document.createElement('b'); nomeEl.textContent = p.nome;
     const det = document.createElement('small');
+    const emPromo = p.precoPromo > 0 && p.precoPromo < p.preco;
     det.textContent =
-      (p.aPartir ? 'A partir de ' : '') + dinheiro(p.preco) +
+      (p.aPartir ? 'A partir de ' : '') +
+      (emPromo ? dinheiro(p.precoPromo) + ' (de ' + dinheiro(p.preco) + ')' : dinheiro(p.preco)) +
       (p.sabores && p.sabores.length ? ' · ' + p.sabores.join(', ') : '') +
       (p.ativo === false ? ' · pausado' : '');
     info.append(nomeEl, det);
-
-    const ref_ = ref(db, 'config/cardapio/' + id);
+    const r = ref(db, 'config/cardapio/' + id);
     const acoes = document.createElement('div');
     acoes.append(
       botao(p.ativo === false ? 'Ativar' : 'Pausar', 'cinza', () =>
-        salvar(update(ref_, { ativo: p.ativo === false }), 'Atualizado!')),
+        salvar(update(r, { ativo: p.ativo === false }), 'Atualizado!')),
       botao('Preço', 'cinza', () => {
         const v = parseFloat(prompt('Novo preço para ' + p.nome + ':', p.preco));
-        if (v > 0) salvar(update(ref_, { preco: v }), 'Preço atualizado!');
+        if (v > 0) salvar(update(r, { preco: v }), 'Preço atualizado!');
+      }),
+      botao('Promo', 'verde', () => {
+        const v = parseFloat(prompt('Preço promocional de ' + p.nome + ' (deixe vazio para remover):', p.precoPromo || ''));
+        if (isNaN(v)) return;
+        salvar(update(r, { precoPromo: v > 0 && v < p.preco ? v : null }), v > 0 ? 'Promoção aplicada!' : 'Promoção removida!');
       }),
       botao('Excluir', 'perigo', () => {
-        if (confirm('Excluir ' + p.nome + '?')) salvar(remove(ref_), 'Produto excluído.');
+        if (confirm('Excluir ' + p.nome + '?')) salvar(remove(r), 'Produto excluído.');
       })
     );
     row.append(info, acoes);
@@ -219,7 +295,7 @@ function desenharLista(dados) {
   });
 }
 
-// ---------- Importar cardápio atual do site ----------
+// ---------- Importar cardápio atual ----------
 const SEED = [
   { nome: 'Torta de bolacha no pote', preco: 10, sabores: ['Nata e Ninho', 'Doce de leite com chocolate amargo', 'Bombom'], ordem: 1 },
   { nome: 'Torta de Bolacha Grande 1 kg', preco: 55, ordem: 2 },
