@@ -2186,6 +2186,9 @@ const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 
 let REGRAS = { freteGratisMin: 50, descontoPct: 5, descontoMinimo: 50 };
 let CUPONS = {};
+let PROMO_NOMES = new Set();
+const isPromo = i => PROMO_NOMES.has(i.base || i.nome) || i.nome === CONFIG_PROMO.nomeProduto;
+const elegivelCupom = (cup, i) => (!cup.produto || (i.base || i.nome) === cup.produto) && !isPromo(i);
 let cupomAplicado = null;
 try { cupomAplicado = localStorage.getItem('cupomJosi') || null; } catch (e) {}
 
@@ -2199,6 +2202,7 @@ function renderCardapio(dados) {
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 
   lista.forEach(p => { PRECOS_OFICIAIS[p.nome] = precoEfetivo(p); });
+  PROMO_NOMES = new Set(lista.filter(p => p.precoPromo > 0 && p.precoPromo < p.preco).map(p => p.nome));
 
   let cont = document.getElementById('cardapioRemoto');
   if (!cont) {
@@ -2287,6 +2291,17 @@ function aplicarAviso(a) {
   el.style.display = ativo ? 'block' : 'none';
 }
 
+// ---------- Faixa dourada do topo ----------
+let FAIXA = null;
+let FAIXA_REGRAS = '';
+function renderFaixa() {
+  const barra = document.getElementById('barraCupom');
+  if (!barra) return;
+  barra.style.display = (FAIXA && FAIXA.ativa === false) ? 'none' : '';
+  barra.textContent = (FAIXA && FAIXA.texto) || FAIXA_REGRAS;
+}
+function aplicarFaixa(f) { FAIXA = f || null; renderFaixa(); }
+
 // ---------- Regras de frete e desconto ----------
 function aplicarRegras(r) {
   if (!r) return;
@@ -2298,28 +2313,31 @@ function aplicarRegras(r) {
   const partes = [];
   if (REGRAS.descontoPct > 0) partes.push(`${REGRAS.descontoPct}% de DESCONTO a partir de R$ ${REGRAS.descontoMinimo.toFixed(2).replace('.', ',')}`);
   partes.push(`FRETE GRÁTIS a partir de R$ ${REGRAS.freteGratisMin.toFixed(2).replace('.', ',')}`);
-  const barra = document.getElementById('barraCupom');
-  if (barra) barra.textContent = '🎉 PROMOÇÃO: Ganhe ' + partes.join(' + ') + '! 🍰';
+  FAIXA_REGRAS = '🎉 PROMOÇÃO: Ganhe ' + partes.join(' + ') + '! 🍰';
+  renderFaixa();
   atualizar();
 }
 
 // ---------- Cupons ----------
 function cupomValido() {
   const c = cupomAplicado && CUPONS[cupomAplicado];
-  return c && c.ativo !== false && Number(c.pct) > 0 ? { code: cupomAplicado, pct: Number(c.pct) } : null;
+  return c && c.ativo !== false && Number(c.pct) > 0 ? { code: cupomAplicado, pct: Number(c.pct), produto: c.produto || '' } : null;
 }
 
 // Desconto: vale o maior entre o automático e o cupom (não soma os dois)
 function calcularTotais(sub, bairro) {
   const cup = cupomValido();
-  const autoPct = (REGRAS.descontoPct > 0 && sub >= REGRAS.descontoMinimo) ? REGRAS.descontoPct : 0;
-  const pct = Math.max(cup ? cup.pct : 0, autoPct);
-  const desconto = sub * pct / 100;
-  const frete = (sub >= REGRAS.freteGratisMin || promoAtiva || bairro === 'retirada') ? 0 : (parseFloat(bairro) || 0);
+  const subCupom = cup ? carrinho.filter(i => elegivelCupom(cup, i)).reduce((a, i) => a + i.preco * i.qtd, 0) : 0;
+  const autoDesc = (REGRAS.descontoPct > 0 && sub >= REGRAS.descontoMinimo) ? sub * REGRAS.descontoPct / 100 : 0;
+  const cupDesc = subCupom * (cup ? cup.pct : 0) / 100;
+  const usaCupom = cupDesc > 0 && cupDesc > autoDesc;
+  const desconto = usaCupom ? cupDesc : autoDesc;
+  const pct = usaCupom ? cup.pct : (autoDesc > 0 ? REGRAS.descontoPct : 0);
+  const frete = (sub >= REGRAS.freteGratisMin || bairro === 'retirada') ? 0 : (parseFloat(bairro) || 0);
   return {
     subtotal: sub, pct, desconto, frete,
     total: sub - desconto + frete,
-    cupom: cup && cup.pct >= autoPct ? cup.code : null
+    cupom: usaCupom ? cup.code : null
   };
 }
 
@@ -2341,7 +2359,7 @@ function criarCampoCupom() {
       m.textContent = '';
     } else if (c && c.ativo !== false && Number(c.pct) > 0) {
       cupomAplicado = code;
-      m.textContent = '✅ Cupom ' + code + ' aplicado: ' + c.pct + '% de desconto';
+      m.textContent = carrinho.some(i => elegivelCupom({ produto: c.produto || '' }, i)) ? '✅ Cupom ' + code + ' aplicado: ' + c.pct + '% ' + (c.produto ? 'no produto ' + c.produto : 'nos produtos fora de promoção') : '⚠️ Este cupom não vale para os produtos do seu pedido.';
       m.style.color = '#2e7d32';
     } else {
       cupomAplicado = null;
@@ -2356,6 +2374,7 @@ function criarCampoCupom() {
 // ---------- Ajustes no carrinho e no resumo ----------
 const _atualizarAnt = atualizar;
 atualizar = function () {
+  carrinho = carrinho.filter(i => i.nome !== 'FRETE GRÁTIS (Ativado)');
   _atualizarAnt();
   const bairro = document.getElementById('bairro').value;
   const sub = carrinho.reduce((a, i) => a + i.preco * i.qtd, 0);
@@ -2366,7 +2385,7 @@ atualizar = function () {
   if (alerta) {
     const ganhos = [];
     if (t.pct) ganhos.push(t.pct + '% de desconto' + (t.cupom ? ' (cupom ' + t.cupom + ')' : ''));
-    if (sub > 0 && t.frete === 0 && bairro !== 'retirada' && !promoAtiva) ganhos.push('frete grátis');
+    if (sub > 0 && t.frete === 0 && bairro !== 'retirada') ganhos.push('frete grátis');
     if (ganhos.length) {
       alerta.innerHTML = `<div class="alerta-sucesso-cupom">🎉 Você ganhou: ${ganhos.join(' + ')}!</div>`;
     } else if (sub > 0 && sub < REGRAS.freteGratisMin) {
@@ -2408,6 +2427,14 @@ montarTextoPedido = function (numeroPedido) {
   return Object.assign(r, { texto, subtotal: t.subtotal, desconto: t.desconto, frete: t.frete, total: t.total });
 };
 
+// ---------- Promoção do banner: não zera a taxa de entrega nem remove o cupom ----------
+addPromoCombo = function () {
+  if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
+  carrinho = carrinho.filter(i => i.nome !== CONFIG_PROMO.nomeProduto);
+  carrinho.push({ nome: CONFIG_PROMO.nomeProduto, preco: CONFIG_PROMO.preco, qtd: 1, fixo: true });
+  salvarDados(); resetPagamentoFluxo(); verificarPgto(); toggleVisibilidadeCarrinho();
+};
+
 // ---------- Inicialização ----------
 criarCampoCupom();
 
@@ -2421,6 +2448,7 @@ onValue(ref(db, 'config/cardapio'), s => renderCardapio(s.val()), e => console.w
 onValue(ref(db, 'config/promocao'), s => aplicarPromo(s.val()), e => console.warn('Promoção:', e));
 onValue(ref(db, 'config/regras'), s => aplicarRegras(s.val()), e => console.warn('Regras:', e));
 onValue(ref(db, 'config/cupons'), s => { CUPONS = s.val() || {}; atualizar(); }, e => console.warn('Cupons:', e));
+onValue(ref(db, 'config/faixa'), s => aplicarFaixa(s.val()), e => console.warn('Faixa:', e));
 onValue(ref(db, 'config/aviso'), s => aplicarAviso(s.val()), e => console.warn('Aviso:', e));
 </script>
 
