@@ -2183,6 +2183,8 @@ const app = getApps().length ? getApp() : initializeApp({ databaseURL: "https://
 const db = getDatabase(app);
 const CACHE = 'cardapioCacheJosi';
 const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+const ACAI_NOME = 'Açaí Copo 400 ml';
+let ACAI_TAGS = null;
 
 let REGRAS = { freteGratisMin: 50, descontoPct: 5, descontoMinimo: 50 };
 let CUPONS = {};
@@ -2201,6 +2203,19 @@ function renderCardapio(dados) {
     .filter(p => p.nome && typeof p.preco === 'number' && p.ativo !== false)
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 
+  // Açaí: se estiver cadastrado no painel, substitui o card fixo e usa o preço/promoção do painel
+  const acaiDb = Object.values(dados || {}).find(p => p && p.nome === ACAI_NOME);
+  const estaticoAcai = document.querySelector('.card-acai');
+  if (acaiDb && estaticoAcai) {
+    if (!ACAI_TAGS) { const t = estaticoAcai.querySelector('.sabores-tags'); ACAI_TAGS = t ? t.cloneNode(true) : null; }
+    estaticoAcai.remove();
+  }
+  if (acaiDb) {
+    PRECO_ACAI = precoEfetivo(acaiDb);
+    const ins = document.querySelector('#modalAcai .sabores-instrucao');
+    if (ins) ins.textContent = 'Escolha até 4 adicionais (frutas, complementos ou cremes) pelo mesmo preço de ' + brl(PRECO_ACAI) + ':';
+  }
+
   lista.forEach(p => { PRECOS_OFICIAIS[p.nome] = precoEfetivo(p); });
   PROMO_NOMES = new Set(lista.filter(p => p.precoPromo > 0 && p.precoPromo < p.preco).map(p => p.nome));
 
@@ -2214,6 +2229,7 @@ function renderCardapio(dados) {
   cont.innerHTML = '';
 
   lista.forEach(p => {
+    if (p.nome === ACAI_NOME) { cont.append(criarCardAcai(p)); return; }
     const preco = precoEfetivo(p);
     const emPromo = preco < p.preco;
     const sabores = Array.isArray(p.sabores) ? p.sabores.filter(Boolean) : [];
@@ -2262,6 +2278,40 @@ function renderCardapio(dados) {
   });
 
   try { localStorage.setItem(CACHE, JSON.stringify(dados || {})); } catch (e) {}
+}
+
+// ---------- Card do açaí (mantém o modal de adicionais) ----------
+function criarCardAcai(p) {
+  const preco = precoEfetivo(p);
+  const emPromo = preco < p.preco;
+  const card = document.createElement('div');
+  card.className = 'card card-acai';
+  const h3 = document.createElement('h3'); h3.textContent = p.nome;
+  const pr = document.createElement('p'); pr.className = 'price';
+  if (emPromo) {
+    const s = document.createElement('s');
+    s.style.cssText = 'font-size:13px;color:#aaa;font-weight:400;margin-right:6px';
+    s.textContent = brl(p.preco);
+    pr.append(s);
+  }
+  pr.append(brl(preco));
+  card.append(h3, pr);
+  if (emPromo) {
+    const t = document.createElement('div');
+    t.style.cssText = 'font-size:12px;font-weight:700;color:#c0392b';
+    t.textContent = '🔥 Promoção';
+    card.append(t);
+  }
+  if (ACAI_TAGS) card.append(ACAI_TAGS.cloneNode(true));
+  const ctrl = document.createElement('div');
+  ctrl.className = 'controles-quantidade';
+  ctrl.innerHTML = '<button class="btn-menor">-</button><span class="adicionar-texto">Adicionar</span> <span class="qtd-display">0</span><button class="btn-maior">+</button>';
+  const [menos, mais] = ctrl.querySelectorAll('button');
+  ctrl.querySelector('.qtd-display').id = 'qtd-' + p.nome;
+  menos.onclick = () => removerPorNomeBasico(p.nome);
+  mais.onclick = () => abrirModalAcai();
+  card.append(ctrl);
+  return card;
 }
 
 // ---------- Promoção (banner) ----------
