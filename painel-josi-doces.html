@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Painel Josi Doces</title>
+<style>
+  body{font-family:system-ui,Arial,sans-serif;margin:0;background:#fdf5e6;color:#3e2723}
+  header{background:#5d4037;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+  main{max-width:720px;margin:0 auto;padding:16px}
+  .box{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  h3{margin:0 0 10px;color:#5d4037}
+  input[type=text],input[type=email],input[type=password],input[type=number]{width:100%;padding:10px;margin:4px 0 10px;border:1px solid #d7ccc8;border-radius:8px;font-size:15px;box-sizing:border-box}
+  label{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+  button{background:#5d4037;color:#fff;border:0;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;margin:2px}
+  .verde{background:#2e7d32}.perigo{background:#c0392b}.cinza{background:#8d6e63}
+  .item{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #efebe9;padding:10px 0;flex-wrap:wrap}
+  .item small{display:block;color:#8d6e63}
+  .off{opacity:.45}
+  .aviso{color:#2e7d32;font-weight:700;min-height:20px}
+  .erro{color:#c0392b;font-weight:700;min-height:20px}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<header><b>🍰 Painel Josi Doces</b><button id="btnSair" class="cinza hide">Sair</button></header>
+<main>
+  <div id="login" class="box">
+    <h3>Entrar</h3>
+    <input type="email" id="email" placeholder="E-mail">
+    <input type="password" id="senha" placeholder="Senha">
+    <button id="btnEntrar">Entrar</button>
+    <p class="erro" id="erroLogin"></p>
+  </div>
+
+  <div id="app" class="hide">
+    <div class="box">
+      <h3>Atendimento (site de pedidos)</h3>
+      <label><input type="checkbox" id="atendAtivo"> Bloquear novos pedidos</label>
+      <input type="text" id="atendMsg" placeholder="Mensagem exibida ao cliente">
+      <button id="btnAtend">Salvar atendimento</button>
+    </div>
+
+    <div class="box">
+      <h3>Promoção em destaque</h3>
+      <label><input type="checkbox" id="promoAtiva"> Mostrar promoção</label>
+      <input type="text" id="promoNome" placeholder="Nome do produto (ex: COMBO: Bolo + Torta)">
+      <input type="number" id="promoPreco" step="0.01" min="0" placeholder="Preço (ex: 22.90)">
+      <input type="text" id="promoBotao" placeholder="Texto do botão">
+      <input type="text" id="promoImg" placeholder="Link da imagem (https://...)">
+      <button id="btnPromo">Salvar promoção</button>
+    </div>
+
+    <div class="box">
+      <h3>Produtos</h3>
+      <input type="text" id="pNome" placeholder="Nome do produto">
+      <input type="number" id="pPreco" step="0.01" min="0" placeholder="Preço (ex: 10.00)">
+      <input type="text" id="pSabores" placeholder="Sabores separados por vírgula (vazio se não tiver)">
+      <label><input type="checkbox" id="pAPartir"> Mostrar "A partir de" antes do preço</label>
+      <button id="btnAddProd">Adicionar produto</button>
+      <div id="lista"></div>
+      <button id="btnSeed" class="verde">Importar cardápio atual do site</button>
+    </div>
+    <p id="aviso"></p>
+  </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyCHzkyYek4fV7fs_1f6FTA9o4o3ikJuhs0",
+  authDomain: "josigourmet-af3ff.firebaseapp.com",
+  databaseURL: "https://josigourmet-af3ff-default-rtdb.firebaseio.com",
+  projectId: "josigourmet-af3ff"
+});
+const auth = getAuth(app);
+const db = getDatabase(app);
+const $ = id => document.getElementById(id);
+const dinheiro = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+
+function msg(texto, erro = false) {
+  const el = $('aviso');
+  el.textContent = texto;
+  el.className = erro ? 'erro' : 'aviso';
+  setTimeout(() => { if (el.textContent === texto) el.textContent = ''; }, 3500);
+}
+function salvar(promessa, ok) {
+  return promessa.then(() => msg(ok)).catch(e => msg('Erro ao salvar: ' + e.message, true));
+}
+function botao(texto, classe, fn) {
+  const b = document.createElement('button');
+  b.textContent = texto;
+  b.className = classe;
+  b.onclick = fn;
+  return b;
+}
+
+// ---------- Login ----------
+let iniciado = false;
+$('btnEntrar').onclick = async () => {
+  $('erroLogin').textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, $('email').value.trim(), $('senha').value);
+  } catch (e) {
+    $('erroLogin').textContent = 'E-mail ou senha incorretos.';
+  }
+};
+$('btnSair').onclick = () => signOut(auth);
+onAuthStateChanged(auth, user => {
+  $('login').classList.toggle('hide', !!user);
+  $('app').classList.toggle('hide', !user);
+  $('btnSair').classList.toggle('hide', !user);
+  if (user && !iniciado) { iniciado = true; iniciar(); }
+});
+
+// ---------- Leitura em tempo real ----------
+function iniciar() {
+  onValue(ref(db, 'config/atendimento'), s => {
+    const d = s.val() || {};
+    $('atendAtivo').checked = !!d.ativo;
+    $('atendMsg').value = d.mensagem || '';
+  });
+  onValue(ref(db, 'config/promocao'), s => {
+    const d = s.val() || {};
+    $('promoAtiva').checked = !!d.ativa;
+    $('promoNome').value = d.nomeProduto || '';
+    $('promoPreco').value = d.preco ?? '';
+    $('promoBotao').value = d.textoBotao || '';
+    $('promoImg').value = d.imagemUrl || '';
+  });
+  onValue(ref(db, 'config/cardapio'), s => desenharLista(s.val() || {}));
+}
+
+// ---------- Atendimento ----------
+$('btnAtend').onclick = () => salvar(
+  set(ref(db, 'config/atendimento'), {
+    ativo: $('atendAtivo').checked,
+    mensagem: $('atendMsg').value.trim().slice(0, 300)
+  }),
+  'Atendimento salvo!'
+);
+
+// ---------- Promoção ----------
+$('btnPromo').onclick = () => {
+  const img = $('promoImg').value.trim();
+  const dados = {
+    ativa: $('promoAtiva').checked,
+    nomeProduto: $('promoNome').value.trim(),
+    preco: parseFloat($('promoPreco').value) || 0,
+    textoBotao: $('promoBotao').value.trim() || '🔥 Aproveitar promoção',
+    imagemUrl: /^https:\/\//.test(img) ? img : ''
+  };
+  if (dados.ativa && (!dados.nomeProduto || !dados.preco)) {
+    return msg('Para ativar a promoção, informe nome e preço.', true);
+  }
+  salvar(set(ref(db, 'config/promocao'), dados), 'Promoção salva!');
+};
+
+// ---------- Produtos ----------
+$('btnAddProd').onclick = () => {
+  const nome = $('pNome').value.trim();
+  const preco = parseFloat($('pPreco').value);
+  if (nome.length < 2 || !(preco > 0)) return msg('Informe nome e preço válidos.', true);
+  const sabores = $('pSabores').value.split(',').map(s => s.trim()).filter(Boolean);
+  salvar(
+    push(ref(db, 'config/cardapio'), {
+      nome, preco, sabores,
+      aPartir: $('pAPartir').checked,
+      ativo: true,
+      ordem: Date.now()
+    }),
+    'Produto adicionado!'
+  ).then(() => {
+    $('pNome').value = '';
+    $('pPreco').value = '';
+    $('pSabores').value = '';
+    $('pAPartir').checked = false;
+  });
+};
+
+function desenharLista(dados) {
+  const lista = $('lista');
+  lista.innerHTML = '';
+  const itens = Object.entries(dados).sort((a, b) => (a[1].ordem || 0) - (b[1].ordem || 0));
+  if (!itens.length) lista.textContent = 'Nenhum produto cadastrado.';
+  itens.forEach(([id, p]) => {
+    const row = document.createElement('div');
+    row.className = 'item' + (p.ativo === false ? ' off' : '');
+
+    const info = document.createElement('div');
+    const nomeEl = document.createElement('b');
+    nomeEl.textContent = p.nome;
+    const det = document.createElement('small');
+    det.textContent =
+      (p.aPartir ? 'A partir de ' : '') + dinheiro(p.preco) +
+      (p.sabores && p.sabores.length ? ' · ' + p.sabores.join(', ') : '') +
+      (p.ativo === false ? ' · pausado' : '');
+    info.append(nomeEl, det);
+
+    const ref_ = ref(db, 'config/cardapio/' + id);
+    const acoes = document.createElement('div');
+    acoes.append(
+      botao(p.ativo === false ? 'Ativar' : 'Pausar', 'cinza', () =>
+        salvar(update(ref_, { ativo: p.ativo === false }), 'Atualizado!')),
+      botao('Preço', 'cinza', () => {
+        const v = parseFloat(prompt('Novo preço para ' + p.nome + ':', p.preco));
+        if (v > 0) salvar(update(ref_, { preco: v }), 'Preço atualizado!');
+      }),
+      botao('Excluir', 'perigo', () => {
+        if (confirm('Excluir ' + p.nome + '?')) salvar(remove(ref_), 'Produto excluído.');
+      })
+    );
+    row.append(info, acoes);
+    lista.append(row);
+  });
+}
+
+// ---------- Importar cardápio atual do site ----------
+const SEED = [
+  { nome: 'Torta de bolacha no pote', preco: 10, sabores: ['Nata e Ninho', 'Doce de leite com chocolate amargo', 'Bombom'], ordem: 1 },
+  { nome: 'Torta de Bolacha Grande 1 kg', preco: 55, ordem: 2 },
+  { nome: 'Bolo grande', preco: 35, sabores: ['Chocolate', 'Beijinhos e Brigadeiro', 'Cenoura com brigadeiro', 'Chocolate amargo', 'Doce de leite'], ordem: 3 },
+  { nome: 'Bolo no pote', preco: 10, sabores: ['Beijinho', 'Coco', 'Doce de leite', 'Brigadeiro', 'Cenoura com brigadeiro'], ordem: 4 },
+  { nome: 'Torta grande (A partir de 1 kg)', preco: 60, aPartir: true, ordem: 5 },
+  { nome: 'Bolo no Pote com Pudim', preco: 14, ordem: 6 },
+  { nome: 'Bolo de Stikadinho no Pote', preco: 12, ordem: 7 }
+];
+$('btnSeed').onclick = () => {
+  if (!confirm('Isso substitui TODO o cardápio no banco pelos produtos atuais do site. Continuar?')) return;
+  const obj = {};
+  SEED.forEach((p, i) => { obj['p' + (i + 1)] = { ativo: true, ...p }; });
+  salvar(set(ref(db, 'config/cardapio'), obj), 'Cardápio importado!');
+};
+</script>
+</body>
+</html>
