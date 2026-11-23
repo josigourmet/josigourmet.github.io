@@ -2423,5 +2423,254 @@ onValue(ref(db, 'config/regras'), s => aplicarRegras(s.val()), e => console.warn
 onValue(ref(db, 'config/cupons'), s => { CUPONS = s.val() || {}; atualizar(); }, e => console.warn('Cupons:', e));
 onValue(ref(db, 'config/aviso'), s => aplicarAviso(s.val()), e => console.warn('Aviso:', e));
 </script>
+  <script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const app = getApps().length ? getApp() : initializeApp({ databaseURL: "https://josigourmet-af3ff-default-rtdb.firebaseio.com" });
+const db = getDatabase(app);
+const CACHE = 'cardapioCacheJosi';
+const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
+
+let REGRAS = { freteGratisMin: 50, descontoPct: 5, descontoMinimo: 50 };
+let CUPONS = {};
+let cupomAplicado = null;
+try { cupomAplicado = localStorage.getItem('cupomJosi') || null; } catch (e) {}
+
+const precoEfetivo = p => (p.precoPromo > 0 && p.precoPromo < p.preco) ? p.precoPromo : p.preco;
+
+// ---------- Cardápio ----------
+function renderCardapio(dados) {
+  const lista = Object.entries(dados || {})
+    .map(([id, p]) => ({ id, ...p }))
+    .filter(p => p.nome && typeof p.preco === 'number' && p.ativo !== false)
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+
+  lista.forEach(p => { PRECOS_OFICIAIS[p.nome] = precoEfetivo(p); });
+
+  let cont = document.getElementById('cardapioRemoto');
+  if (!cont) {
+    cont = document.createElement('div');
+    cont.id = 'cardapioRemoto';
+    (document.querySelector('.card-cor') || document.getElementById('secaoDadosPedido')).before(cont);
+  }
+  document.querySelectorAll('.card-cor').forEach(el => el.remove());
+  cont.innerHTML = '';
+
+  lista.forEach(p => {
+    const preco = precoEfetivo(p);
+    const emPromo = preco < p.preco;
+    const sabores = Array.isArray(p.sabores) ? p.sabores.filter(Boolean) : [];
+
+    const card = document.createElement('div');
+    card.className = 'card card-cor';
+    card.style.cssText = '--t1:#fffaf0;--t2:#f3e3d3;--borda:#c68642;--preco:#8a4b14;--faixa:#c68642';
+
+    const h3 = document.createElement('h3');
+    h3.textContent = p.nome;
+    const pr = document.createElement('p');
+    pr.className = 'price';
+    if (emPromo) {
+      const s = document.createElement('s');
+      s.style.cssText = 'font-size:13px;color:#aaa;font-weight:400;margin-right:6px';
+      s.textContent = brl(p.preco);
+      pr.append(s);
+    }
+    pr.append((p.aPartir ? 'A partir de ' : '') + brl(preco));
+    card.append(h3, pr);
+
+    if (emPromo) {
+      const t = document.createElement('div');
+      t.style.cssText = 'font-size:12px;font-weight:700;color:#c0392b';
+      t.textContent = '🔥 Promoção';
+      card.append(t);
+    }
+    if (sabores.length) {
+      const tags = document.createElement('div');
+      tags.className = 'sabores-tags';
+      tags.innerHTML = '<span class="sabores-tags-label">🍰 Sabores disponíveis</span><span class="sabores-tags-lista"></span>';
+      tags.querySelector('.sabores-tags-lista').textContent = sabores.join(', ');
+      card.append(tags);
+    }
+
+    const ctrl = document.createElement('div');
+    ctrl.className = 'controles-quantidade';
+    ctrl.innerHTML = '<button class="btn-menor">-</button><span class="adicionar-texto">Adicionar</span> <span class="qtd-display">0</span><button class="btn-maior">+</button>';
+    const [menos, mais] = ctrl.querySelectorAll('button');
+    ctrl.querySelector('.qtd-display').id = 'qtd-' + p.nome;
+    menos.onclick = () => removerPorNomeBasico(p.nome);
+    mais.onclick = () => sabores.length ? addComSabor(p.nome, preco, sabores) : add(p.nome, preco);
+
+    card.append(ctrl);
+    cont.append(card);
+  });
+
+  try { localStorage.setItem(CACHE, JSON.stringify(dados || {})); } catch (e) {}
+}
+
+// ---------- Promoção (banner) ----------
+function aplicarPromo(p) {
+  if (!p) return;
+  CONFIG_PROMO.ativa = !!p.ativa;
+  CONFIG_PROMO.textoBotao = p.textoBotao || CONFIG_PROMO.textoBotao;
+  CONFIG_PROMO.nomeProduto = p.nomeProduto || CONFIG_PROMO.nomeProduto;
+  CONFIG_PROMO.preco = Number(p.preco) || CONFIG_PROMO.preco;
+  CONFIG_PROMO.imagemUrl = p.imagemUrl || CONFIG_PROMO.imagemUrl;
+  if (CONFIG_PROMO.nomeProduto) PRECOS_OFICIAIS[CONFIG_PROMO.nomeProduto] = CONFIG_PROMO.preco;
+  carregarBannerDinamico();
+  document.getElementById('btnReabrirPromo').style.display = CONFIG_PROMO.ativa ? '' : 'none';
+}
+
+// ---------- Aviso no topo ----------
+function aplicarAviso(a) {
+  let el = document.getElementById('avisoSite');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'avisoSite';
+    el.style.cssText = 'background:#fff3cd;color:#7a5800;text-align:center;padding:10px 12px;font-size:14px;font-weight:700;border-bottom:1px solid #f0c040;display:none';
+    document.getElementById('barraCupom').after(el);
+  }
+  const ativo = !!(a && a.ativo && a.texto);
+  el.textContent = ativo ? a.texto : '';
+  el.style.display = ativo ? 'block' : 'none';
+}
+
+// ---------- Regras de frete e desconto ----------
+function aplicarRegras(r) {
+  if (!r) return;
+  REGRAS = {
+    freteGratisMin: Number(r.freteGratisMin) || 0,
+    descontoPct: Number(r.descontoPct) || 0,
+    descontoMinimo: Number(r.descontoMinimo) || 0
+  };
+  const partes = [];
+  if (REGRAS.descontoPct > 0) partes.push(`${REGRAS.descontoPct}% de DESCONTO a partir de R$ ${REGRAS.descontoMinimo.toFixed(2).replace('.', ',')}`);
+  partes.push(`FRETE GRÁTIS a partir de R$ ${REGRAS.freteGratisMin.toFixed(2).replace('.', ',')}`);
+  const barra = document.getElementById('barraCupom');
+  if (barra) barra.textContent = '🎉 PROMOÇÃO: Ganhe ' + partes.join(' + ') + '! 🍰';
+  atualizar();
+}
+
+// ---------- Cupons ----------
+function cupomValido() {
+  const c = cupomAplicado && CUPONS[cupomAplicado];
+  return c && c.ativo !== false && Number(c.pct) > 0 ? { code: cupomAplicado, pct: Number(c.pct) } : null;
+}
+
+// Desconto: vale o maior entre o automático e o cupom (não soma os dois)
+function calcularTotais(sub, bairro) {
+  const cup = cupomValido();
+  const autoPct = (REGRAS.descontoPct > 0 && sub >= REGRAS.descontoMinimo) ? REGRAS.descontoPct : 0;
+  const pct = Math.max(cup ? cup.pct : 0, autoPct);
+  const desconto = sub * pct / 100;
+  const frete = (sub >= REGRAS.freteGratisMin || promoAtiva || bairro === 'retirada') ? 0 : (parseFloat(bairro) || 0);
+  return {
+    subtotal: sub, pct, desconto, frete,
+    total: sub - desconto + frete,
+    cupom: cup && cup.pct >= autoPct ? cup.code : null
+  };
+}
+
+function criarCampoCupom() {
+  const box = document.createElement('div');
+  box.style.cssText = 'margin:8px 0';
+  box.innerHTML = '<input id="cupomInput" type="text" placeholder="Tem cupom? Digite aqui" style="width:100%;padding:10px;border:1.5px solid var(--creme-escuro);border-radius:10px;box-sizing:border-box;text-transform:uppercase">' +
+    '<button id="btnCupom" style="margin-top:6px;padding:10px;font-size:13px;width:100%">Aplicar cupom</button>' +
+    '<div id="cupomMsg" style="font-size:12px;margin-top:4px"></div>';
+  document.getElementById('resumo').before(box);
+  if (cupomAplicado) document.getElementById('cupomInput').value = cupomAplicado;
+
+  document.getElementById('btnCupom').onclick = () => {
+    const code = document.getElementById('cupomInput').value.trim().toUpperCase();
+    const m = document.getElementById('cupomMsg');
+    const c = CUPONS[code];
+    if (!code) {
+      cupomAplicado = null;
+      m.textContent = '';
+    } else if (c && c.ativo !== false && Number(c.pct) > 0) {
+      cupomAplicado = code;
+      m.textContent = '✅ Cupom ' + code + ' aplicado: ' + c.pct + '% de desconto';
+      m.style.color = '#2e7d32';
+    } else {
+      cupomAplicado = null;
+      m.textContent = 'Cupom inválido ou expirado.';
+      m.style.color = '#c0392b';
+    }
+    try { localStorage.setItem('cupomJosi', cupomAplicado || ''); } catch (e) {}
+    atualizar();
+  };
+}
+
+// ---------- Ajustes no carrinho e no resumo ----------
+const _atualizarAnt = atualizar;
+atualizar = function () {
+  _atualizarAnt();
+  const bairro = document.getElementById('bairro').value;
+  const sub = carrinho.reduce((a, i) => a + i.preco * i.qtd, 0);
+  const t = calcularTotais(sub, bairro);
+  const qtd = carrinho.reduce((a, i) => a + (i.nome !== 'FRETE GRÁTIS (Ativado)' ? i.qtd : 0), 0);
+
+  const alerta = document.getElementById('alertaCupomDinamico');
+  if (alerta) {
+    const ganhos = [];
+    if (t.pct) ganhos.push(t.pct + '% de desconto' + (t.cupom ? ' (cupom ' + t.cupom + ')' : ''));
+    if (sub > 0 && t.frete === 0 && bairro !== 'retirada' && !promoAtiva) ganhos.push('frete grátis');
+    if (ganhos.length) {
+      alerta.innerHTML = `<div class="alerta-sucesso-cupom">🎉 Você ganhou: ${ganhos.join(' + ')}!</div>`;
+    } else if (sub > 0 && sub < REGRAS.freteGratisMin) {
+      alerta.innerHTML = `<div class="alerta-progresso-cupom">🛒 Adicione mais <b>${brl(REGRAS.freteGratisMin - sub)}</b> para ganhar frete grátis!</div>`;
+    } else {
+      alerta.innerHTML = '';
+    }
+  }
+
+  const resumo = document.getElementById('resumo');
+  if (resumo) {
+    resumo.innerHTML =
+      `<div style="font-size:14px;text-align:left;line-height:1.8">` +
+      `<div>🧁 <b>Itens:</b> ${qtd}</div>` +
+      `<div>💰 <b>Subtotal:</b> ${brl(t.subtotal)}</div>` +
+      (t.desconto > 0 ? `<div style="color:#2e7d32">🏷️ <b>Desconto (${t.pct}%):</b> -${brl(t.desconto)}</div>` : '') +
+      (t.cupom ? `<div>🎟️ <b>Cupom:</b> ${t.cupom}</div>` : '') +
+      `<div>🚚 <b>Frete:</b> ${t.frete === 0 ? '<span style="color:#2e7d32;font-weight:700">GRÁTIS</span>' : brl(t.frete)}</div>` +
+      `<div>📍 <b>Forma:</b> ${bairro === 'retirada' ? 'Retirada no local' : 'Entrega'}</div>` +
+      `<hr style="margin:10px 0;border:none;border-top:1.5px dashed var(--creme-escuro)">` +
+      `<div style="font-size:20px;font-family:'Playfair Display',serif"><b>TOTAL: ${brl(t.total)}</b></div></div>`;
+  }
+  return t.total;
+};
+
+// Mensagem enviada ao WhatsApp com os mesmos valores mostrados no carrinho
+const _montarAnt = montarTextoPedido;
+montarTextoPedido = function (numeroPedido) {
+  const r = _montarAnt(numeroPedido);
+  const bairro = document.getElementById('bairro').value;
+  const t = calcularTotais(r.subtotal, bairro);
+  const bloco =
+    `💰 *Subtotal:* ${brl(t.subtotal)}\n` +
+    (t.desconto > 0 ? `🏷️ *Desconto (${t.pct}%):* -${brl(t.desconto)}\n` : '') +
+    (t.cupom ? `🎟️ *Cupom:* ${t.cupom}\n` : '') +
+    `🚚 *Frete:* ${t.frete === 0 ? 'GRÁTIS' : brl(t.frete)}\n` +
+    `💳 *Total:* ${brl(t.total)}\n`;
+  const texto = r.texto.replace(/💰 \*Subtotal:\*[\s\S]*?💳 \*Total:\*[^\n]*\n/, bloco);
+  return Object.assign(r, { texto, subtotal: t.subtotal, desconto: t.desconto, frete: t.frete, total: t.total });
+};
+
+// ---------- Inicialização ----------
+criarCampoCupom();
+
+// 1) Antes da rede: usa o último cardápio salvo neste aparelho (evita perder o carrinho)
+let cache = null;
+try { cache = JSON.parse(localStorage.getItem(CACHE)); } catch (e) {}
+if (cache) renderCardapio(cache);
+
+// 2) Depois: atualiza em tempo real a partir do painel
+onValue(ref(db, 'config/cardapio'), s => renderCardapio(s.val()), e => console.warn('Cardápio:', e));
+onValue(ref(db, 'config/promocao'), s => aplicarPromo(s.val()), e => console.warn('Promoção:', e));
+onValue(ref(db, 'config/regras'), s => aplicarRegras(s.val()), e => console.warn('Regras:', e));
+onValue(ref(db, 'config/cupons'), s => { CUPONS = s.val() || {}; atualizar(); }, e => console.warn('Cupons:', e));
+onValue(ref(db, 'config/aviso'), s => aplicarAviso(s.val()), e => console.warn('Aviso:', e));
+</script>
+
  </body>
   </html>
