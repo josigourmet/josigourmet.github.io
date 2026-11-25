@@ -91,10 +91,19 @@
       <input type="number" id="pPromo" step="0.01" min="0" placeholder="Preço promocional (opcional)">
       <input type="text" id="pSabores" placeholder="Sabores separados por vírgula (vazio se não tiver)">
       <label><input type="checkbox" id="pAPartir"> Mostrar "A partir de" antes do preço</label>
-      <p style="font-size:12px;color:#8d6e63;margin:0 0 8px">Para o açaí, cadastre com o nome exato <b>Açaí Copo 400 ml</b> e preço 18. Os adicionais continuam fixos no site.</p>
+      <p style="font-size:12px;color:#8d6e63;margin:0 0 8px">Para cada açaí, cadastre com nome começando por <b>Açaí</b>, por exemplo <b>Açaí Copo 400 ml</b> ou <b>Açaí morango</b>. Os adicionais continuam fixos no site.</p>
       <button id="btnAddProd">Adicionar produto</button>
       <div id="lista"></div>
       <button id="btnSeed" class="verde">Importar cardápio atual do site</button>
+    </div>
+    <div class="box">
+      <h3>Adicionais do açaí</h3>
+      <p style="font-size:12px;color:#8d6e63;margin:0 0 8px">Separe os itens por vírgula. Ex: Banana, Morango, Uva verde. Para adicionar frutas, complementos ou cremes, edite o grupo ou crie um novo.</p>
+      <div id="listaAdicionais"></div>
+      <input type="text" id="gTitulo" placeholder="Nome do grupo (ex: 🍓 Caldas)">
+      <input type="text" id="gItens" placeholder="Itens separados por vírgula">
+      <button id="btnGrupo">Adicionar grupo</button>
+      <button id="btnSeedAd" class="verde">Importar adicionais padrão</button>
     </div>
     <p id="aviso"></p>
   </div>
@@ -138,7 +147,18 @@ let iniciado = false;
 $('btnEntrar').onclick = async () => {
   $('erroLogin').textContent = '';
   try { await signInWithEmailAndPassword(auth, $('email').value.trim(), $('senha').value); }
-  catch (e) { $('erroLogin').textContent = 'E-mail ou senha incorretos.'; }
+  catch (e) {
+    const motivos = {
+      'auth/invalid-credential': 'E-mail ou senha não conferem. Confira se o usuário existe em Authentication → Users.',
+      'auth/user-not-found': 'Não existe usuário com este e-mail no Firebase.',
+      'auth/wrong-password': 'Senha incorreta.',
+      'auth/invalid-email': 'O e-mail está em formato inválido.',
+      'auth/operation-not-allowed': 'O login por e-mail e senha não está ativado no Firebase (Authentication → Sign-in method).',
+      'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
+      'auth/network-request-failed': 'Sem conexão. Verifique a internet e tente de novo.'
+    };
+    $('erroLogin').textContent = (motivos[e.code] || 'Erro ao entrar') + ' [' + (e.code || e.message) + ']';
+  }
 };
 $('btnSair').onclick = () => signOut(auth);
 onAuthStateChanged(auth, user => {
@@ -180,6 +200,7 @@ function iniciar() {
     $('promoBotao').value = d.textoBotao || '';
     $('promoImg').value = d.imagemUrl || '';
   });
+  onValue(ref(db, 'config/adicionais'), s => desenharAdicionais(s.val() || {}));
   onValue(ref(db, 'config/cardapio'), s => desenharLista(s.val() || {}));
 }
 
@@ -320,6 +341,52 @@ function desenharLista(dados) {
     lista.append(row);
   });
 }
+
+// ---------- Adicionais do açaí ----------
+const listaSep = t => t.split(',').map(x => x.trim()).filter(Boolean);
+function desenharAdicionais(dados) {
+  const box = $('listaAdicionais');
+  box.innerHTML = '';
+  const grupos = Object.entries(dados).sort((a, b) => (a[1].ordem || 0) - (b[1].ordem || 0));
+  if (!grupos.length) box.textContent = 'Nenhum grupo cadastrado. O site usa a lista padrão.';
+  grupos.forEach(([id, g]) => {
+    const row = document.createElement('div');
+    row.className = 'item';
+    row.style.display = 'block';
+    const t = document.createElement('b'); t.textContent = g.titulo;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = (Array.isArray(g.itens) ? g.itens : Object.values(g.itens || {})).join(', ');
+    inp.style.cssText = 'width:100%;padding:10px;margin:6px 0;border:1px solid #d7ccc8;border-radius:8px;box-sizing:border-box';
+    const acoes = document.createElement('div');
+    acoes.append(
+      botao('Salvar', 'verde', () => salvar(update(ref(db, 'config/adicionais/' + id), { itens: listaSep(inp.value) }), 'Grupo salvo!')),
+      botao('Excluir grupo', 'perigo', () => {
+        if (confirm('Excluir o grupo ' + g.titulo + '?')) salvar(remove(ref(db, 'config/adicionais/' + id)), 'Grupo excluído.');
+      })
+    );
+    row.append(t, inp, acoes);
+    box.append(row);
+  });
+}
+$('btnGrupo').onclick = () => {
+  const titulo = $('gTitulo').value.trim();
+  const itens = listaSep($('gItens').value);
+  if (!titulo || !itens.length) return msg('Informe o nome do grupo e pelo menos um item.', true);
+  salvar(push(ref(db, 'config/adicionais'), { titulo, itens, ordem: Date.now() }), 'Grupo adicionado!')
+    .then(() => { $('gTitulo').value = ''; $('gItens').value = ''; });
+};
+const ADICIONAIS_PADRAO = [
+  { titulo: '🍌 Frutas', itens: ['Banana', 'Manga', 'Uva verde', 'Morango'] },
+  { titulo: '🍯 Complementos', itens: ['Granola', 'Leite em pó', 'Leite condensado', 'Granulado', 'Suspiro (merengue)', 'Mel', 'Sucrilhos', 'Paçoca'] },
+  { titulo: '🍫 Cremes', itens: ['Creme de Alpino', 'Creme de Ninho', 'Brigadeiro'] }
+];
+$('btnSeedAd').onclick = () => {
+  if (!confirm('Substitui todos os grupos de adicionais pela lista padrão. Continuar?')) return;
+  const obj = {};
+  ADICIONAIS_PADRAO.forEach((g, i) => { obj['g' + (i + 1)] = { ...g, ordem: i + 1 }; });
+  salvar(set(ref(db, 'config/adicionais'), obj), 'Adicionais importados!');
+};
 
 // ---------- Importar cardápio atual ----------
 const SEED = [
