@@ -2093,7 +2093,7 @@ if(_originalSalvarPedidoDireto){
 <script>
 // ===== AÇAÍ COPO 400 ML: R$ 18,00 com até 4 adicionais (frutas, complementos ou cremes) =====
 var GRUPOS_ACAI = [
-  { titulo: '🍌 Frutas',       itens: ['Banana', 'Manga', 'Uva verde'] },
+  { titulo: '🍌 Frutas',       itens: ['Banana', 'Manga', 'Uva verde', 'Morango'] },
   { titulo: '🍯 Complementos', itens: ['Granola', 'Leite em pó', 'Leite condensado', 'Granulado', 'Suspiro (merengue)', 'Mel', 'Sucrilhos', 'Paçoca'] },
   { titulo: '🍫 Cremes',       itens: ['Creme de Alpino', 'Creme de Ninho', 'Brigadeiro'] }
 ];
@@ -2185,6 +2185,9 @@ const CACHE = 'cardapioCacheJosi';
 const brl = v => 'R$ ' + Number(v).toFixed(2).replace('.', ',');
 const ACAI_NOME = 'Açaí Copo 400 ml';
 let ACAI_TAGS = null;
+let ACAI_ATUAL = ACAI_NOME;
+const ACAI_PRECOS = {};
+const isAcai = p => typeof p.nome === 'string' && /^açaí/i.test(p.nome);
 
 let REGRAS = { freteGratisMin: 50, descontoPct: 5, descontoMinimo: 50 };
 let CUPONS = {};
@@ -2204,17 +2207,13 @@ function renderCardapio(dados) {
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 
   // Açaí: se estiver cadastrado no painel, substitui o card fixo e usa o preço/promoção do painel
-  const acaiDb = Object.values(dados || {}).find(p => p && p.nome === ACAI_NOME);
+  const acais = Object.values(dados || {}).filter(p => p && isAcai(p));
   const estaticoAcai = document.querySelector('.card-acai');
-  if (acaiDb && estaticoAcai) {
+  if (acais.length && estaticoAcai) {
     if (!ACAI_TAGS) { const t = estaticoAcai.querySelector('.sabores-tags'); ACAI_TAGS = t ? t.cloneNode(true) : null; }
     estaticoAcai.remove();
   }
-  if (acaiDb) {
-    PRECO_ACAI = precoEfetivo(acaiDb);
-    const ins = document.querySelector('#modalAcai .sabores-instrucao');
-    if (ins) ins.textContent = 'Escolha até 4 adicionais (frutas, complementos ou cremes) pelo mesmo preço de ' + brl(PRECO_ACAI) + ':';
-  }
+  acais.forEach(p => { ACAI_PRECOS[p.nome] = precoEfetivo(p); });
 
   lista.forEach(p => { PRECOS_OFICIAIS[p.nome] = precoEfetivo(p); });
   PROMO_NOMES = new Set(lista.filter(p => p.precoPromo > 0 && p.precoPromo < p.preco).map(p => p.nome));
@@ -2229,7 +2228,7 @@ function renderCardapio(dados) {
   cont.innerHTML = '';
 
   lista.forEach(p => {
-    if (p.nome === ACAI_NOME) { cont.append(criarCardAcai(p)); return; }
+    if (isAcai(p)) { cont.append(criarCardAcai(p)); return; }
     const preco = precoEfetivo(p);
     const emPromo = preco < p.preco;
     const sabores = Array.isArray(p.sabores) ? p.sabores.filter(Boolean) : [];
@@ -2309,7 +2308,7 @@ function criarCardAcai(p) {
   const [menos, mais] = ctrl.querySelectorAll('button');
   ctrl.querySelector('.qtd-display').id = 'qtd-' + p.nome;
   menos.onclick = () => removerPorNomeBasico(p.nome);
-  mais.onclick = () => abrirModalAcai();
+  mais.onclick = () => { ACAI_ATUAL = p.nome; abrirModalAcai(); };
   card.append(ctrl);
   return card;
 }
@@ -2477,6 +2476,28 @@ montarTextoPedido = function (numeroPedido) {
   return Object.assign(r, { texto, subtotal: t.subtotal, desconto: t.desconto, frete: t.frete, total: t.total });
 };
 
+// ---------- Açaís: modal genérico para cada sabor cadastrado no painel ----------
+const _abrirAcaiAnt = abrirModalAcai;
+abrirModalAcai = function () {
+  PRECO_ACAI = ACAI_PRECOS[ACAI_ATUAL] ?? 18;
+  _abrirAcaiAnt();
+  const h2 = document.querySelector('#modalAcai h2');
+  if (h2) h2.textContent = '🍇 ' + ACAI_ATUAL;
+  const ins = document.querySelector('#modalAcai .sabores-instrucao');
+  if (ins) ins.textContent = 'Escolha até 4 adicionais (frutas, complementos ou cremes) pelo mesmo preço de ' + brl(PRECO_ACAI) + ':';
+};
+confirmarAcai = function () {
+  if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
+  const base = ACAI_ATUAL;
+  const escolhidos = Array.from(_acaiSel);
+  const nomeCompleto = escolhidos.length ? base + ' (' + escolhidos.join(' + ') + ')' : base;
+  const preco = ACAI_PRECOS[base] ?? 18;
+  const item = carrinho.find(i => i.nome === nomeCompleto);
+  if (item) item.qtd++; else carrinho.push({ nome: nomeCompleto, preco, qtd: 1, base });
+  salvarDados(); resetPagamentoFluxo(); verificarPgto();
+  fecharModalAcai();
+};
+
 // ---------- Promoção do banner: não zera a taxa de entrega nem remove o cupom ----------
 addPromoCombo = function () {
   if (CONFIG_BLOQUEIO.ativo) { aplicarBloqueioSite(); return; }
@@ -2499,6 +2520,16 @@ onValue(ref(db, 'config/promocao'), s => aplicarPromo(s.val()), e => console.war
 onValue(ref(db, 'config/regras'), s => aplicarRegras(s.val()), e => console.warn('Regras:', e));
 onValue(ref(db, 'config/cupons'), s => { CUPONS = s.val() || {}; atualizar(); }, e => console.warn('Cupons:', e));
 onValue(ref(db, 'config/faixa'), s => aplicarFaixa(s.val()), e => console.warn('Faixa:', e));
+onValue(ref(db, 'config/adicionais'), s => {
+  const d = s.val();
+  if (!d) return;
+  const grupos = Object.values(d)
+    .filter(g => g && g.titulo)
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
+    .map(g => ({ titulo: g.titulo, itens: (Array.isArray(g.itens) ? g.itens : Object.values(g.itens || {})).filter(Boolean) }))
+    .filter(g => g.itens.length);
+  if (grupos.length) GRUPOS_ACAI = grupos;
+}, e => console.warn('Adicionais:', e));
 onValue(ref(db, 'config/aviso'), s => aplicarAviso(s.val()), e => console.warn('Aviso:', e));
 </script>
 
