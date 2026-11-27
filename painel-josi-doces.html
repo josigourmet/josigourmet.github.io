@@ -89,6 +89,9 @@
       <input type="text" id="pNome" placeholder="Nome do produto">
       <input type="number" id="pPreco" step="0.01" min="0" placeholder="Preço (ex: 10.00)">
       <input type="number" id="pPromo" step="0.01" min="0" placeholder="Preço promocional (opcional)">
+      <label style="font-size:13px">Foto do produto (opcional)</label>
+      <input type="file" id="pFoto" accept="image/*">
+      <input type="text" id="pFotoLink" placeholder="ou cole o link da foto (https://...)">
       <input type="text" id="pSabores" placeholder="Sabores separados por vírgula (vazio se não tiver)">
       <label><input type="checkbox" id="pAPartir"> Mostrar "A partir de" antes do preço</label>
       <p style="font-size:12px;color:#8d6e63;margin:0 0 8px">Para cada açaí, cadastre com nome começando por <b>Açaí</b>, por exemplo <b>Açaí Copo 400 ml</b> ou <b>Açaí morango</b>. Os adicionais continuam fixos no site.</p>
@@ -282,7 +285,7 @@ $('btnPromo').onclick = () => {
 };
 
 // ---------- Produtos ----------
-$('btnAddProd').onclick = () => {
+$('btnAddProd').onclick = async () => {
   const nome = $('pNome').value.trim();
   const preco = parseFloat($('pPreco').value);
   const promo = parseFloat($('pPromo').value);
@@ -290,7 +293,15 @@ $('btnAddProd').onclick = () => {
   const sabores = $('pSabores').value.split(',').map(s => s.trim()).filter(Boolean);
   const prod = { nome, preco, sabores, aPartir: $('pAPartir').checked, ativo: true, ordem: Date.now() };
   if (promo > 0 && promo < preco) prod.precoPromo = promo;
+  const linkFoto = $('pFotoLink').value.trim();
+  if (/^https:\/\//.test(linkFoto)) prod.imagem = linkFoto;
+  else if ($('pFoto').files[0]) {
+    try { prod.imagem = await comprimirImagem($('pFoto').files[0]); }
+    catch (e) { return msg('Não foi possível ler a imagem.', true); }
+  }
   salvar(push(ref(db, 'config/cardapio'), prod), 'Produto adicionado!').then(() => {
+    $('pFoto').value = '';
+    $('pFotoLink').value = '';
     $('pNome').value = ''; $('pPreco').value = ''; $('pPromo').value = '';
     $('pSabores').value = ''; $('pAPartir').checked = false;
   });
@@ -318,6 +329,12 @@ function desenharLista(dados) {
       (emPromo ? dinheiro(p.precoPromo) + ' (de ' + dinheiro(p.preco) + ')' : dinheiro(p.preco)) +
       (p.sabores && p.sabores.length ? ' · ' + p.sabores.join(', ') : '') +
       (p.ativo === false ? ' · pausado' : '');
+    if (p.imagem) {
+      const im = document.createElement('img');
+      im.src = p.imagem;
+      im.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:8px;float:right;margin-left:8px';
+      info.append(im);
+    }
     info.append(nomeEl, det);
     const r = ref(db, 'config/cardapio/' + id);
     const acoes = document.createElement('div');
@@ -328,6 +345,15 @@ function desenharLista(dados) {
         const v = parseFloat(prompt('Novo preço para ' + p.nome + ':', p.preco));
         if (v > 0) salvar(update(r, { preco: v }), 'Preço atualizado!');
       }),
+      botao('Link da foto', 'cinza', () => {
+        const l = prompt('Cole o link da foto (https://...). Deixe vazio para remover:', p.imagem && /^https:/.test(p.imagem) ? p.imagem : '');
+        if (l === null) return;
+        const t = l.trim();
+        if (t && !/^https:\/\//.test(t)) return msg('O link precisa começar com https://', true);
+        salvar(update(r, { imagem: t || null }), t ? 'Link salvo!' : 'Foto removida!');
+      }),
+      botao('Foto', 'cinza', () => escolherFoto(id)),
+      p.imagem ? botao('Tirar foto', 'perigo', () => salvar(update(r, { imagem: null }), 'Foto removida!')) : document.createTextNode(''),
       botao('Promo', 'verde', () => {
         const v = parseFloat(prompt('Preço promocional de ' + p.nome + ' (deixe vazio para remover):', p.precoPromo || ''));
         if (isNaN(v)) return;
@@ -386,6 +412,44 @@ $('btnSeedAd').onclick = () => {
   const obj = {};
   ADICIONAIS_PADRAO.forEach((g, i) => { obj['g' + (i + 1)] = { ...g, ordem: i + 1 }; });
   salvar(set(ref(db, 'config/adicionais'), obj), 'Adicionais importados!');
+};
+
+// ---------- Fotos dos produtos ----------
+function comprimirImagem(file) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 400;
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * k);
+        c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = reject;
+      img.src = leitor.result;
+    };
+    leitor.onerror = reject;
+    leitor.readAsDataURL(file);
+  });
+}
+const inputFoto = document.createElement('input');
+inputFoto.type = 'file';
+inputFoto.accept = 'image/*';
+inputFoto.style.display = 'none';
+document.body.append(inputFoto);
+let fotoAlvo = null;
+function escolherFoto(id) { fotoAlvo = id; inputFoto.value = ''; inputFoto.click(); }
+inputFoto.onchange = async () => {
+  const f = inputFoto.files[0];
+  if (!f || !fotoAlvo) return;
+  try {
+    const img = await comprimirImagem(f);
+    salvar(update(ref(db, 'config/cardapio/' + fotoAlvo), { imagem: img }), 'Foto salva!');
+  } catch (e) { msg('Não foi possível ler a imagem.', true); }
 };
 
 // ---------- Importar cardápio atual ----------
