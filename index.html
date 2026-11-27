@@ -2236,6 +2236,7 @@ function renderCardapio(dados) {
     const card = document.createElement('div');
     card.className = 'card card-cor';
     card.style.cssText = '--t1:#fffaf0;--t2:#f3e3d3;--borda:#c68642;--preco:#8a4b14;--faixa:#c68642';
+    if (p.imagem) card.append(criarImgProduto(p.imagem));
 
     const h3 = document.createElement('h3');
     h3.textContent = p.nome;
@@ -2279,12 +2280,22 @@ function renderCardapio(dados) {
   try { localStorage.setItem(CACHE, JSON.stringify(dados || {})); } catch (e) {}
 }
 
+// ---------- Foto do produto ----------
+function criarImgProduto(src) {
+  const im = document.createElement('img');
+  im.src = src;
+  im.alt = '';
+  im.style.cssText = 'width:100%;height:170px;object-fit:cover;border-radius:12px;margin-bottom:10px';
+  return im;
+}
+
 // ---------- Card do açaí (mantém o modal de adicionais) ----------
 function criarCardAcai(p) {
   const preco = precoEfetivo(p);
   const emPromo = preco < p.preco;
   const card = document.createElement('div');
   card.className = 'card card-acai';
+  if (p.imagem) card.append(criarImgProduto(p.imagem));
   const h3 = document.createElement('h3'); h3.textContent = p.nome;
   const pr = document.createElement('p'); pr.className = 'price';
   if (emPromo) {
